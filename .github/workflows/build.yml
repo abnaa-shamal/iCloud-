@@ -73,14 +73,13 @@ jobs:
         run: |
           gradle :app:assembleRiderRelease :app:assembleCaptainRelease --no-daemon --stacktrace 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
 
-      # Short error summary as an annotation, readable without opening the full log
+      # Short error summary: ONE annotation with the real compiler/Gradle errors (not the task list)
       - name: Report build errors
         if: failure()
         run: |
           if [ -f build.log ]; then
-            grep -E "^e: |error:|What went wrong|> " build.log | head -n 25 | while IFS= read -r line; do
-              echo "::error::$line"
-            done
+            ERR=$(grep -E "^e: |^w: .*Unresolved|error:|What went wrong|Execution failed|FAILED|Could not |Caused by" build.log | sed 's#file:///home/runner/work/[^/]*/[^/]*/##' | head -n 25 | cut -c1-260 | paste -sd '|' -)
+            echo "::error title=Build errors::${ERR:-no error lines found}"
           fi
 
       - name: Verify signature, package names, version
