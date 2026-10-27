@@ -67,6 +67,7 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
     var to by rememberSaveable { mutableStateOf(ALL) }
     var day by rememberSaveable { mutableStateOf(ALL) }
     var booking by remember { mutableStateOf<Trip?>(null) }
+    var tracking by remember { mutableStateOf<Trip?>(null) }
 
     DisposableEffect(Unit) {
         val r = Repo.listenTrips(
@@ -116,6 +117,12 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
                 val mine = myBookings.firstOrNull { it.tripId == t.id && it.isActive }
                 AppCard {
                     TripInfo(t)
+                    if (mine?.status == BK_ACCEPTED) {
+                        Button(
+                            onClick = { tracking = t },
+                            shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth().height(48.dp)
+                        ) { Text("تتبّع الكابتن على الخريطة") }
+                    }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         when {
@@ -144,6 +151,8 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
             }
         }
     }
+
+    tracking?.let { t -> LiveTrackDialog(t.id, t.captainName) { tracking = null } }
 
     booking?.let { t ->
         BookingDialog(t, me, onClose = { booking = null }, onBooked = { booking = null; onBooked() })
@@ -273,6 +282,7 @@ private fun BookingDialog(t: Trip, me: UserProfile, onClose: () -> Unit, onBooke
 private fun MyBookings(list: List<Booking>) {
     val ctx = LocalContext.current
     var toCancel by remember { mutableStateOf<Booking?>(null) }
+    var tracking by remember { mutableStateOf<Booking?>(null) }
     val now = System.currentTimeMillis()
     // Upcoming first, then past/finished ones.
     val sorted = list.sortedWith(compareByDescending<Booking> { it.isActive && it.departAt > now }.thenBy { it.departAt })
@@ -315,6 +325,12 @@ private fun MyBookings(list: List<Booking>) {
                         Text("الكابتن ${b.captainName}", color = cs.onSurfaceVariant)
                     }
                     if (b.reason.isNotBlank()) Text("السبب: ${b.reason}", color = cs.error)
+                    if (b.status == BK_ACCEPTED && upcoming) {
+                        Button(
+                            onClick = { tracking = b },
+                            shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth().height(48.dp)
+                        ) { Text("تتبّع الكابتن على الخريطة") }
+                    }
                     if (b.isActive && upcoming) {
                         HorizontalDivider(color = cs.outlineVariant.copy(alpha = 0.6f))
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -332,6 +348,8 @@ private fun MyBookings(list: List<Booking>) {
             }
         }
     }
+
+    tracking?.let { b -> LiveTrackDialog(b.tripId, b.captainName) { tracking = null } }
 
     toCancel?.let { b ->
         AlertDialog(

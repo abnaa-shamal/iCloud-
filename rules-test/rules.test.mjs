@@ -902,3 +902,34 @@ test('verify code: only the admin marks a number verified; the owner cannot chan
   await assertFails(updateDoc(doc(asAdmin(), 'users/vp'), { verifyCode: '999999' }));
 });
 
+
+// ===== Live captain location =====
+const live = (over = {}) => ({ captainUid: 'cap', riders: ['pax'], lat: 32.5, lng: 35.9, accuracy: 8, speed: 12, updatedAt: 1700000000000, ...over });
+
+test('live: the trip captain can share his location', async () => {
+  await assertSucceeds(setDoc(doc(asCap(), 'liveLocations/t1'), live()));
+});
+test('live: another captain cannot write on someone else\'s trip', async () => {
+  await assertFails(setDoc(doc(asCapM(), 'liveLocations/t1'), live({ captainUid: 'capM' })));
+});
+test('live: a pending/rejected captain cannot share', async () => {
+  await assertFails(setDoc(doc(asCapR(), 'liveLocations/t1'), live({ captainUid: 'capR' })));
+});
+test('live: cannot write invalid coordinates or extra fields', async () => {
+  await assertFails(setDoc(doc(asCap(), 'liveLocations/t1'), live({ lat: 120 })));
+  await assertFails(setDoc(doc(asCap(), 'liveLocations/t1'), live({ extra: 1 })));
+});
+test('live: only listed riders (and the captain) can read it', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), 'liveLocations/t1'), live()); });
+  await assertSucceeds(getDoc(doc(asPax(), 'liveLocations/t1')));
+  await assertSucceeds(getDoc(doc(asCap(), 'liveLocations/t1')));
+  await assertFails(getDoc(doc(as('other', '0793000009'), 'liveLocations/t1')));
+});
+test('live: a missing document can be read (rider waits for the captain to start)', async () => {
+  await assertSucceeds(getDoc(doc(asPax(), 'liveLocations/t1')));
+});
+test('live: the captain can stop sharing, a rider cannot delete', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), 'liveLocations/t1'), live()); });
+  await assertFails(deleteDoc(doc(asPax(), 'liveLocations/t1')));
+  await assertSucceeds(deleteDoc(doc(asCap(), 'liveLocations/t1')));
+});

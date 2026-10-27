@@ -86,6 +86,9 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-core")
 
+    // Free OpenStreetMap map view (no API key, no billing)
+    implementation("org.osmdroid:osmdroid-android:6.1.20")
+
     implementation(platform("com.google.firebase:firebase-bom:35.0.2"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")

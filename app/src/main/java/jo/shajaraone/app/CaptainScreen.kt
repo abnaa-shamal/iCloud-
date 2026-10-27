@@ -1,5 +1,8 @@
 package jo.shajaraone.app
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -260,6 +263,7 @@ private fun MyTrips(me: UserProfile, onPublish: () -> Unit) {
                     .sortedBy { if (it.status == BK_PENDING) 0 else if (it.status == BK_ACCEPTED) 1 else 2 }
                 AppCard {
                     TripInfo(t, showCaptain = false)
+                    LiveShareControl(t)
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
                     if (reqs.isEmpty()) {
                         Text("ما في حجوزات لسا", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -377,5 +381,33 @@ internal fun BookingRow(b: Booking, onCancel: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+/** Optional live location sharing for one trip: available from an hour before departure until a few hours after. */
+@Composable
+internal fun LiveShareControl(t: Trip) {
+    val ctx = LocalContext.current
+    val active by LiveShareService.active.collectAsState()
+    val now = System.currentTimeMillis()
+    val inWindow = t.status != TRIP_CANCELLED && now >= t.departAt - 60 * 60_000L && now <= t.departAt + 4 * 3_600_000L
+    if (!inWindow) return
+
+    val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { r ->
+        if (r.values.any { it }) LiveShareService.start(ctx, t.id) else toast(ctx, "لازم توافق على الموقع عشان تشاركه")
+    }
+    when {
+        active == t.id -> OutlinedButton(
+            onClick = { LiveShareService.stop(ctx) },
+            shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth().height(48.dp)
+        ) { Text("إيقاف مشاركة موقعي الحي", color = MaterialTheme.colorScheme.error) }
+        active != null -> Text("بتشارك موقعك لرحلة ثانية. وقّفها أول.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        else -> Button(
+            onClick = {
+                if (hasLocationPermission(ctx)) LiveShareService.start(ctx, t.id)
+                else ask.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+            },
+            shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth().height(48.dp)
+        ) { Text("ابدأ مشاركة موقعي الحي") }
     }
 }
