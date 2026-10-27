@@ -2,6 +2,8 @@ name: Design screenshots
 
 on:
   workflow_dispatch:
+  push:
+    branches: [redesign]
 
 permissions:
   contents: read
