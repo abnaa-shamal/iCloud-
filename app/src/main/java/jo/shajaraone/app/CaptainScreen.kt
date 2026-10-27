@@ -352,6 +352,7 @@ internal fun BookingRow(b: Booking, onCancel: () -> Unit) {
             }
             if (b.reason.isNotBlank() && !active) Text("السبب: ${b.reason}", color = cs.onSurfaceVariant)
             if (active) {
+                // Row 1: the decision (accept / reject, or cancel). Row 2: contact buttons.
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (b.status == BK_PENDING) {
                         Button(
@@ -365,9 +366,11 @@ internal fun BookingRow(b: Booking, onCancel: () -> Unit) {
                     } else {
                         OutlinedButton(
                             onClick = onCancel,
-                            shape = MaterialTheme.shapes.medium, modifier = Modifier.weight(1f).height(48.dp)
+                            shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth().height(48.dp)
                         ) { Text("إلغاء الحجز") }
                     }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     ShareLocationButton(b.passengerPhone)
                     CallButton(b.passengerPhone)
                     WhatsAppButton(b.passengerPhone, "مرحبا ${b.passengerName}، بخصوص حجزك برحلة ${b.tripSummary}")
