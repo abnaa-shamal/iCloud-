@@ -104,14 +104,14 @@ jobs:
         if: always()
         run: rm -f "$RUNNER_TEMP/release.jks" app/google-services.json
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: shajara-one-rider-apk
           path: app/build/outputs/apk/rider/release/*.apk
           if-no-files-found: error
           retention-days: 30
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: shajara-one-captain-apk
           path: app/build/outputs/apk/captain/release/*.apk
