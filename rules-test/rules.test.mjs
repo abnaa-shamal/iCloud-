@@ -5,13 +5,13 @@ import { test, before, after, beforeEach } from 'node:test';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
 import { doc, getDoc, getDocs, query, where, setDoc, updateDoc, addDoc, deleteDoc, collection, writeBatch } from 'firebase/firestore';
 
-const mail = (p) => `${p}@mashwarak.app`;
-const capMail = (p) => `${p}@captain.mashwarak.app`;
+const mail = (p) => `${p}@shajaraone.app`;
+const capMail = (p) => `${p}@captain.shajaraone.app`;
 let env;
 
 before(async () => {
   env = await initializeTestEnvironment({
-    projectId: 'demo-mashwarak',
+    projectId: 'demo-shajaraone',
     firestore: { rules: readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8') },
   });
 });
@@ -102,7 +102,7 @@ for (const p of ['0771234567', '0781234567', '0791234567']) {
     await assertSucceeds(setDoc(doc(asNew(p), 'users/new'), newUser({ phone: p })));
   });
 }
-test('create: email must equal phone@mashwarak.app exactly', async () => {
+test('create: email must equal phone@shajaraone.app exactly', async () => {
   await assertFails(setDoc(doc(env.authenticatedContext('new', { email: '0791234567@evil.com' }).firestore(), 'users/new'), newUser()));
   await assertFails(setDoc(doc(as('new', '0791234568'), 'users/new'), newUser())); // phone field != email
 });
@@ -491,7 +491,7 @@ test('abuse/users create: limits are inclusive (2..80 chars name, 60 chars car f
 });
 test('abuse/users create: cannot create a profile with an email/phone of another number', async () => {
   await assertFails(setDoc(doc(as('n1', '0791230021'), 'users/n1'), newUser({ phone: '0791230022' })));
-  await assertFails(setDoc(doc(env.authenticatedContext('n2', { email: '0791230023@mashwarak.app.evil.com' }).firestore(), 'users/n2'),
+  await assertFails(setDoc(doc(env.authenticatedContext('n2', { email: '0791230023@shajaraone.app.evil.com' }).firestore(), 'users/n2'),
     newUser({ phone: '0791230023' })));
   await assertFails(setDoc(doc(env.authenticatedContext('n3', {}).firestore(), 'users/n3'), newUser({ phone: '0791230024' }))); // no email at all
 });

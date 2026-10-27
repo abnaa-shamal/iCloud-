@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Orange icon so the developer app is easy to tell apart -->
-    <color name="ic_launcher_background">#D35400</color>
-</resources>

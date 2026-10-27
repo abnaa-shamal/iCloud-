@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// «مشوارك» security rules.
+// Shajara One security rules.
 // Paste this whole file into: Firebase console → Firestore Database → Rules → Publish.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -54,12 +54,12 @@ service cloud.firestore {
 
       // Phone must be a valid Jordanian mobile. The login email is hidden from users and differs per app, so a
       // rider account and a captain account are fully separate (the same number can hold one of each):
-      //   rider   -> phone@mashwarak.app          captain -> phone@captain.mashwarak.app
+      //   rider   -> phone@shajaraone.app          captain -> phone@captain.shajaraone.app
       // Passenger starts active; captain always starts pending (needs the admin).
       allow create: if signedIn() && me() == uid
         && validPhone(request.resource.data.phone)
-        && ((request.resource.data.role == 'captain' && request.auth.token.email == request.resource.data.phone + '@captain.mashwarak.app')
-         || (request.resource.data.role == 'passenger' && request.auth.token.email == request.resource.data.phone + '@mashwarak.app'))
+        && ((request.resource.data.role == 'captain' && request.auth.token.email == request.resource.data.phone + '@captain.shajaraone.app')
+         || (request.resource.data.role == 'passenger' && request.auth.token.email == request.resource.data.phone + '@shajaraone.app'))
         && request.resource.data.keys().hasOnly(['role', 'status', 'name', 'phone', 'carType', 'carColor', 'carPlate', 'createdAt', 'verifyCode'])
         && request.resource.data.name is string
         && request.resource.data.name.size() >= 2 && request.resource.data.name.size() <= 80

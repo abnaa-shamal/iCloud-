@@ -78,7 +78,7 @@ private val AppShapes = Shapes(
 )
 
 @Composable
-fun MashwarakTheme(content: @Composable () -> Unit) {
+fun ShajaraTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = if (isSystemInDarkTheme()) DarkColors else LightColors,
         shapes = AppShapes

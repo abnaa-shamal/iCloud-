@@ -8,31 +8,6 @@ plugins {
 // (which reads them from GitHub Secrets). Nothing secret lives in this file.
 val keystoreFile: String? = System.getenv("KEYSTORE_FILE")
 
-// DEV build only: the admin panel talks to the REAL Firebase project.
-// Its settings are read from the REAL google-services.json that GitHub Actions
-// writes from a Secret. If the file is absent (e.g. local), the values stay empty.
-fun realFirebaseValue(key: String): String {
-    val f = file("src/prod/google-services.json")
-    if (!f.exists()) return ""
-    val root = groovy.json.JsonSlurper().parse(f) as Map<*, *>
-    val info = root["project_info"] as Map<*, *>
-    val clients = root["client"] as List<*>
-    val client = clients.map { it as Map<*, *> }.first { c ->
-        val ci = c["client_info"] as Map<*, *>
-        val aci = ci["android_client_info"] as Map<*, *>
-        aci["package_name"] == "jo.shajaraone.rider"
-    }
-    val clientInfo = client["client_info"] as Map<*, *>
-    val apiKeys = client["api_key"] as List<*>
-    val firstKey = apiKeys.first() as Map<*, *>
-    return when (key) {
-        "project" -> info["project_id"].toString()
-        "bucket" -> info["storage_bucket"]?.toString() ?: ""
-        "app" -> clientInfo["mobilesdk_app_id"].toString()
-        else -> firstKey["current_key"].toString()
-    }
-}
-
 android {
     namespace = "com.shajara.rides"
     compileSdk = 37
@@ -46,13 +21,12 @@ android {
         versionName = "1.5"
     }
 
-    // Two apps from the same code (dimension "app") x two environments (dimension "env"):
-    //   riderProd   = jo.shajaraone.rider             (riders' app, REAL project)
-    //   captainProd = jo.shajaraone.captain           (captains' app, REAL project)
-    //   riderDev    = jo.shajaraone.rider.dev         (old developer build, optional)
-    //   captainDev  = jo.shajaraone.captain.dev       (old developer build, optional)
+    // Two apps from the same code, one flavor each (the admin dashboard is a separate web app, not part of these):
+    //   rider   = jo.shajaraone.rider     (riders' app)
+    //   captain = jo.shajaraone.captain   (captains' app)
+    // Both use the same Firebase project and are registered in it with exactly these package names.
     // The Kotlin namespace stays com.shajara.rides on purpose: it is only the source package, not the app id.
-    flavorDimensions += listOf("app", "env")
+    flavorDimensions += "app"
     productFlavors {
         create("rider") {
             dimension = "app"
@@ -62,20 +36,6 @@ android {
             dimension = "app"
             applicationId = "jo.shajaraone.captain"
             buildConfigField("boolean", "CAPTAIN_APP", "true")
-        }
-        // Users' app: no admin code at all
-        create("prod") {
-            dimension = "env"
-        }
-        // Developer app: installs next to the users' app, has the admin panel
-        create("dev") {
-            dimension = "env"
-            applicationIdSuffix = ".dev"
-            versionNameSuffix = "-dev"
-            buildConfigField("String", "REAL_PROJECT_ID", "\"${realFirebaseValue("project")}\"")
-            buildConfigField("String", "REAL_APP_ID", "\"${realFirebaseValue("app")}\"")
-            buildConfigField("String", "REAL_API_KEY", "\"${realFirebaseValue("key")}\"")
-            buildConfigField("String", "REAL_STORAGE_BUCKET", "\"${realFirebaseValue("bucket")}\"")
         }
     }
 

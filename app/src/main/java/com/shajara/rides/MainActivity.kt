@@ -28,7 +28,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         Alerts.createChannels(this)
         setContent {
-            MashwarakTheme {
+            ShajaraTheme {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     Root()
                 }
@@ -149,12 +149,6 @@ private fun HomeScaffold(me: UserProfile, onShowGuide: () -> Unit) {
                     Box {
                         IconButton(onClick = { menu = true }) { Text("⋮", fontSize = 22.sp) }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                            if (AdminFeature.enabled) {
-                                DropdownMenuItem(
-                                    text = { Text("👤 طلبات الكباتن") },
-                                    onClick = { menu = false; screen = "admin" }
-                                )
-                            }
                             DropdownMenuItem(text = { Text("📖 شرح التطبيق") }, onClick = { menu = false; onShowGuide() })
                             DropdownMenuItem(
                                 text = { Text("💬 تواصل مع المشرف") },
@@ -169,10 +163,8 @@ private fun HomeScaffold(me: UserProfile, onShowGuide: () -> Unit) {
         }
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
-          AdminFeature.EnvBanner()
           Box(Modifier.weight(1f).fillMaxWidth()) {
             when {
-                screen == "admin" && AdminFeature.enabled -> AdminFeature.Screen()
                 IS_CAPTAIN_APP && me.isCaptain && me.status == USER_APPROVED -> CaptainHome(me)
                 IS_CAPTAIN_APP && me.isCaptain -> CaptainStatusScreen(me) // admin whose own captain account is not approved yet
                 else -> PassengerHome(me) // rider app: approved captains also see the passenger screens

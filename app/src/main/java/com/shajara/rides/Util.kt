@@ -19,7 +19,7 @@ fun isValidPhone(p: String) = Regex("^07[789]\\d{7}$").matches(p.trim())
 /** Firebase Auth needs an email; the user only ever sees the phone number. */
 /** Hidden login email. Different per app, so the rider account and the captain account of one number are separate. */
 fun phoneToLoginEmail(phone: String) =
-    "${phone.trim()}@${if (IS_CAPTAIN_APP) "captain.mashwarak.app" else "mashwarak.app"}"
+    "${phone.trim()}@${if (IS_CAPTAIN_APP) "captain.shajaraone.app" else "shajaraone.app"}"
 
 /** 07XXXXXXXX -> 9627XXXXXXXX for WhatsApp links */
 fun intlPhone(p: String): String {
@@ -105,7 +105,7 @@ fun dayOffsetOf(millis: Long): Int = ((millis - dayStart(0)) / 86_400_000L).toIn
 // ===== Things remembered on this phone only =====
 
 class Prefs(context: Context) {
-    private val sp = context.applicationContext.getSharedPreferences("mashwarak", Context.MODE_PRIVATE)
+    private val sp = context.applicationContext.getSharedPreferences("shajaraone", Context.MODE_PRIVATE)
 
     fun onboarded(role: String) = sp.getBoolean("onboarded_$role", false)
     fun setOnboarded(role: String, v: Boolean) = sp.edit().putBoolean("onboarded_$role", v).apply()

@@ -26,8 +26,7 @@ jobs:
           gradle-version: "9.6.0"
 
       # Firebase settings are kept in GitHub Secrets, never in the repo.
-      # prod = REAL project. The google-services.json is BUILT here from 4 secrets (+ the public project id).
-      # dev  = optional TEST project: built only if the secret GOOGLE_SERVICES_JSON_DEV exists.
+      # The google-services.json is BUILT here from 4 secrets (+ the public project id).
       - name: Write google-services.json files
         env:
           SHAJARA_FIREBASE_API_KEY: ${{ secrets.SHAJARA_FIREBASE_API_KEY }}
@@ -35,12 +34,10 @@ jobs:
           SHAJARA_RIDER_APP_ID: ${{ secrets.SHAJARA_RIDER_APP_ID }}
           SHAJARA_CAPTAIN_APP_ID: ${{ secrets.SHAJARA_CAPTAIN_APP_ID }}
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID || 'shajara-rides-security-t-2632f' }}
-          GOOGLE_SERVICES_JSON_DEV: ${{ secrets.GOOGLE_SERVICES_JSON_DEV }}
         run: |
           for v in SHAJARA_FIREBASE_API_KEY SHAJARA_FIREBASE_SENDER_ID SHAJARA_RIDER_APP_ID SHAJARA_CAPTAIN_APP_ID; do
             if [ -z "${!v}" ]; then echo "::error::Secret $v is missing"; exit 1; fi
           done
-          mkdir -p app/src/prod app/src/dev app/src/riderProd app/src/captainProd app/src/riderDev app/src/captainDev
           python3 - <<'PY'
           import json, os
           e = os.environ
@@ -51,19 +48,9 @@ jobs:
                                   "storage_bucket": e["FIREBASE_PROJECT_ID"] + ".firebasestorage.app"},
                  "client": [client("SHAJARA_RIDER_APP_ID", "jo.shajaraone.rider"), client("SHAJARA_CAPTAIN_APP_ID", "jo.shajaraone.captain")],
                  "configuration_version": "1"}
-          for d in ("prod", "riderProd", "captainProd"):
-              json.dump(cfg, open(f"app/src/{d}/google-services.json", "w"))
+          json.dump(cfg, open("app/google-services.json", "w"))
           PY
-          if [ -n "$GOOGLE_SERVICES_JSON_DEV" ]; then
-            for d in dev riderDev captainDev; do printf '%s' "$GOOGLE_SERVICES_JSON_DEV" > app/src/$d/google-services.json; done
-            for pkg in jo.shajaraone.rider.dev jo.shajaraone.captain.dev; do
-              grep -q "\"package_name\": *\"$pkg\"" app/src/dev/google-services.json || { echo "::error::dev json does not contain $pkg"; exit 1; }
-            done
-            echo "BUILD_DEV=1" >> "$GITHUB_ENV"
-          else
-            echo "No GOOGLE_SERVICES_JSON_DEV: building prod apps only"
-          fi
-          echo "prod project: $FIREBASE_PROJECT_ID"
+          echo "firebase project: $FIREBASE_PROJECT_ID"
 
       # Signing key is kept in GitHub Secrets, never in the repo
       - name: Decode signing key
@@ -84,9 +71,7 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           VERSION_CODE: ${{ github.run_number }}
         run: |
-          TASKS=":app:assembleRiderProdRelease :app:assembleCaptainProdRelease"
-          if [ "$BUILD_DEV" = "1" ]; then TASKS="$TASKS :app:assembleRiderDevRelease :app:assembleCaptainDevRelease"; fi
-          gradle $TASKS --no-daemon --stacktrace 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
+          gradle :app:assembleRiderRelease :app:assembleCaptainRelease --no-daemon --stacktrace 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
 
       # Short error summary as an annotation, readable without opening the full log
       - name: Report build errors
@@ -102,57 +87,35 @@ jobs:
         run: |
           BT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
           FAIL=0
-          check() { # flavor-dir  expected-package  is-prod
+          check() { # flavor-dir  expected-package
             APK=$(find "app/build/outputs/apk/$1/release" -name '*.apk' 2>/dev/null | head -1)
             if [ -z "$APK" ]; then echo "::error::APK for $1 not found"; FAIL=1; return; fi
             echo "=== $1: $APK"
             "$BT/apksigner" verify --print-certs "$APK" | grep -E "Verifies|SHA-256" || { echo "::error::signature check failed for $1"; FAIL=1; }
             "$BT/aapt2" dump badging "$APK" | grep -E "^package:|application-label:"
             "$BT/aapt2" dump badging "$APK" | grep -q "name='$2' " || { echo "::error::$1 package name is not $2"; FAIL=1; }
-            if [ "$3" = "prod" ]; then
-              # The users' apps must not contain any admin code
-              if unzip -p "$APK" 'classes*.dex' | strings | grep -E "AdminScreen|RealFirebase"; then echo "::error::admin code found in $1 apk"; FAIL=1; else echo "OK: no admin code in $1"; fi
-            fi
+            # The apps must not contain any admin code (the admin is a separate web app)
+            if unzip -p "$APK" 'classes*.dex' | strings | grep -E "AdminScreen|RealFirebase"; then echo "::error::admin code found in $1 apk"; FAIL=1; else echo "OK: no admin code in $1"; fi
           }
-          check riderProd jo.shajaraone.rider prod
-          check captainProd jo.shajaraone.captain prod
-          if [ "$BUILD_DEV" = "1" ]; then
-            check riderDev jo.shajaraone.rider.dev dev
-            check captainDev jo.shajaraone.captain.dev dev
-          fi
+          check rider jo.shajaraone.rider
+          check captain jo.shajaraone.captain
           exit $FAIL
 
       - name: Clean up key
         if: always()
-        run: rm -f "$RUNNER_TEMP/release.jks" app/src/*/google-services.json
+        run: rm -f "$RUNNER_TEMP/release.jks" app/google-services.json
 
       - uses: actions/upload-artifact@v5
         with:
-          name: shajara-one-rider-prod-apk
-          path: app/build/outputs/apk/riderProd/release/*.apk
+          name: shajara-one-rider-apk
+          path: app/build/outputs/apk/rider/release/*.apk
           if-no-files-found: error
           retention-days: 30
 
       - uses: actions/upload-artifact@v5
         with:
-          name: shajara-one-captain-prod-apk
-          path: app/build/outputs/apk/captainProd/release/*.apk
-          if-no-files-found: error
-          retention-days: 30
-
-      - uses: actions/upload-artifact@v5
-        if: env.BUILD_DEV == '1'
-        with:
-          name: shajara-one-rider-dev-apk
-          path: app/build/outputs/apk/riderDev/release/*.apk
-          if-no-files-found: error
-          retention-days: 30
-
-      - uses: actions/upload-artifact@v5
-        if: env.BUILD_DEV == '1'
-        with:
-          name: shajara-one-captain-dev-apk
-          path: app/build/outputs/apk/captainDev/release/*.apk
+          name: shajara-one-captain-apk
+          path: app/build/outputs/apk/captain/release/*.apk
           if-no-files-found: error
           retention-days: 30
 
