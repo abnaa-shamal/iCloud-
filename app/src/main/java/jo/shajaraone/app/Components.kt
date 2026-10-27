@@ -36,9 +36,9 @@ import androidx.compose.ui.unit.sp
 
 // ===== Selection chips =====
 
-val SignYellow = Color(0xFFFFC400)
-val SignGreen = Color(0xFF0A6B3B)
-val BoardBlack = Color(0xFF121212)
+val SignYellow = Color(0xFF2DE2C0)
+val SignGreen = Color(0xFF6B4BFF)
+val BoardBlack = Color(0xFF0B1030)
 
 /** Ink color for borders and hard shadows (near-black in light mode, light in dark mode). */
 @Composable
@@ -47,14 +47,13 @@ fun inkColor(): Color = MaterialTheme.colorScheme.onBackground
 /** One rectangular choice chip: black with a yellow label when selected, white with a black outline when not. */
 @Composable
 fun PillChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    val ink = inkColor()
-    val bg by animateColorAsState(if (selected) ink else MaterialTheme.colorScheme.surfaceContainerLowest, label = "chipBg")
-    val fg by animateColorAsState(if (selected) SignYellow else MaterialTheme.colorScheme.onSurface, label = "chipFg")
+    val bg by animateColorAsState(if (selected) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.07f), label = "chipBg")
+    val fg by animateColorAsState(if (selected) Color.White else MaterialTheme.colorScheme.onSurface, label = "chipFg")
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(14.dp),
         color = bg,
-        border = BorderStroke(1.5.dp, ink),
+        border = BorderStroke(1.dp, if (selected) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.22f)),
         modifier = Modifier.height(42.dp)
     ) {
         Row(
@@ -148,11 +147,10 @@ fun Pill(text: String, container: Color, content: Color) {
 fun PricePill(price: Double?) {
     Text(
         priceText(price),
-        color = Color(0xFF111111),
+        color = Color(0xFF06251F),
         style = MaterialTheme.typography.titleSmall,
         modifier = Modifier
-            .background(SignYellow, RoundedCornerShape(8.dp))
-            .border(1.5.dp, Color(0xFF111111), RoundedCornerShape(8.dp))
+            .background(SignYellow, RoundedCornerShape(10.dp))
             .padding(horizontal = 12.dp, vertical = 5.dp)
     )
 }
@@ -254,11 +252,11 @@ fun Avatar(name: String, size: Dp = 44.dp) {
 private fun YellowButton(onClick: () -> Unit, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(10.dp),
-        color = SignYellow,
-        contentColor = Color(0xFF111111),
-        border = BorderStroke(1.5.dp, Color(0xFF111111)),
-        modifier = modifier.height(44.dp)
+        shape = RoundedCornerShape(14.dp),
+        color = Color.White.copy(alpha = 0.10f),
+        contentColor = SignYellow,
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.22f)),
+        modifier = modifier.height(46.dp)
     ) { Box(Modifier.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) { content() } }
 }
 
@@ -288,7 +286,7 @@ fun WhatsAppButton(phone: String, message: String) {
 @Composable
 fun TimeBlock(millis: Long) {
     Column(
-        Modifier.background(BoardBlack, RoundedCornerShape(10.dp)).padding(horizontal = 14.dp, vertical = 8.dp),
+        Modifier.background(Color.White.copy(alpha = 0.08f), RoundedCornerShape(14.dp)).border(1.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(14.dp)).padding(horizontal = 14.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(clockText(millis), style = MaterialTheme.typography.titleLarge, color = SignYellow)
@@ -299,10 +297,10 @@ fun TimeBlock(millis: Long) {
 /** A highway-style sign: green panel, white inner frame, destination big, origin small. */
 @Composable
 fun RoadSign(from: String, to: String, road: String = "", modifier: Modifier = Modifier) {
-    Box(modifier.background(SignGreen, RoundedCornerShape(12.dp)).padding(5.dp)) {
+    Box(modifier.background(Brush.linearGradient(listOf(Color(0xFF6B4BFF), Color(0xFF3D2BD6))), RoundedCornerShape(18.dp)).padding(5.dp)) {
         Column(
             Modifier.fillMaxWidth()
-                .border(2.dp, Color.White, RoundedCornerShape(8.dp))
+                .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
                 .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
@@ -367,33 +365,27 @@ fun TripInfo(t: Trip, showCaptain: Boolean = true) {
     }
 }
 
-/** White card with a thick black outline and a hard offset shadow. */
+/** Glass card: translucent fill, hairline border. */
 @Composable
 fun AppCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    val ink = inkColor()
-    val shape = RoundedCornerShape(14.dp)
+    val shape = RoundedCornerShape(24.dp)
     Box(
         modifier
             .fillMaxWidth()
-            .padding(end = 5.dp, bottom = 5.dp)
-            .drawBehind {
-                val o = 5.dp.toPx()
-                drawRoundRect(ink, topLeft = Offset(o, o), size = size, cornerRadius = CornerRadius(14.dp.toPx()))
-            }
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest, shape)
-            .border(2.dp, ink, shape)
+            .background(Color.White.copy(alpha = 0.08f), shape)
+            .border(1.dp, Color.White.copy(alpha = 0.16f), shape)
     ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
     }
 }
 
-/** Departure-board header: black, white title, yellow caption, hazard stripe underneath. */
+/** Header: app title and a greeting over a soft violet glow, with a thin teal-violet line underneath. */
 @Composable
 fun HeroHeader(title: String, subtitle: String, trailing: @Composable (() -> Unit)? = null) {
     Column(Modifier.fillMaxWidth()) {
         Box(
-            Modifier.fillMaxWidth().background(BoardBlack).statusBarsPadding()
-                .padding(start = 20.dp, end = 12.dp, top = 12.dp, bottom = 16.dp)
+            Modifier.fillMaxWidth().statusBarsPadding()
+                .padding(start = 20.dp, end = 12.dp, top = 12.dp, bottom = 14.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -403,15 +395,7 @@ fun HeroHeader(title: String, subtitle: String, trailing: @Composable (() -> Uni
                 trailing?.invoke()
             }
         }
-        Canvas(Modifier.fillMaxWidth().height(10.dp)) {
-            val w = 18.dp.toPx()
-            drawRect(SignYellow)
-            var x = -size.height
-            while (x < size.width) {
-                drawLine(BoardBlack, Offset(x, size.height), Offset(x + size.height, 0f), strokeWidth = w / 2)
-                x += w
-            }
-        }
+        Box(Modifier.fillMaxWidth().height(2.dp).background(Brush.horizontalGradient(listOf(Color(0xFF6B4BFF), Color(0xFF2DE2C0)))))
     }
 }
 
@@ -437,16 +421,15 @@ fun LoadingBox() {
     }
 }
 
+/** Primary action: solid violet, white label. */
 @Composable
 fun BigButton(text: String, enabled: Boolean = true, onClick: () -> Unit) {
-    val ink = Color(0xFF111111)
     Surface(
         onClick = onClick, enabled = enabled,
-        shape = RoundedCornerShape(12.dp),
-        color = if (enabled) SignYellow else MaterialTheme.colorScheme.surfaceContainerHigh,
-        contentColor = ink,
-        border = BorderStroke(2.dp, if (enabled) ink else MaterialTheme.colorScheme.outlineVariant),
-        modifier = Modifier.fillMaxWidth().height(58.dp)
+        shape = RoundedCornerShape(16.dp),
+        color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = Color.White,
+        modifier = Modifier.fillMaxWidth().height(56.dp)
     ) {
         Box(contentAlignment = Alignment.Center) { Text(text, style = MaterialTheme.typography.titleMedium) }
     }

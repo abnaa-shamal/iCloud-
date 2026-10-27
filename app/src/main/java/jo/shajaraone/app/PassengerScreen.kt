@@ -128,7 +128,7 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
                             t.isBookable -> Button(
                                 onClick = { booking = t },
                                 shape = MaterialTheme.shapes.medium,
-                                modifier = Modifier.weight(1f).height(52.dp)
+                                modifier = Modifier.weight(1f).height(48.dp)
                             ) { Text("احجز مقعد", style = MaterialTheme.typography.titleMedium) }
                             else -> Spacer(Modifier.weight(1f))
                         }
@@ -319,7 +319,7 @@ private fun MyBookings(list: List<Booking>) {
                             OutlinedButton(
                                 onClick = { toCancel = b },
                                 shape = MaterialTheme.shapes.medium,
-                                modifier = Modifier.weight(1f).height(46.dp)
+                                modifier = Modifier.weight(1f).height(48.dp)
                             ) { Text("إلغاء الحجز", color = cs.error) }
                             CallButton(b.captainPhone)
                             WhatsAppButton(b.captainPhone, "مرحبا كابتن ${b.captainName}، بخصوص حجزي برحلة ${b.tripSummary}")

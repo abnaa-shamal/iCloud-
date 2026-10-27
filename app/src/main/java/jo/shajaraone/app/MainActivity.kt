@@ -32,8 +32,10 @@ class MainActivity : ComponentActivity() {
         Alerts.createChannels(this)
         setContent {
             ShajaraTheme {
-                Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    Root()
+                AppBackground {
+                    Surface(Modifier.fillMaxSize(), color = Color.Transparent) {
+                        Root()
+                    }
                 }
             }
         }

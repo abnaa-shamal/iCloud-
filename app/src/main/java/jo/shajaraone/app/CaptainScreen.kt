@@ -110,7 +110,7 @@ private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
             OutlinedButton(
                 onClick = { showTime = true },
                 shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.fillMaxWidth().height(52.dp)
+                modifier = Modifier.fillMaxWidth().height(48.dp)
             ) {
                 Text(
                     if (timeChosen) "الساعة ${clockText(departMillis(day.toInt(), hour, minute))}"
@@ -356,16 +356,16 @@ internal fun BookingRow(b: Booking, onCancel: () -> Unit) {
                     if (b.status == BK_PENDING) {
                         Button(
                             onClick = { Repo.accept(b) { ok -> toast(ctx, if (ok) "تم القبول ✅" else "ما في مقاعد كافية أو الطلب تغيّر") } },
-                            shape = MaterialTheme.shapes.medium, modifier = Modifier.weight(1f).height(46.dp)
+                            shape = MaterialTheme.shapes.medium, modifier = Modifier.weight(1f).height(48.dp)
                         ) { Text("قبول") }
                         OutlinedButton(
                             onClick = { Repo.reject(b) { ok -> if (!ok) toast(ctx, "ما قدرت أرفض، جرّب كمان مرة") } },
-                            shape = MaterialTheme.shapes.medium, modifier = Modifier.weight(1f).height(46.dp)
+                            shape = MaterialTheme.shapes.medium, modifier = Modifier.weight(1f).height(48.dp)
                         ) { Text("رفض") }
                     } else {
                         OutlinedButton(
                             onClick = onCancel,
-                            shape = MaterialTheme.shapes.medium, modifier = Modifier.weight(1f).height(46.dp)
+                            shape = MaterialTheme.shapes.medium, modifier = Modifier.weight(1f).height(48.dp)
                         ) { Text("إلغاء الحجز") }
                     }
                     CallButton(b.passengerPhone)

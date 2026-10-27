@@ -38,7 +38,7 @@ class DesignShotsTest {
     private fun shot(name: String, content: @Composable () -> Unit) {
         rule.setContent {
             ShajaraTheme {
-                Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { content() }
+                AppBackground { Surface(Modifier.fillMaxSize(), color = androidx.compose.ui.graphics.Color.Transparent) { content() } }
             }
         }
         val bmp = rule.onRoot().captureToImage().asAndroidBitmap()
@@ -63,7 +63,7 @@ class DesignShotsTest {
                     TripInfo(t1)
                     HorizontalDivider()
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Button(onClick = {}, modifier = Modifier.weight(1f).height(52.dp)) { Text("احجز مقعد") }
+                        Button(onClick = {}, modifier = Modifier.weight(1f).height(48.dp)) { Text("احجز مقعد") }
                         CallButton("0790000000")
                         WhatsAppButton("0790000000", "")
                     }

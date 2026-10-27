@@ -1,6 +1,10 @@
 package jo.shajaraone.app
 
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
@@ -17,71 +21,42 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
 // Palette: deep olive-green (the village tree), warm amber (the road sun), warm paper background.
-private val LightColors = lightColorScheme(
-    primary = Color(0xFF0A6B3B),
+// "Night" palette: deep navy, violet actions, teal highlights. The app is always dark.
+private val NightColors = darkColorScheme(
+    primary = Color(0xFF6B4BFF),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFD6EFDF),
-    onPrimaryContainer = Color(0xFF00210F),
-    secondary = Color(0xFFE6A800),
-    onSecondary = Color(0xFF111111),
-    secondaryContainer = Color(0xFFFFD84D),
-    onSecondaryContainer = Color(0xFF1A1400),
-    tertiary = Color(0xFFD9381E),
-    tertiaryContainer = Color(0xFFFFDAD3),
-    onTertiaryContainer = Color(0xFF3A0800),
-    background = Color(0xFFF3F1E8),
-    onBackground = Color(0xFF111111),
-    surface = Color(0xFFF3F1E8),
-    onSurface = Color(0xFF111111),
-    surfaceVariant = Color(0xFFE2DFD3),
-    onSurfaceVariant = Color(0xFF4A4A44),
-    surfaceContainerLowest = Color(0xFFFFFFFF),
-    surfaceContainerLow = Color(0xFFFAF8F1),
-    surfaceContainer = Color(0xFFEBE8DC),
-    surfaceContainerHigh = Color(0xFFE4E1D4),
-    surfaceContainerHighest = Color(0xFFDDDACD),
-    outline = Color(0xFF6B6B63),
-    outlineVariant = Color(0xFFC9C6B8),
-    error = Color(0xFFBA1A1A),
-    errorContainer = Color(0xFFFFDAD6),
-    onErrorContainer = Color(0xFF410002)
-)
-
-private val DarkColors = darkColorScheme(
-    primary = Color(0xFF7FD9B3),
-    onPrimary = Color(0xFF00382A),
-    primaryContainer = Color(0xFF0E5A45),
-    onPrimaryContainer = Color(0xFFD3F0E1),
-    secondary = Color(0xFFF2B84B),
-    onSecondary = Color(0xFF3F2800),
-    secondaryContainer = Color(0xFF5D3E00),
-    onSecondaryContainer = Color(0xFFFFE3A8),
-    tertiary = Color(0xFFFFB59B),
-    tertiaryContainer = Color(0xFF7A2C0C),
-    onTertiaryContainer = Color(0xFFFFDBCB),
-    background = Color(0xFF0F1512),
-    onBackground = Color(0xFFE3E4DD),
-    surface = Color(0xFF0F1512),
-    onSurface = Color(0xFFE3E4DD),
-    surfaceVariant = Color(0xFF42463E),
-    onSurfaceVariant = Color(0xFFC4C7BA),
-    surfaceContainerLowest = Color(0xFF0A0F0D),
-    surfaceContainerLow = Color(0xFF151C18),
-    surfaceContainer = Color(0xFF1A221E),
-    surfaceContainerHigh = Color(0xFF242C28),
-    surfaceContainerHighest = Color(0xFF2E3733),
-    outline = Color(0xFF8E9186),
-    outlineVariant = Color(0xFF42463E),
-    error = Color(0xFFFFB4AB),
-    errorContainer = Color(0xFF93000A),
+    primaryContainer = Color(0xFF2A2370),
+    onPrimaryContainer = Color(0xFFE4DEFF),
+    secondary = Color(0xFF2DE2C0),
+    onSecondary = Color(0xFF06251F),
+    secondaryContainer = Color(0xFF0F4D47),
+    onSecondaryContainer = Color(0xFFB9F6EA),
+    tertiary = Color(0xFFFF8A7A),
+    tertiaryContainer = Color(0xFF5A2018),
+    onTertiaryContainer = Color(0xFFFFDAD3),
+    background = Color(0xFF0B1030),
+    onBackground = Color(0xFFF5F6FF),
+    surface = Color(0xFF0B1030),
+    onSurface = Color(0xFFF5F6FF),
+    surfaceVariant = Color(0xFF2A2F5C),
+    onSurfaceVariant = Color(0xFFB7BBE0),
+    surfaceContainerLowest = Color(0xFF11163A),
+    surfaceContainerLow = Color(0xFF151A42),
+    surfaceContainer = Color(0xFF1B2050),
+    surfaceContainerHigh = Color(0xFF232958),
+    surfaceContainerHighest = Color(0xFF2C3262),
+    outline = Color(0xFF7F84B8),
+    outlineVariant = Color(0xFF3A4078),
+    error = Color(0xFFFF8A80),
+    errorContainer = Color(0xFF5C1A1A),
     onErrorContainer = Color(0xFFFFDAD6)
 )
 
 private val AppShapes = Shapes(
     extraSmall = RoundedCornerShape(6.dp),
     small = RoundedCornerShape(8.dp),
-    medium = RoundedCornerShape(12.dp),
-    large = RoundedCornerShape(14.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(24.dp),
     extraLarge = RoundedCornerShape(20.dp)
 )
 
@@ -100,11 +75,20 @@ private val AppTypography = Typography().let { d ->
 @Composable
 fun ShajaraTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) DarkColors else LightColors,
+        colorScheme = NightColors,
         shapes = AppShapes,
         typography = AppTypography
     ) {
         // Arabic app: always right-to-left
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl, content = content)
     }
+}
+
+/** The app background: deep navy fading into violet. */
+@Composable
+fun AppBackground(content: @Composable () -> Unit) {
+    Box(
+        Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF0B1030), Color(0xFF1B0F3F), Color(0xFF0E2B3A)))),
+        content = { content() }
+    )
 }
