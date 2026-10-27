@@ -6,7 +6,7 @@ on:
     branches: [redesign]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   shots:
@@ -44,3 +44,11 @@ jobs:
           name: design-screenshots
           path: app/build/design-shots/*.png
           if-no-files-found: warn
+      - name: Publish PNGs to branch design-shots
+        if: always()
+        run: |
+          cd app/build/design-shots || exit 0
+          git init -q && git checkout -q -b design-shots
+          git config user.name "ci" && git config user.email "ci@example.com"
+          git add . && git commit -qm "screenshots from run ${{ github.run_id }}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" design-shots
