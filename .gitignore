@@ -1,0 +1,15 @@
+# Build output
+.gradle/
+build/
+app/build/
+local.properties
+.idea/
+*.iml
+.DS_Store
+
+# Secrets: never commit (they live in GitHub Secrets only)
+*.jks
+*.keystore
+*.p12
+google-services.json
+keystore-info*

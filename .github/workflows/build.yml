@@ -1,0 +1,210 @@
+name: Build signed APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: "9.6.0"
+
+      # Firebase settings are kept in GitHub Secrets, never in the repo.
+      # prod = REAL project. The google-services.json is BUILT here from 4 secrets (+ the public project id).
+      # dev  = optional TEST project: built only if the secret GOOGLE_SERVICES_JSON_DEV exists.
+      - name: Write google-services.json files
+        env:
+          SHAJARA_FIREBASE_API_KEY: ${{ secrets.SHAJARA_FIREBASE_API_KEY }}
+          SHAJARA_FIREBASE_SENDER_ID: ${{ secrets.SHAJARA_FIREBASE_SENDER_ID }}
+          SHAJARA_RIDER_APP_ID: ${{ secrets.SHAJARA_RIDER_APP_ID }}
+          SHAJARA_CAPTAIN_APP_ID: ${{ secrets.SHAJARA_CAPTAIN_APP_ID }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID || 'shajara-rides-security-t-2632f' }}
+          GOOGLE_SERVICES_JSON_DEV: ${{ secrets.GOOGLE_SERVICES_JSON_DEV }}
+        run: |
+          for v in SHAJARA_FIREBASE_API_KEY SHAJARA_FIREBASE_SENDER_ID SHAJARA_RIDER_APP_ID SHAJARA_CAPTAIN_APP_ID; do
+            if [ -z "${!v}" ]; then echo "::error::Secret $v is missing"; exit 1; fi
+          done
+          mkdir -p app/src/prod app/src/dev app/src/riderProd app/src/captainProd app/src/riderDev app/src/captainDev
+          python3 - <<'PY'
+          import json, os
+          e = os.environ
+          def client(app_id, pkg):
+              return {"client_info": {"mobilesdk_app_id": e[app_id], "android_client_info": {"package_name": pkg}},
+                      "api_key": [{"current_key": e["SHAJARA_FIREBASE_API_KEY"]}], "services": {}}
+          cfg = {"project_info": {"project_number": e["SHAJARA_FIREBASE_SENDER_ID"], "project_id": e["FIREBASE_PROJECT_ID"],
+                                  "storage_bucket": e["FIREBASE_PROJECT_ID"] + ".firebasestorage.app"},
+                 "client": [client("SHAJARA_RIDER_APP_ID", "jo.shajaraone.rider"), client("SHAJARA_CAPTAIN_APP_ID", "jo.shajaraone.captain")],
+                 "configuration_version": "1"}
+          for d in ("prod", "riderProd", "captainProd"):
+              json.dump(cfg, open(f"app/src/{d}/google-services.json", "w"))
+          PY
+          if [ -n "$GOOGLE_SERVICES_JSON_DEV" ]; then
+            for d in dev riderDev captainDev; do printf '%s' "$GOOGLE_SERVICES_JSON_DEV" > app/src/$d/google-services.json; done
+            for pkg in jo.shajaraone.rider.dev jo.shajaraone.captain.dev; do
+              grep -q "\"package_name\": *\"$pkg\"" app/src/dev/google-services.json || { echo "::error::dev json does not contain $pkg"; exit 1; }
+            done
+            echo "BUILD_DEV=1" >> "$GITHUB_ENV"
+          else
+            echo "No GOOGLE_SERVICES_JSON_DEV: building prod apps only"
+          fi
+          echo "prod project: $FIREBASE_PROJECT_ID"
+
+      # Signing key is kept in GitHub Secrets, never in the repo
+      - name: Decode signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Secret KEYSTORE_BASE64 is missing"
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - name: Build release APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          TASKS=":app:assembleRiderProdRelease :app:assembleCaptainProdRelease"
+          if [ "$BUILD_DEV" = "1" ]; then TASKS="$TASKS :app:assembleRiderDevRelease :app:assembleCaptainDevRelease"; fi
+          gradle $TASKS --no-daemon --stacktrace 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
+
+      # Short error summary as an annotation, readable without opening the full log
+      - name: Report build errors
+        if: failure()
+        run: |
+          if [ -f build.log ]; then
+            grep -E "^e: |error:|What went wrong|> " build.log | head -n 25 | while IFS= read -r line; do
+              echo "::error::$line"
+            done
+          fi
+
+      - name: Verify signature, package names, version
+        run: |
+          BT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+          FAIL=0
+          check() { # flavor-dir  expected-package  is-prod
+            APK=$(find "app/build/outputs/apk/$1/release" -name '*.apk' 2>/dev/null | head -1)
+            if [ -z "$APK" ]; then echo "::error::APK for $1 not found"; FAIL=1; return; fi
+            echo "=== $1: $APK"
+            "$BT/apksigner" verify --print-certs "$APK" | grep -E "Verifies|SHA-256" || { echo "::error::signature check failed for $1"; FAIL=1; }
+            "$BT/aapt2" dump badging "$APK" | grep -E "^package:|application-label:"
+            "$BT/aapt2" dump badging "$APK" | grep -q "name='$2' " || { echo "::error::$1 package name is not $2"; FAIL=1; }
+            if [ "$3" = "prod" ]; then
+              # The users' apps must not contain any admin code
+              if unzip -p "$APK" 'classes*.dex' | strings | grep -E "AdminScreen|RealFirebase"; then echo "::error::admin code found in $1 apk"; FAIL=1; else echo "OK: no admin code in $1"; fi
+            fi
+          }
+          check riderProd jo.shajaraone.rider prod
+          check captainProd jo.shajaraone.captain prod
+          if [ "$BUILD_DEV" = "1" ]; then
+            check riderDev jo.shajaraone.rider.dev dev
+            check captainDev jo.shajaraone.captain.dev dev
+          fi
+          exit $FAIL
+
+      - name: Clean up key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.jks" app/src/*/google-services.json
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: shajara-one-rider-prod-apk
+          path: app/build/outputs/apk/riderProd/release/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: shajara-one-captain-prod-apk
+          path: app/build/outputs/apk/captainProd/release/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v5
+        if: env.BUILD_DEV == '1'
+        with:
+          name: shajara-one-rider-dev-apk
+          path: app/build/outputs/apk/riderDev/release/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v5
+        if: env.BUILD_DEV == '1'
+        with:
+          name: shajara-one-captain-dev-apk
+          path: app/build/outputs/apk/captainDev/release/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+  # Automatic tests of firestore.rules on a LOCAL emulator (never touches real or test Firebase data)
+  rules-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Test Firestore rules
+        working-directory: rules-test
+        run: |
+          node -v
+          npm install --no-audit --no-fund
+          npm test 2>&1 | tee ../rules-test.log; exit ${PIPESTATUS[0]}
+
+      # Short failure summary as annotations, readable without opening the full log
+      - name: Report test failures
+        if: failure()
+        run: |
+          if [ -f rules-test.log ]; then
+            # GitHub shows only ~10 annotations, so put ALL failed test names in ONE annotation,
+            # and the first error lines of the log in a second one.
+            echo "::error title=Failed tests::$(grep -E '^not ok' rules-test.log | sed 's/^not ok [0-9]* - //' | head -n 40 | paste -sd '|' -)"
+            echo "::error title=First errors::$(grep -E -A2 '^ +error:' rules-test.log | head -n 30 | tr '\n' ' ' | cut -c1-3000)"
+          fi
+
+  # The admin web dashboard must at least build. (The Firebase values are public web settings, not secrets;
+  # placeholders are fine here because the build does not contact Firebase.)
+  admin-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: admin-web
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      # Unit tests of the dashboard's pure logic (stats, search, CSV export); no Firebase, no network
+      - run: npm test
+      - run: npm run build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY || 'ci-placeholder' }}
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID || 'ci-placeholder' }}
+          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID || 'ci-placeholder' }}

@@ -1,0 +1,11 @@
+{
+  "name": "shajara-one-admin-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "claim": "node set-admin-claim.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.2"
+  }
+}

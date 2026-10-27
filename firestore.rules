@@ -1,0 +1,264 @@
+rules_version = '2';
+
+// «مشوارك» security rules.
+// Paste this whole file into: Firebase console → Firestore Database → Rules → Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+
+    // The admin is an account that carries the custom claim `admin: true`.
+    // The claim can only be set from a trusted environment (see admin-tools/), never from the app,
+    // so no user can promote himself and no phone number or email is trusted as an identity.
+    function isAdmin() {
+      return signedIn() && request.auth.token.get('admin', false) == true;
+    }
+
+    function hasProfile() { return exists(/databases/$(database)/documents/users/$(me())); }
+    function myProfile() { return get(/databases/$(database)/documents/users/$(me())).data; }
+    function isApprovedCaptain() {
+      return signedIn() && hasProfile() && myProfile().role == 'captain' && myProfile().status == 'approved';
+    }
+    // Two independent states per account:
+    //  - captain side: role == 'captain' + status (pending/approved/rejected) -> isApprovedCaptain()
+    //  - rider side (booking): riderSuspended, set by the admin only. Accounts created before this field
+    //    existed have no such field, and .get(..., false) treats them as NOT suspended.
+    // A captain (any status) may book like a passenger unless suspended as a rider; a plain passenger
+    // keeps the old rule (status 'active'). The admin is never blocked.
+    function riderBlocked(p) { return p.get('riderSuspended', false) == true; }
+    // The admin account has no passenger profile of its own (it is a separate account), so it is
+    // allowed through here only for the admin's own seat-return writes; creating a booking still
+    // needs a profile and therefore fails for the admin.
+    function canBook() {
+      return signedIn() && (isAdmin()
+        || (hasProfile() && !riderBlocked(myProfile())
+            && (myProfile().role == 'captain' || myProfile().status in ['active', 'approved'])));
+    }
+
+    function tripOf(id) { return get(/databases/$(database)/documents/trips/$(id)).data; }
+
+    function onlyChanges(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    // Jordanian mobile: 10 digits, 077 (Orange), 078 (Umniah) or 079 (Zain).
+    function validPhone(p) { return p is string && p.matches('^07[789][0-9]{7}$'); }
+    function shortText(t, max) { return t is string && t.size() <= max; }
+
+    // ===== Users =====
+    match /users/{uid} {
+      // Only the owner and the admin can read a profile. Passengers get the captain's name, phone and
+      // car from the trip/booking itself, so they never need the captain's profile.
+      allow read: if signedIn() && (me() == uid || isAdmin());
+
+      // Phone must be a valid Jordanian mobile. The login email is hidden from users and differs per app, so a
+      // rider account and a captain account are fully separate (the same number can hold one of each):
+      //   rider   -> phone@mashwarak.app          captain -> phone@captain.mashwarak.app
+      // Passenger starts active; captain always starts pending (needs the admin).
+      allow create: if signedIn() && me() == uid
+        && validPhone(request.resource.data.phone)
+        && ((request.resource.data.role == 'captain' && request.auth.token.email == request.resource.data.phone + '@captain.mashwarak.app')
+         || (request.resource.data.role == 'passenger' && request.auth.token.email == request.resource.data.phone + '@mashwarak.app'))
+        && request.resource.data.keys().hasOnly(['role', 'status', 'name', 'phone', 'carType', 'carColor', 'carPlate', 'createdAt', 'verifyCode'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2 && request.resource.data.name.size() <= 80
+        && shortText(request.resource.data.carType, 60)
+        && shortText(request.resource.data.carColor, 60)
+        && shortText(request.resource.data.carPlate, 60)
+        && request.resource.data.createdAt is int
+        // Reverse verification code: 6 digits, chosen at sign-up; `verified` can never be set by the user.
+        && (!('verifyCode' in request.resource.data) || (request.resource.data.verifyCode is string && request.resource.data.verifyCode.matches('^[0-9]{6}$')))
+        && ((request.resource.data.role == 'passenger' && request.resource.data.status == 'active')
+         || (request.resource.data.role == 'captain' && request.resource.data.status == 'pending'));
+
+      // Users may edit only their own name/car details, never role, status or phone, and only
+      // until the admin approves them: an approved captain's name and car are frozen.
+      // The admin may change the status, and the name/car details (for approved captains).
+      allow update: if (signedIn() && me() == uid
+          && resource.data.status != 'approved'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'carType', 'carColor', 'carPlate'])
+          && request.resource.data.name.size() >= 2 && request.resource.data.name.size() <= 80
+          && shortText(request.resource.data.carType, 60)
+          && shortText(request.resource.data.carColor, 60)
+          && shortText(request.resource.data.carPlate, 60))
+        || (isAdmin() && onlyChanges(['status', 'name', 'carType', 'carColor', 'carPlate', 'riderSuspended', 'maxSeats', 'verified'])
+          && (!('verified' in request.resource.data) || request.resource.data.verified is bool)
+          && request.resource.data.status in ['active', 'suspended', 'pending', 'approved', 'rejected']
+          && (!('riderSuspended' in request.resource.data) || request.resource.data.riderSuspended is bool)
+          && (!('maxSeats' in request.resource.data)
+              || (request.resource.data.maxSeats is int && request.resource.data.maxSeats >= 4 && request.resource.data.maxSeats <= 7))
+          && request.resource.data.name is string
+          && request.resource.data.name.size() >= 2 && request.resource.data.name.size() <= 80
+          && shortText(request.resource.data.carType, 60)
+          && shortText(request.resource.data.carColor, 60)
+          && shortText(request.resource.data.carPlate, 60));
+
+      allow delete: if isAdmin();
+    }
+
+    // ===== Trips =====
+    match /trips/{tripId} {
+      allow read: if signedIn();
+
+      // Only approved captains, only as themselves, with their own name and phone.
+      allow create: if isApprovedCaptain()
+        && request.resource.data.keys().hasOnly(['captainUid', 'captainName', 'captainPhone', 'carText', 'from', 'to', 'road',
+             'departAt', 'seatsTotal', 'seatsFree', 'price', 'acceptsParcels', 'note', 'status', 'cancelReason', 'createdAt'])
+        && request.resource.data.captainUid == me()
+        && request.resource.data.captainPhone == myProfile().phone
+        && request.resource.data.captainName == myProfile().name
+        && request.resource.data.seatsTotal is int
+        && request.resource.data.seatsTotal >= 1
+        // 4 seats for every captain; more only when the admin raised maxSeats on his profile (missing = 4).
+        && request.resource.data.seatsTotal <= myProfile().get('maxSeats', 4)
+        && request.resource.data.seatsFree == request.resource.data.seatsTotal
+        && request.resource.data.status == 'open'
+        && request.resource.data.departAt is int
+        && shortText(request.resource.data.note, 300)
+        && (request.resource.data.price == null || request.resource.data.price is number);
+
+      // ----- seat accounting -----
+      // A trip's seatsFree changes ONLY together with a booking entering or leaving 'accepted', in the SAME
+      // transaction/batch. The write names that booking in trip.lastBookingId, so these rules can read it
+      // (before and after) and check that the amount of seats is exactly the booking's seats.
+      // The booking rules below check the other half (the booking cannot enter/leave 'accepted' alone).
+      function named() { return request.resource.data.get('lastBookingId', null) is string; }
+      function bkPath() { return /databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId); }
+      function seatsOnlyChange() { return onlyChanges(['seatsFree', 'status', 'lastBookingId']); }
+      function validSeats() {
+        return request.resource.data.seatsFree is int
+          && request.resource.data.seatsFree >= 0
+          && request.resource.data.seatsFree <= resource.data.seatsTotal;
+      }
+
+      // The captain accepts a pending booking: the trip loses exactly that booking's seats and closes
+      // automatically ('full') when none are left.
+      function acceptingBooking() {
+        return named() && isApprovedCaptain() && resource.data.captainUid == me()
+          && seatsOnlyChange() && validSeats()
+          && resource.data.status == 'open'
+          && get(bkPath()).data.status == 'pending'
+          && getAfter(bkPath()).data.status == 'accepted'
+          && getAfter(bkPath()).data.tripId == tripId
+          && getAfter(bkPath()).data.captainUid == me()
+          && resource.data.seatsFree - request.resource.data.seatsFree == getAfter(bkPath()).data.seats
+          && ((request.resource.data.seatsFree == 0 && request.resource.data.status == 'full')
+              || (request.resource.data.seatsFree > 0 && request.resource.data.status == 'open'));
+      }
+
+      // An accepted booking is cancelled (by its passenger, by the trip's captain, or by the admin):
+      // the trip gets exactly that booking's seats back (never above seatsTotal) and reopens.
+      function returningSeats() {
+        return named() && seatsOnlyChange() && validSeats()
+          && resource.data.status in ['open', 'full']
+          && request.resource.data.status == 'open'
+          && get(bkPath()).data.status == 'accepted'
+          && getAfter(bkPath()).data.tripId == tripId
+          && request.resource.data.seatsFree - resource.data.seatsFree == getAfter(bkPath()).data.seats
+          && ((getAfter(bkPath()).data.status == 'cancelled_by_passenger'
+                 && (getAfter(bkPath()).data.passengerUid == me() || isAdmin()))
+              || (getAfter(bkPath()).data.status == 'cancelled_by_captain'
+                 && ((isApprovedCaptain() && resource.data.captainUid == me()) || isAdmin())));
+      }
+
+      allow update:
+        // The owner (still an approved captain) cancels the whole trip.
+        if (isApprovedCaptain() && resource.data.captainUid == me()
+            && onlyChanges(['status', 'cancelReason'])
+            && request.resource.data.status == 'cancelled'
+            && resource.data.status in ['open', 'full']
+            && shortText(request.resource.data.cancelReason, 300))
+        || acceptingBooking()
+        || returningSeats()
+        // The admin can only cancel a trip (used when suspending a captain).
+        || (isAdmin() && onlyChanges(['status', 'cancelReason'])
+            && request.resource.data.status == 'cancelled'
+            && resource.data.status in ['open', 'full']);
+
+      allow delete: if isAdmin() || (signedIn() && resource.data.captainUid == me());
+    }
+
+    // ===== Bookings =====
+    match /bookings/{bookingId} {
+      allow read: if signedIn()
+        && (resource.data.passengerUid == me() || resource.data.captainUid == me() || isAdmin());
+
+      // Only a user allowed to book (see canBook), for himself, on an existing open trip that has enough
+      // free seats, with the trip's real captain, and never on his own trip.
+      allow create: if canBook()
+        && request.resource.data.keys().hasOnly(['tripId', 'captainUid', 'captainName', 'captainPhone', 'passengerUid',
+             'passengerName', 'passengerPhone', 'seats', 'dropoff', 'tripSummary', 'departAt', 'status', 'reason',
+             'createdAt', 'updatedAt'])
+        && request.resource.data.passengerUid == me()
+        && request.resource.data.passengerPhone == myProfile().phone
+        && request.resource.data.passengerName == myProfile().name
+        && request.resource.data.status == 'pending'
+        && request.resource.data.seats is int
+        && request.resource.data.seats >= 1 && request.resource.data.seats <= 7
+        && request.resource.data.tripId is string
+        && exists(/databases/$(database)/documents/trips/$(request.resource.data.tripId))
+        && tripOf(request.resource.data.tripId).status == 'open'
+        && tripOf(request.resource.data.tripId).captainUid == request.resource.data.captainUid
+        && tripOf(request.resource.data.tripId).captainUid != me()
+        && request.resource.data.seats <= tripOf(request.resource.data.tripId).seatsFree
+        && shortText(request.resource.data.dropoff, 120);
+
+      // Seats are tied to the 'accepted' state, in BOTH directions and in the same batch/transaction
+      // (the trip rules above check the other half through trip.lastBookingId):
+      //  - entering 'accepted' must take exactly this booking's seats from the trip;
+      //  - leaving 'accepted' (any cancellation) must give them back, unless the whole trip is cancelled
+      //    (or gone) in the same batch, because then the seats no longer matter.
+      function tripPath() { return /databases/$(database)/documents/trips/$(resource.data.tripId); }
+      function acceptedWithSeatsTaken() {
+        return exists(tripPath()) && existsAfter(tripPath())
+          && getAfter(tripPath()).data.seatsFree == get(tripPath()).data.seatsFree - resource.data.seats
+          && getAfter(tripPath()).data.lastBookingId == bookingId;
+      }
+      function leavesAcceptedWithSeatsBack() {
+        return !exists(tripPath()) || !existsAfter(tripPath())
+          || getAfter(tripPath()).data.status == 'cancelled'
+          || (getAfter(tripPath()).data.seatsFree == get(tripPath()).data.seatsFree + resource.data.seats
+              && getAfter(tripPath()).data.lastBookingId == bookingId);
+      }
+      function cancellable() {
+        return resource.data.status == 'pending'
+          || (resource.data.status == 'accepted' && leavesAcceptedWithSeatsBack());
+      }
+
+      // Passenger: can only cancel their own booking.
+      // Captain (still approved): reject a pending booking, accept it (with the seats), or cancel a pending/accepted one.
+      // Admin: can only cancel a pending/accepted booking, as "cancelled by captain" (suspending a captain)
+      // or as "cancelled by passenger" (suspending a rider).
+      allow update: if signedIn() && onlyChanges(['status', 'reason', 'updatedAt']) && (
+          (resource.data.passengerUid == me()
+            && request.resource.data.status == 'cancelled_by_passenger'
+            && resource.data.status in ['pending', 'accepted']
+            && cancellable())
+        || (isApprovedCaptain() && resource.data.captainUid == me()
+            && ((request.resource.data.status == 'rejected' && resource.data.status == 'pending')
+             || (request.resource.data.status == 'accepted' && resource.data.status == 'pending'
+                 && acceptedWithSeatsTaken())
+             || (request.resource.data.status == 'cancelled_by_captain'
+                 && resource.data.status in ['pending', 'accepted'] && cancellable())))
+        || (isAdmin()
+            && request.resource.data.status in ['cancelled_by_captain', 'cancelled_by_passenger']
+            && resource.data.status in ['pending', 'accepted']
+            && cancellable())
+      ) && shortText(request.resource.data.reason, 300);
+
+      allow delete: if isAdmin();
+    }
+
+    // Place/sub-area lists shown in the apps. Everyone signed in may read; only the admin edits the one doc
+    // config/places = { subAreas: { "<place>" or "<place>|<road>": [names] }, updatedAt }.
+    match /config/{docId} {
+      allow read: if signedIn();
+      allow write: if isAdmin() && docId == 'places'
+        && request.resource.data.keys().hasOnly(['subAreas', 'updatedAt'])
+        && request.resource.data.subAreas is map
+        && request.resource.data.subAreas.keys().size() <= 40
+        && request.resource.data.updatedAt is int;
+    }
+  }
+}
