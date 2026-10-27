@@ -1,6 +1,10 @@
 package jo.shajaraone.app
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -18,16 +22,32 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CaptainHome(me: UserProfile) {
+    val uid = Repo.auth.currentUser?.uid ?: ""
     var tab by rememberSaveable { mutableIntStateOf(0) }
+    var bookings by remember { mutableStateOf<List<Booking>>(emptyList()) }
+    DisposableEffect(uid) {
+        val r = Repo.listenBookings("captainUid", uid) { bookings = it }
+        onDispose { r.remove() }
+    }
+    val pending = bookings.count { it.status == BK_PENDING && it.departAt > System.currentTimeMillis() }
     Column(Modifier.fillMaxSize()) {
-        PrimaryTabRow(selectedTabIndex = tab) {
-            Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("📝 نشر رحلة") })
-            Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("🚗 رحلاتي والطلبات") })
+        Box(Modifier.weight(1f).fillMaxWidth()) {
+            if (tab == 0) MyTrips(me, onPublish = { tab = 1 }) else PublishTrip(me, onPublished = { tab = 0 })
         }
-        if (tab == 0) PublishTrip(me, onPublished = { tab = 1 }) else MyTrips(me)
+        NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest) {
+            NavigationBarItem(
+                selected = tab == 0, onClick = { tab = 0 },
+                icon = { BadgedBox(badge = { if (pending > 0) Badge { Text("$pending") } }) { Icon(Icons.AutoMirrored.Filled.List, null) } },
+                label = { Text("رحلاتي والطلبات") }
+            )
+            NavigationBarItem(
+                selected = tab == 1, onClick = { tab = 1 },
+                icon = { Icon(Icons.Filled.Add, null) },
+                label = { Text("نشر رحلة") }
+            )
+        }
     }
 }
 
@@ -64,10 +84,12 @@ private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).imePadding().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        Text("نشر رحلة جديدة", style = MaterialTheme.typography.headlineSmall)
         AppCard {
-            SectionLabel("📍 من وين؟")
+            Text("١. الخط", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            SectionLabel("من وين؟")
             ChoiceChips(allPlaces, from) { setRoute(it, to) }
-            SectionLabel("🏁 لوين؟")
+            SectionLabel("لوين؟")
             ChoiceChips(allPlaces, to) { setRoute(from, it) }
             if (!isValidRoute(from, to)) {
                 Text(
@@ -76,13 +98,14 @@ private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
                 )
             }
             if (needsRoadChoice(from, to)) {
-                SectionLabel("🛣️ الطريق")
+                SectionLabel("الطريق")
                 ChoiceChips(tripRoads, road) { road = it }
             }
         }
 
         AppCard {
-            SectionLabel("📅 اليوم")
+            Text("٢. الوقت", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            SectionLabel("اليوم")
             ScrollChips(nextDays(), day) { day = it }
             OutlinedButton(
                 onClick = { showTime = true },
@@ -90,23 +113,29 @@ private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().height(52.dp)
             ) {
                 Text(
-                    if (timeChosen) "🕒 الساعة ${clockText(departMillis(day.toInt(), hour, minute))}"
-                    else "🕒 اختار ساعة الانطلاق"
+                    if (timeChosen) "الساعة ${clockText(departMillis(day.toInt(), hour, minute))}"
+                    else "اختار ساعة الانطلاق"
                 )
             }
         }
 
         AppCard {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("💺 المقاعد الفاضية", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                Stepper(seats, 1, me.maxSeats) { seats = it }
+            Text("٣. المقاعد والسعر", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            SectionLabel("كم مقعد فاضي؟ (اضغط على المقعد)")
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                for (i in 1..me.maxSeats.coerceIn(1, 8)) {
+                    SeatShape(if (i <= seats) SeatState.PICKED else SeatState.FREE, 38.dp) { seats = i }
+                }
+                Spacer(Modifier.weight(1f))
+                Text("$seats", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
             }
-            SectionLabel("💰 السعر للراكب")
+            SectionLabel("السعر للراكب")
             ChoiceChips(listOf("سعر محدد", "حسب الاتفاق"), if (fixedPrice) "سعر محدد" else "حسب الاتفاق") {
                 fixedPrice = it == "سعر محدد"
                 if (fixedPrice && priceStr.isBlank()) priceStr = "1"
             }
             if (fixedPrice) {
+                ScrollChips(listOf("1", "1.5", "2", "3", "5").map { it to "$it د.أ" }, priceStr) { priceStr = it }
                 OutlinedTextField(
                     value = priceStr,
                     onValueChange = { v -> priceStr = v.filter { it.isDigit() || it == '.' }.take(5) },
@@ -116,8 +145,12 @@ private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+        }
+
+        AppCard {
+            Text("٤. تفاصيل إضافية", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("📦 بقبل أمانات بهالرحلة", modifier = Modifier.weight(1f))
+                Text("بقبل أمانات بهالرحلة", modifier = Modifier.weight(1f))
                 Switch(checked = parcels, onCheckedChange = { parcels = it })
             }
             OutlinedTextField(
@@ -127,7 +160,7 @@ private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
             )
         }
 
-        BigButton(if (sending) "جاري النشر..." else "🚀 انشر الرحلة", enabled = !sending) {
+        BigButton(if (sending) "جاري النشر..." else "انشر الرحلة", enabled = !sending) {
             val price = if (fixedPrice) priceStr.toDoubleOrNull() else null
             val departAt = departMillis(day.toInt(), hour, minute)
             when {
@@ -187,7 +220,7 @@ private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
 // ===== My trips and their bookings =====
 
 @Composable
-private fun MyTrips(me: UserProfile) {
+private fun MyTrips(me: UserProfile, onPublish: () -> Unit) {
     val ctx = LocalContext.current
     val uid = Repo.auth.currentUser?.uid ?: ""
     var trips by remember { mutableStateOf<List<Trip>?>(null) }
@@ -207,17 +240,27 @@ private fun MyTrips(me: UserProfile) {
     val list = trips
     when {
         list == null -> LoadingBox()
-        list.isEmpty() -> EmptyState("🚗", "ما عندك رحلات جاية.\nانشر رحلة من تبويب «نشر رحلة».")
         else -> LazyColumn(
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
+            item {
+                val pend = bookings.count { it.status == BK_PENDING && it.departAt > System.currentTimeMillis() }
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        StatTile("رحلاتك", "${list.count { it.status != TRIP_CANCELLED }}", Modifier.weight(1f))
+                        StatTile("طلبات جديدة", "$pend", Modifier.weight(1f), highlight = pend > 0)
+                    }
+                    BigButton("انشر رحلة جديدة", onClick = onPublish)
+                }
+            }
+            if (list.isEmpty()) item { EmptyState("🚗", "ما عندك رحلات جاية.\nانشر أول رحلة بالزر فوق.") }
             items(list, key = { it.id }) { t ->
                 val reqs = bookings.filter { it.tripId == t.id }
                     .sortedBy { if (it.status == BK_PENDING) 0 else if (it.status == BK_ACCEPTED) 1 else 2 }
                 AppCard {
                     TripInfo(t, showCaptain = false)
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
                     if (reqs.isEmpty()) {
                         Text("ما في حجوزات لسا", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else {
@@ -266,41 +309,67 @@ private fun MyTrips(me: UserProfile) {
 }
 
 @Composable
+private fun StatTile(label: String, value: String, modifier: Modifier = Modifier, highlight: Boolean = false) {
+    val cs = MaterialTheme.colorScheme
+    Surface(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.medium,
+        color = if (highlight) cs.secondaryContainer else cs.surfaceContainerLowest,
+        border = BorderStroke(1.dp, cs.outlineVariant.copy(alpha = 0.6f))
+    ) {
+        Column(Modifier.padding(14.dp)) {
+            Text(value, style = MaterialTheme.typography.headlineSmall, color = if (highlight) cs.onSecondaryContainer else cs.primary)
+            Text(label, style = MaterialTheme.typography.labelMedium, color = cs.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
 private fun BookingRow(b: Booking, onCancel: () -> Unit) {
     val ctx = LocalContext.current
     val active = b.isActive
+    val cs = MaterialTheme.colorScheme
     Surface(
         shape = MaterialTheme.shapes.medium,
-        color = if (active) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer,
+        color = when (b.status) {
+            BK_PENDING -> cs.secondaryContainer.copy(alpha = 0.55f)
+            BK_ACCEPTED -> cs.primaryContainer.copy(alpha = 0.7f)
+            else -> cs.surfaceContainer
+        },
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "${b.passengerName} • ${seatsText(b.seats)}",
-                    fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f)
-                )
-                Text(bookingStatusText(b.status), style = MaterialTheme.typography.labelLarge)
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Avatar(b.passengerName, 38.dp)
+                Column(Modifier.weight(1f)) {
+                    Text(b.passengerName, style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        seatsText(b.seats) + if (b.dropoff.isNotBlank()) " • ${b.dropoff}" else "",
+                        style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant
+                    )
+                }
+                Text(bookingStatusText(b.status), style = MaterialTheme.typography.labelMedium)
             }
-            if (b.dropoff.isNotBlank()) Text("📍 النزول: ${b.dropoff}")
-            if (b.reason.isNotBlank() && !active) Text("السبب: ${b.reason}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (b.reason.isNotBlank() && !active) Text("السبب: ${b.reason}", color = cs.onSurfaceVariant)
             if (active) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (b.status == BK_PENDING) {
-                        Button(onClick = {
-                            Repo.accept(b) { ok -> toast(ctx, if (ok) "تم القبول ✅" else "ما في مقاعد كافية أو الطلب تغيّر") }
-                        }) { Text("✅ قبول") }
-                        OutlinedButton(onClick = {
-                            Repo.reject(b) { ok -> if (!ok) toast(ctx, "ما قدرت أرفض، جرّب كمان مرة") }
-                        }) { Text("رفض") }
+                        Button(
+                            onClick = { Repo.accept(b) { ok -> toast(ctx, if (ok) "تم القبول ✅" else "ما في مقاعد كافية أو الطلب تغيّر") } },
+                            shape = MaterialTheme.shapes.medium, modifier = Modifier.weight(1f).height(46.dp)
+                        ) { Text("قبول") }
+                        OutlinedButton(
+                            onClick = { Repo.reject(b) { ok -> if (!ok) toast(ctx, "ما قدرت أرفض، جرّب كمان مرة") } },
+                            shape = MaterialTheme.shapes.medium, modifier = Modifier.weight(1f).height(46.dp)
+                        ) { Text("رفض") }
                     } else {
-                        OutlinedButton(onClick = onCancel) { Text("إلغاء الحجز") }
+                        OutlinedButton(
+                            onClick = onCancel,
+                            shape = MaterialTheme.shapes.medium, modifier = Modifier.weight(1f).height(46.dp)
+                        ) { Text("إلغاء الحجز") }
                     }
-                    Spacer(Modifier.weight(1f))
-                    FilledTonalIconButton(onClick = { callPhone(ctx, b.passengerPhone) }) { Text("📞") }
-                    FilledTonalIconButton(onClick = {
-                        openWhatsApp(ctx, b.passengerPhone, "مرحبا ${b.passengerName}، بخصوص حجزك برحلة ${b.tripSummary}")
-                    }) { Text("💬") }
+                    CallButton(b.passengerPhone)
+                    WhatsAppButton(b.passengerPhone, "مرحبا ${b.passengerName}، بخصوص حجزك برحلة ${b.tripSummary}")
                 }
             }
         }

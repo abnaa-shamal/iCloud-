@@ -10,6 +10,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -114,64 +117,40 @@ private fun Ready(uid: String, me: UserProfile) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HomeScaffold(me: UserProfile, onShowGuide: () -> Unit) {
     val ctx = LocalContext.current
-    var screen by rememberSaveable { mutableStateOf("home") }
     var menu by remember { mutableStateOf(false) }
     var confirmLogout by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = screen != "home") { screen = "home" }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            if (screen == "admin") "طلبات الكباتن" else "شجرة 1",
-                            fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary
+    Column(Modifier.fillMaxSize()) {
+        HeroHeader(
+            title = "أهلاً ${me.name}",
+            subtitle = if (IS_CAPTAIN_APP) "شجرة 1 • تطبيق الكابتن" else "شجرة 1 • وين رايح اليوم؟",
+            trailing = {
+                Box {
+                    IconButton(onClick = { menu = true }) {
+                        Icon(Icons.Filled.MoreVert, contentDescription = "القائمة", tint = Color.White)
+                    }
+                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                        DropdownMenuItem(text = { Text("شرح التطبيق") }, onClick = { menu = false; onShowGuide() })
+                        DropdownMenuItem(
+                            text = { Text("تواصل مع المشرف") },
+                            onClick = { menu = false; openWhatsApp(ctx, SUPPORT_PHONE, "مرحبا، بخصوص تطبيق شجرة 1") }
                         )
-                        Text(
-                            (if (IS_CAPTAIN_APP) "🚗 كابتن" else "🧍 راكب") + " • ${me.name}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        DropdownMenuItem(text = { Text("تسجيل الخروج") }, onClick = { menu = false; confirmLogout = true })
                     }
-                },
-                navigationIcon = {
-                    if (screen != "home") {
-                        IconButton(onClick = { screen = "home" }) { Text("→", fontSize = 22.sp) }
-                    }
-                },
-                actions = {
-                    Box {
-                        IconButton(onClick = { menu = true }) { Text("⋮", fontSize = 22.sp) }
-                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                            DropdownMenuItem(text = { Text("📖 شرح التطبيق") }, onClick = { menu = false; onShowGuide() })
-                            DropdownMenuItem(
-                                text = { Text("💬 تواصل مع المشرف") },
-                                onClick = { menu = false; openWhatsApp(ctx, SUPPORT_PHONE, "مرحبا، بخصوص تطبيق شجرة 1") }
-                            )
-                            DropdownMenuItem(text = { Text("🚪 تسجيل الخروج") }, onClick = { menu = false; confirmLogout = true })
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
-            )
-        }
-    ) { padding ->
-        Column(Modifier.padding(padding).fillMaxSize()) {
-          Box(Modifier.weight(1f).fillMaxWidth()) {
+                }
+            }
+        )
+        Box(Modifier.weight(1f).fillMaxWidth()) {
             when {
                 IS_CAPTAIN_APP && me.isCaptain && me.status == USER_APPROVED -> CaptainHome(me)
                 IS_CAPTAIN_APP && me.isCaptain -> CaptainStatusScreen(me) // admin whose own captain account is not approved yet
                 else -> PassengerHome(me) // rider app: approved captains also see the passenger screens
             }
-          }
-          if (me.needsVerification) VerifyBar(me)
         }
+        if (me.needsVerification) VerifyBar(me)
     }
 
     if (confirmLogout) {

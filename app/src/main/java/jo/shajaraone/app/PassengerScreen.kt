@@ -1,6 +1,13 @@
 package jo.shajaraone.app
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
@@ -14,7 +21,6 @@ import androidx.compose.ui.unit.dp
 
 private const val ALL = "all"
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PassengerHome(me: UserProfile) {
     val uid = Repo.auth.currentUser?.uid ?: ""
@@ -26,15 +32,27 @@ fun PassengerHome(me: UserProfile) {
         onDispose { r.remove() }
     }
 
+    val upcoming = myBookings.count { it.isActive && it.departAt > System.currentTimeMillis() }
     Column(Modifier.fillMaxSize()) {
-        PrimaryTabRow(selectedTabIndex = tab) {
-            Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("🔎 الرحلات") })
-            Tab(selected = tab == 1, onClick = { tab = 1 }, text = {
-                val n = myBookings.count { it.isActive && it.departAt > System.currentTimeMillis() }
-                Text(if (n > 0) "🗂️ حجوزاتي ($n)" else "🗂️ حجوزاتي")
-            })
+        Box(Modifier.weight(1f).fillMaxWidth()) {
+            if (tab == 0) TripsList(me, myBookings, onBooked = { tab = 1 }) else MyBookings(myBookings)
         }
-        if (tab == 0) TripsList(me, myBookings, onBooked = { tab = 1 }) else MyBookings(myBookings)
+        NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest) {
+            NavigationBarItem(
+                selected = tab == 0, onClick = { tab = 0 },
+                icon = { Icon(Icons.Filled.Search, null) },
+                label = { Text("الرحلات") }
+            )
+            NavigationBarItem(
+                selected = tab == 1, onClick = { tab = 1 },
+                icon = {
+                    BadgedBox(badge = { if (upcoming > 0) Badge { Text("$upcoming") } }) {
+                        Icon(Icons.AutoMirrored.Filled.List, null)
+                    }
+                },
+                label = { Text("حجوزاتي") }
+            )
+        }
     }
 }
 
@@ -69,18 +87,26 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
 
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
         modifier = Modifier.fillMaxSize()
     ) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                SectionLabel("📍 من")
+            AppCard {
+                Text("وين رايح؟", style = MaterialTheme.typography.titleLarge)
+                SectionLabel("من")
                 ScrollChips(placeOptions, from) { from = it }
-                SectionLabel("🏁 إلى")
+                SectionLabel("إلى")
                 ScrollChips(placeOptions, to) { to = it }
-                SectionLabel("📅 اليوم")
+                SectionLabel("متى؟")
                 ScrollChips(dayOptions, day) { day = it }
             }
+        }
+        item {
+            Text(
+                if (trips == null) "" else "${shown.size} رحلة متاحة",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
         }
         when {
             trips == null -> item { LoadingBox() }
@@ -90,27 +116,27 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
                 val mine = myBookings.firstOrNull { it.tripId == t.id && it.isActive }
                 AppCard {
                     TripInfo(t)
-                    when {
-                        mine != null -> Pill(
-                            "حجزك: ${seatsText(mine.seats)} — ${bookingStatusText(mine.status)}",
-                            MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        t.isBookable -> BigButton("📩 احجز مقعد") { booking = t }
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(
-                            onClick = { callPhone(ctx, t.captainPhone) },
-                            shape = MaterialTheme.shapes.medium, modifier = Modifier.weight(1f)
-                        ) { Text("📞 اتصال") }
-                        OutlinedButton(
-                            onClick = {
-                                openWhatsApp(
-                                    ctx, t.captainPhone,
-                                    "مرحبا كابتن ${t.captainName}، بخصوص رحلة ${t.from} ← ${t.to} (${timeText(t.departAt)})"
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        when {
+                            mine != null -> Box(Modifier.weight(1f)) {
+                                Pill(
+                                    "حجزك: ${seatsText(mine.seats)} — ${bookingStatusText(mine.status)}",
+                                    MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer
                                 )
-                            },
-                            shape = MaterialTheme.shapes.medium, modifier = Modifier.weight(1f)
-                        ) { Text("💬 واتساب") }
+                            }
+                            t.isBookable -> Button(
+                                onClick = { booking = t },
+                                shape = MaterialTheme.shapes.medium,
+                                modifier = Modifier.weight(1f).height(52.dp)
+                            ) { Text("احجز مقعد", style = MaterialTheme.typography.titleMedium) }
+                            else -> Spacer(Modifier.weight(1f))
+                        }
+                        CallButton(t.captainPhone)
+                        WhatsAppButton(
+                            t.captainPhone,
+                            "مرحبا كابتن ${t.captainName}، بخصوص رحلة ${t.from} ← ${t.to} (${timeText(t.departAt)})"
+                        )
                     }
                 }
             }
@@ -122,33 +148,89 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+/** Top-view car: tap the free seats you want. Taken seats are greyed, the driver is fixed. */
+@Composable
+private fun CarSeatMap(total: Int, free: Int, picked: Set<Int>, onToggle: (Int) -> Unit) {
+    val taken = (total - free).coerceAtLeast(0)
+    fun state(i: Int) = when {
+        i < taken -> SeatState.TAKEN
+        i in picked -> SeatState.PICKED
+        else -> SeatState.FREE
+    }
+    Column(
+        Modifier
+            .width(210.dp)
+            .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(40.dp))
+            .padding(horizontal = 22.dp, vertical = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        // Front row: passenger seat on the right, driver on the left (as seen from above, car facing up).
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            if (total >= 1) SeatShape(state(0), 40.dp) { onToggle(0) } else Spacer(Modifier.size(40.dp))
+            Text("الكابتن", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            SeatShape(SeatState.DRIVER, 40.dp)
+        }
+        (1 until total).toList().chunked(3).forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                row.forEach { i -> SeatShape(state(i), 40.dp) { onToggle(i) } }
+                repeat(3 - row.size) { Spacer(Modifier.size(40.dp)) }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BookingDialog(t: Trip, me: UserProfile, onClose: () -> Unit, onBooked: () -> Unit) {
     val ctx = LocalContext.current
-    var seats by remember { mutableIntStateOf(1) }
+    val total = t.seatsTotal.toInt().coerceIn(1, 8)
+    val free = t.seatsFree.toInt().coerceIn(1, total)
+    var picked by remember { mutableStateOf(setOf(total - free)) }
     var point by remember { mutableStateOf("") }
     var other by remember { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
     val areas = subAreasFor(t.to, t.road)
+    val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    AlertDialog(
+    ModalBottomSheet(
         onDismissRequest = onClose,
-        title = { Text("حجز برحلة ${t.from} ← ${t.to}") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("🕒 ${timeText(t.departAt)} • ${priceText(t.price)}")
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("كم مقعد؟", modifier = Modifier.weight(1f))
-                    Stepper(seats, 1, t.seatsFree.toInt().coerceAtLeast(1)) { seats = it }
+        sheetState = sheet,
+        containerColor = MaterialTheme.colorScheme.background
+    ) {
+        Column(
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().imePadding()
+                .padding(horizontal = 20.dp).padding(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("${t.from}  ←  ${t.to}", style = MaterialTheme.typography.titleLarge)
+            Text(
+                "${timeText(t.departAt)}  •  ${priceText(t.price)}",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text("اضغط على المقاعد اللي بدك ياها", style = MaterialTheme.typography.titleSmall)
+            CarSeatMap(total, free, picked) { i ->
+                val taken = total - free
+                if (i >= taken) {
+                    picked = if (i in picked) {
+                        if (picked.size > 1) picked - i else picked
+                    } else picked + i
                 }
-                SectionLabel("📍 وين بدك تنزل؟")
+            }
+            Text(
+                "اخترت ${seatsText(picked.size.toLong())}",
+                style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary
+            )
+
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SectionLabel("وين بدك تنزل؟")
                 if (areas != null) {
                     ChoiceChips(areas + ANY_PLACE + OTHER_PLACE, point) { point = it }
                     if (point == OTHER_PLACE) {
                         OutlinedTextField(
                             value = other, onValueChange = { other = it.take(60) },
                             label = { Text("اكتب المكان") }, singleLine = true,
+                            shape = MaterialTheme.shapes.medium,
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -156,20 +238,20 @@ private fun BookingDialog(t: Trip, me: UserProfile, onClose: () -> Unit, onBooke
                     OutlinedTextField(
                         value = other, onValueChange = { other = it.take(60) },
                         label = { Text("نقطة النزول") }, placeholder = { Text("مثلاً: مجمع الشمال") },
-                        singleLine = true, modifier = Modifier.fillMaxWidth()
+                        singleLine = true, shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
-        },
-        confirmButton = {
-            Button(enabled = !sending, onClick = {
+
+            BigButton(if (sending) "لحظة..." else "أرسل الطلب", enabled = !sending) {
                 val dropoff = if (areas != null && point.isNotBlank() && point != OTHER_PLACE) point
                     else if (areas != null && point.isBlank()) ANY_PLACE else other.trim()
                 when {
                     dropoff.isBlank() -> toast(ctx, "اكتب نقطة النزول")
                     else -> {
                         sending = true
-                        Repo.book(t, me, seats.toLong(), dropoff) { ok ->
+                        Repo.book(t, me, picked.size.toLong(), dropoff) { ok ->
                             sending = false
                             if (ok) {
                                 toast(ctx, "تم إرسال طلبك، الكابتن رح يرد عليك")
@@ -178,10 +260,9 @@ private fun BookingDialog(t: Trip, me: UserProfile, onClose: () -> Unit, onBooke
                         }
                     }
                 }
-            }) { Text(if (sending) "لحظة..." else "أرسل الطلب") }
-        },
-        dismissButton = { TextButton(onClick = onClose) { Text("إلغاء") } }
-    )
+            }
+        }
+    }
 }
 
 // ===== My bookings =====
@@ -204,28 +285,44 @@ private fun MyBookings(list: List<Booking>) {
         ) {
             items(sorted, key = { it.id }) { b ->
                 val upcoming = b.departAt > now
+                val cs = MaterialTheme.colorScheme
+                val (stBg, stFg) = when (b.status) {
+                    BK_ACCEPTED -> cs.primaryContainer to cs.onPrimaryContainer
+                    BK_PENDING -> cs.secondaryContainer to cs.onSecondaryContainer
+                    else -> cs.errorContainer to cs.onErrorContainer
+                }
                 AppCard {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             b.tripSummary, style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f)
                         )
-                        Text(bookingStatusText(b.status), style = MaterialTheme.typography.labelLarge)
+                        Pill(bookingStatusText(b.status), stBg, stFg)
                     }
-                    Text("🕒 ${timeText(b.departAt)} • ${seatsText(b.seats)}")
-                    if (b.dropoff.isNotBlank()) Text("📍 النزول: ${b.dropoff}")
-                    Text("الكابتن ${b.captainName}", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (b.reason.isNotBlank()) Text("السبب: ${b.reason}", color = MaterialTheme.colorScheme.error)
-                    if (b.isActive && upcoming) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            OutlinedButton(onClick = { toCancel = b }) {
-                                Text("إلغاء الحجز", color = MaterialTheme.colorScheme.error)
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        TimeBlock(b.departAt)
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(seatsText(b.seats), style = MaterialTheme.typography.titleSmall)
+                            if (b.dropoff.isNotBlank()) {
+                                Text("النزول: ${b.dropoff}", style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
                             }
-                            Spacer(Modifier.weight(1f))
-                            FilledTonalIconButton(onClick = { callPhone(ctx, b.captainPhone) }) { Text("📞") }
-                            FilledTonalIconButton(onClick = {
-                                openWhatsApp(ctx, b.captainPhone, "مرحبا كابتن ${b.captainName}، بخصوص حجزي برحلة ${b.tripSummary}")
-                            }) { Text("💬") }
+                        }
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Avatar(b.captainName, 34.dp)
+                        Text("الكابتن ${b.captainName}", color = cs.onSurfaceVariant)
+                    }
+                    if (b.reason.isNotBlank()) Text("السبب: ${b.reason}", color = cs.error)
+                    if (b.isActive && upcoming) {
+                        HorizontalDivider(color = cs.outlineVariant.copy(alpha = 0.6f))
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            OutlinedButton(
+                                onClick = { toCancel = b },
+                                shape = MaterialTheme.shapes.medium,
+                                modifier = Modifier.weight(1f).height(46.dp)
+                            ) { Text("إلغاء الحجز", color = cs.error) }
+                            CallButton(b.captainPhone)
+                            WhatsAppButton(b.captainPhone, "مرحبا كابتن ${b.captainName}، بخصوص حجزي برحلة ${b.tripSummary}")
                         }
                     }
                 }
