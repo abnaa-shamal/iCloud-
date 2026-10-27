@@ -1,4 +1,4 @@
-package com.shajara.rides
+package jo.shajaraone.app
 
 /** Which of the two apps this build is (set per flavor in build.gradle.kts). */
 val IS_CAPTAIN_APP: Boolean = BuildConfig.CAPTAIN_APP

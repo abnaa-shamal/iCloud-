@@ -1,4 +1,4 @@
-package com.shajara.rides
+package jo.shajaraone.app
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState

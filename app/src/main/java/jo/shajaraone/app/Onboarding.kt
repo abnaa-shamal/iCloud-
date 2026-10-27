@@ -1,4 +1,4 @@
-package com.shajara.rides
+package jo.shajaraone.app
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState

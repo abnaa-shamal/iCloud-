@@ -1,4 +1,4 @@
-package com.shajara.rides
+package jo.shajaraone.app
 
 import android.content.Context
 import android.content.Intent

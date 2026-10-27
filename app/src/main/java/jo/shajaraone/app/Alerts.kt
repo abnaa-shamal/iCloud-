@@ -1,4 +1,4 @@
-package com.shajara.rides
+package jo.shajaraone.app
 
 import android.Manifest
 import android.app.NotificationChannel

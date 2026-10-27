@@ -1,4 +1,4 @@
-package com.shajara.rides
+package jo.shajaraone.app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll

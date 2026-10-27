@@ -22,7 +22,7 @@
 | الراكب | `jo.shajaraone.rider` |
 | الكابتن | `jo.shajaraone.captain` |
 
-لازم يكون التطبيقان مسجّلين بهالحزم بالضبط في Firebase (Project settings ثم Your apps). مجلد الكود الداخلي لسا اسمه `com.shajara.rides` وهذا مقصود: هو مجرد مسار ملفات، مش هوية التطبيق.
+لازم يكون التطبيقان مسجّلين بهالحزم بالضبط في Firebase (Project settings ثم Your apps). مجلد الكود الداخلي `jo.shajaraone.app`.
 الراكب والكابتن تطبيقا أندرويد (APK) كل واحد لحاله، والمشرف لوحة ويب فقط.
 
 ## تشغيل سريع

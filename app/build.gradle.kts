@@ -9,7 +9,7 @@ plugins {
 val keystoreFile: String? = System.getenv("KEYSTORE_FILE")
 
 android {
-    namespace = "com.shajara.rides"
+    namespace = "jo.shajaraone.app"
     compileSdk = 37
 
     defaultConfig {
@@ -25,7 +25,7 @@ android {
     //   rider   = jo.shajaraone.rider     (riders' app)
     //   captain = jo.shajaraone.captain   (captains' app)
     // Both use the same Firebase project and are registered in it with exactly these package names.
-    // The Kotlin namespace stays com.shajara.rides on purpose: it is only the source package, not the app id.
+    // The Kotlin namespace (source package) is jo.shajaraone.app; the app ids are the two above.
     flavorDimensions += "app"
     productFlavors {
         create("rider") {

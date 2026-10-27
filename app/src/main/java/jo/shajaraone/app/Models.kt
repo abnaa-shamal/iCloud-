@@ -1,4 +1,4 @@
-package com.shajara.rides
+package jo.shajaraone.app
 
 import com.google.firebase.firestore.DocumentSnapshot
 

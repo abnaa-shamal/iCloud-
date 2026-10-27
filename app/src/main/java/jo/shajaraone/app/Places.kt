@@ -1,4 +1,4 @@
-package com.shajara.rides
+package jo.shajaraone.app
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
