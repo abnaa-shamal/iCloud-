@@ -89,6 +89,10 @@ fun ShajaraTheme(content: @Composable () -> Unit) {
 fun AppBackground(content: @Composable () -> Unit) {
     Box(
         Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF0B1030), Color(0xFF1B0F3F), Color(0xFF0E2B3A)))),
-        content = { content() }
+        content = {
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.material3.LocalContentColor provides Color(0xFFF5F6FF)
+            ) { content() }
+        }
     )
 }
