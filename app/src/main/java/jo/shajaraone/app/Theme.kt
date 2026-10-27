@@ -84,15 +84,47 @@ fun ShajaraTheme(content: @Composable () -> Unit) {
     }
 }
 
-/** The app background: deep navy fading into violet. */
+/** The app background: deep space with twinkling stars and slowly drifting colored glows. */
 @Composable
 fun AppBackground(content: @Composable () -> Unit) {
-    Box(
-        Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF0B1030), Color(0xFF1B0F3F), Color(0xFF0E2B3A)))),
-        content = {
-            androidx.compose.runtime.CompositionLocalProvider(
-                androidx.compose.material3.LocalContentColor provides Color(0xFFF5F6FF)
-            ) { content() }
-        }
+    val inf = androidx.compose.animation.core.rememberInfiniteTransition(label = "space")
+    val tw by inf.animateFloat(
+        0f, 1f,
+        androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(5000, easing = androidx.compose.animation.core.LinearEasing)),
+        label = "twinkle"
     )
+    val drift by inf.animateFloat(
+        0f, 1f,
+        androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(18000, easing = androidx.compose.animation.core.LinearEasing)),
+        label = "drift"
+    )
+    val stars = androidx.compose.runtime.remember {
+        val r = kotlin.random.Random(7)
+        List(90) { floatArrayOf(r.nextFloat(), r.nextFloat(), 0.6f + r.nextFloat() * 1.6f, r.nextFloat()) }
+    }
+    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF050818), Color(0xFF0B0F2E), Color(0xFF0A1B2E))))) {
+        androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+            val w = size.width
+            val h = size.height
+            val two = (2 * Math.PI).toFloat()
+            fun orb(cx: Float, cy: Float, rad: Float, c: Color, phase: Float) {
+                val dx = kotlin.math.sin((drift + phase) * two) * 0.06f * w
+                val dy = kotlin.math.cos((drift + phase) * two) * 0.04f * h
+                drawCircle(
+                    Brush.radialGradient(listOf(c.copy(alpha = 0.55f), c.copy(alpha = 0f)), center = androidx.compose.ui.geometry.Offset(cx * w + dx, cy * h + dy), radius = rad),
+                    radius = rad, center = androidx.compose.ui.geometry.Offset(cx * w + dx, cy * h + dy)
+                )
+            }
+            orb(0.15f, 0.18f, w * 0.75f, Color(0xFF6B4BFF), 0f)
+            orb(0.92f, 0.52f, w * 0.7f, Color(0xFF2DE2C0), 0.33f)
+            orb(0.25f, 0.92f, w * 0.8f, Color(0xFF2F6BFF), 0.66f)
+            stars.forEach { s ->
+                val a = 0.25f + 0.75f * ((kotlin.math.sin((tw + s[3]) * two) + 1f) / 2f)
+                drawCircle(Color.White.copy(alpha = a), radius = s[2], center = androidx.compose.ui.geometry.Offset(s[0] * w, s[1] * h))
+            }
+        }
+        androidx.compose.runtime.CompositionLocalProvider(
+            androidx.compose.material3.LocalContentColor provides Color(0xFFF5F6FF)
+        ) { content() }
+    }
 }

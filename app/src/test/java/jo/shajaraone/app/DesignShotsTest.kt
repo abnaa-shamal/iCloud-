@@ -36,19 +36,25 @@ class DesignShotsTest {
     private val t2 = t1.copy(id = "2", captainName = "خالد", carText = "هيونداي إلنترا رمادية", seatsFree = 1, price = null, road = "")
 
     private fun shot(name: String, advanceMs: Long = 0, content: @Composable () -> Unit) {
-        if (advanceMs > 0) rule.mainClock.autoAdvance = false
+        rule.mainClock.autoAdvance = false
         rule.setContent {
             ShajaraTheme {
                 AppBackground { Surface(Modifier.fillMaxSize(), color = androidx.compose.ui.graphics.Color.Transparent) { content() } }
             }
         }
-        if (advanceMs > 0) rule.mainClock.advanceTimeBy(advanceMs)
+        rule.mainClock.advanceTimeBy(if (advanceMs > 0) advanceMs else 400)
         val bmp = rule.onRoot().captureToImage().asAndroidBitmap()
         val dir = File("build/design-shots").apply { mkdirs() }
         File(dir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
     @Test fun splash() = shot("0-splash", advanceMs = 1300) { SplashScreen(onDone = {}) }
+
+    @Test fun login() = shot("6-login", advanceMs = 900) { AuthScreen() }
+
+    @Test fun captainWaiting() = shot("7-captain-waiting", advanceMs = 600) {
+        CaptainStatusScreen(UserProfile(role = ROLE_CAPTAIN, name = "أحمد", phone = "0790000000", status = USER_PENDING))
+    }
 
     @Test fun riderHome() = shot("1-rider-home") {
         Column(Modifier.fillMaxSize()) {

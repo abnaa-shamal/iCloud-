@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -19,25 +20,34 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 private fun Brand() {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-        Text("📍", fontSize = 52.sp)
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        GlowTitle(APP_DISPLAY_NAME, fontSize = 46.sp)
         Text(
-            APP_DISPLAY_NAME, fontSize = 36.sp, fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            "مشاويرك من منطقتك لإربد وعمّان والزرقاء",
-            color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center
+            if (IS_CAPTAIN_APP) "تطبيق الكابتن" else "كل رحلاتك بمكان واحد",
+            color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge
         )
     }
 }
+
+@Composable
+private fun glassFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = Color(0xFF2DE2C0),
+    unfocusedBorderColor = Color.White.copy(alpha = 0.22f),
+    focusedContainerColor = Color.White.copy(alpha = 0.10f),
+    unfocusedContainerColor = Color.White.copy(alpha = 0.06f),
+    cursorColor = Color(0xFF2DE2C0),
+    focusedLabelColor = Color(0xFF2DE2C0),
+    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    focusedTextColor = Color.White,
+    unfocusedTextColor = Color.White
+)
 
 @Composable
 private fun PhoneField(value: String, onChange: (String) -> Unit) = OutlinedTextField(
     value = value,
     onValueChange = { onChange(it.filter { c -> c.isDigit() }.take(14)) },
     label = { Text("رقم الهاتف") }, placeholder = { Text("079xxxxxxx") },
-    singleLine = true, shape = MaterialTheme.shapes.medium,
+    singleLine = true, shape = MaterialTheme.shapes.medium, colors = glassFieldColors(),
     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
     modifier = Modifier.fillMaxWidth()
 )
@@ -45,7 +55,7 @@ private fun PhoneField(value: String, onChange: (String) -> Unit) = OutlinedText
 @Composable
 private fun PasswordField(value: String, label: String, onChange: (String) -> Unit) = OutlinedTextField(
     value = value, onValueChange = onChange,
-    label = { Text(label) }, singleLine = true, shape = MaterialTheme.shapes.medium,
+    label = { Text(label) }, singleLine = true, shape = MaterialTheme.shapes.medium, colors = glassFieldColors(),
     visualTransformation = PasswordVisualTransformation(),
     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
     modifier = Modifier.fillMaxWidth()
@@ -54,7 +64,7 @@ private fun PasswordField(value: String, label: String, onChange: (String) -> Un
 @Composable
 private fun TextInput(value: String, label: String, onChange: (String) -> Unit) = OutlinedTextField(
     value = value, onValueChange = { onChange(it.take(40)) },
-    label = { Text(label) }, singleLine = true, shape = MaterialTheme.shapes.medium,
+    label = { Text(label) }, singleLine = true, shape = MaterialTheme.shapes.medium, colors = glassFieldColors(),
     modifier = Modifier.fillMaxWidth()
 )
 
@@ -67,9 +77,9 @@ fun AuthScreen() {
             .verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(56.dp))
         Brand()
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(24.dp))
         if (registering) {
             ProfileForm(needAccount = true)
             TextButton(onClick = { registering = false }, modifier = Modifier.fillMaxWidth()) {

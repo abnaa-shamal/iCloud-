@@ -95,3 +95,23 @@ fun SplashScreen(onDone: () -> Unit) {
         }
     }
 }
+
+/** Big glowing title with a moving light sweep (used on the login screen). */
+@Composable
+fun GlowTitle(text: String, fontSize: androidx.compose.ui.unit.TextUnit = 44.sp, modifier: Modifier = Modifier) {
+    val inf = rememberInfiniteTransition(label = "title")
+    val sweep by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(2600, easing = LinearEasing)), label = "sweep")
+    val glow by inf.animateFloat(0.5f, 1f, infiniteRepeatable(tween(1800, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "glow")
+    val brush = Brush.linearGradient(
+        colors = listOf(Color(0xFFB9B2FF), Color.White, Color(0xFF2DE2C0), Color.White, Color(0xFFB9B2FF)),
+        start = Offset(sweep * 700f - 350f, 0f), end = Offset(sweep * 700f + 350f, 120f), tileMode = TileMode.Mirror
+    )
+    Text(
+        text,
+        style = MaterialTheme.typography.displayMedium.copy(
+            brush = brush, fontSize = fontSize, fontWeight = FontWeight.Black,
+            shadow = Shadow(Color(0xFF6B4BFF), blurRadius = 40f * glow)
+        ),
+        textAlign = TextAlign.Center, modifier = modifier
+    )
+}
