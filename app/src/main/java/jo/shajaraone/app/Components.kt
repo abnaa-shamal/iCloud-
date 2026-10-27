@@ -375,7 +375,9 @@ fun AppCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -
             .background(Color.White.copy(alpha = 0.08f), shape)
             .border(1.dp, Color.White.copy(alpha = 0.16f), shape)
     ) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
+        }
     }
 }
 
