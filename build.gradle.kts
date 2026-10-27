@@ -4,5 +4,5 @@ plugins {
     // AGP 9 has Kotlin built in; this only pins the Kotlin version (official AGP 9.4 setup).
     id("org.jetbrains.kotlin.android") version "2.4.10" apply false
     id("org.jetbrains.kotlin.plugin.compose") version "2.4.10" apply false
-    id("com.google.gms.google-services") version "4.4.4" apply false
+    id("com.google.gms.google-services") version "4.5.0" apply false
 }
