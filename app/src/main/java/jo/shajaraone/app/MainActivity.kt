@@ -33,8 +33,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             ShajaraTheme {
                 AppBackground {
-                    Surface(Modifier.fillMaxSize(), color = Color.Transparent) {
-                        Root()
+                    var splash by rememberSaveable { mutableStateOf(true) }
+                    if (splash) {
+                        SplashScreen(onDone = { splash = false })
+                    } else {
+                        Surface(Modifier.fillMaxSize(), color = Color.Transparent) {
+                            Root()
+                        }
                     }
                 }
             }
@@ -128,7 +133,7 @@ private fun HomeScaffold(me: UserProfile, onShowGuide: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         HeroHeader(
             title = "أهلاً ${me.name}",
-            subtitle = if (IS_CAPTAIN_APP) "شجرة 1 • تطبيق الكابتن" else "شجرة 1 • وين رايح اليوم؟",
+            subtitle = if (IS_CAPTAIN_APP) "$APP_DISPLAY_NAME • تطبيق الكابتن" else "$APP_DISPLAY_NAME • وين رايح اليوم؟",
             trailing = {
                 Box {
                     IconButton(onClick = { menu = true }) {
@@ -138,7 +143,7 @@ private fun HomeScaffold(me: UserProfile, onShowGuide: () -> Unit) {
                         DropdownMenuItem(text = { Text("شرح التطبيق") }, onClick = { menu = false; onShowGuide() })
                         DropdownMenuItem(
                             text = { Text("تواصل مع المشرف") },
-                            onClick = { menu = false; openWhatsApp(ctx, SUPPORT_PHONE, "مرحبا، بخصوص تطبيق شجرة 1") }
+                            onClick = { menu = false; openWhatsApp(ctx, SUPPORT_PHONE, "مرحبا، بخصوص تطبيق $APP_DISPLAY_NAME") }
                         )
                         DropdownMenuItem(text = { Text("تسجيل الخروج") }, onClick = { menu = false; confirmLogout = true })
                     }
@@ -215,7 +220,7 @@ private fun SuspendedScreen(me: UserProfile) {
         )
         Spacer(Modifier.height(24.dp))
         OutlinedButton(onClick = {
-            openWhatsApp(ctx, SUPPORT_PHONE, "مرحبا، حسابي (${me.phone}) موقوف بتطبيق شجرة 1.")
+            openWhatsApp(ctx, SUPPORT_PHONE, "مرحبا، حسابي (${me.phone}) موقوف بتطبيق $APP_DISPLAY_NAME.")
         }) { Text("💬 تواصل مع المشرف") }
         TextButton(onClick = { Repo.signOut() }) { Text("تسجيل الخروج") }
     }

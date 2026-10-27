@@ -22,7 +22,7 @@ private fun Brand() {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
         Text("📍", fontSize = 52.sp)
         Text(
-            "شجرة 1", fontSize = 36.sp, fontWeight = FontWeight.Bold,
+            APP_DISPLAY_NAME, fontSize = 36.sp, fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
         Text(
@@ -237,7 +237,7 @@ fun CaptainStatusScreen(me: UserProfile) {
             Spacer(Modifier.height(8.dp))
         }
         OutlinedButton(onClick = {
-            openWhatsApp(ctx, SUPPORT_PHONE, "مرحبا، أنا الكابتن ${me.name} (${me.phone})، سجّلت بتطبيق شجرة 1 وبانتظار الموافقة.")
+            openWhatsApp(ctx, SUPPORT_PHONE, "مرحبا، أنا الكابتن ${me.name} (${me.phone})، سجّلت بتطبيق $APP_DISPLAY_NAME وبانتظار الموافقة.")
         }) { Text("💬 تواصل مع المشرف") }
         TextButton(onClick = { Repo.signOut() }) { Text("تسجيل الخروج") }
     }
