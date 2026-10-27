@@ -1,0 +1,44 @@
+name: Design screenshots
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: "9.6.0"
+      - name: Arabic fonts for rendering
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-core fonts-noto-ui-core fonts-noto-color-emoji
+      # Placeholder Firebase file: the tests never talk to Firebase, the plugin only needs the file to exist.
+      - name: Placeholder google-services.json
+        run: |
+          python3 - <<'PY'
+          import json
+          def c(pkg): return {"client_info": {"mobilesdk_app_id": "1:1:android:1", "android_client_info": {"package_name": pkg}}, "api_key": [{"current_key": "x"}], "services": {}}
+          json.dump({"project_info": {"project_number": "1", "project_id": "demo", "storage_bucket": "demo.appspot.com"},
+                     "client": [c("jo.shajaraone.rider"), c("jo.shajaraone.captain")], "configuration_version": "1"}, open("app/google-services.json", "w"))
+          PY
+      - name: Render screenshots
+        run: gradle :app:testRiderDebugUnitTest --no-daemon --stacktrace 2>&1 | tee test.log; exit ${PIPESTATUS[0]}
+      - name: Report errors
+        if: failure()
+        run: |
+          grep -E "^e: |error:|FAILED|Exception|Caused by" test.log | head -25 | sed 's/[A-Za-z0-9+\/=]\{40,\}/[redacted]/g' | while read -r l; do echo "::error::$l"; done
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: design-screenshots
+          path: app/build/design-shots/*.png
+          if-no-files-found: warn

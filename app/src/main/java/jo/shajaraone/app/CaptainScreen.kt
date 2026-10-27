@@ -309,7 +309,7 @@ private fun MyTrips(me: UserProfile, onPublish: () -> Unit) {
 }
 
 @Composable
-private fun StatTile(label: String, value: String, modifier: Modifier = Modifier, highlight: Boolean = false) {
+internal fun StatTile(label: String, value: String, modifier: Modifier = Modifier, highlight: Boolean = false) {
     val cs = MaterialTheme.colorScheme
     Surface(
         modifier = modifier,
@@ -325,7 +325,7 @@ private fun StatTile(label: String, value: String, modifier: Modifier = Modifier
 }
 
 @Composable
-private fun BookingRow(b: Booking, onCancel: () -> Unit) {
+internal fun BookingRow(b: Booking, onCancel: () -> Unit) {
     val ctx = LocalContext.current
     val active = b.isActive
     val cs = MaterialTheme.colorScheme

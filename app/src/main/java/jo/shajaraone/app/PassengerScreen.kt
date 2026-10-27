@@ -150,7 +150,7 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
 
 /** Top-view car: tap the free seats you want. Taken seats are greyed, the driver is fixed. */
 @Composable
-private fun CarSeatMap(total: Int, free: Int, picked: Set<Int>, onToggle: (Int) -> Unit) {
+internal fun CarSeatMap(total: Int, free: Int, picked: Set<Int>, onToggle: (Int) -> Unit) {
     val taken = (total - free).coerceAtLeast(0)
     fun state(i: Int) = when {
         i < taken -> SeatState.TAKEN
