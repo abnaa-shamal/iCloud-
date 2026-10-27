@@ -77,7 +77,7 @@ fun priceText(p: Double?): String = when {
 
 // ===== Time =====
 
-private val arLocale = Locale.forLanguageTag("ar-JO")
+private val arLocale = Locale.forLanguageTag("ar-JO-u-nu-latn")
 
 private fun sameDay(a: Calendar, b: Calendar) =
     a.get(Calendar.YEAR) == b.get(Calendar.YEAR) && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR)

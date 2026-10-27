@@ -4,6 +4,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -18,6 +19,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -32,22 +36,25 @@ import androidx.compose.ui.unit.sp
 
 // ===== Selection chips =====
 
-/** One rounded choice pill: filled with the brand color when selected, outlined when not. */
+val SignYellow = Color(0xFFFFC400)
+val SignGreen = Color(0xFF0A6B3B)
+val BoardBlack = Color(0xFF121212)
+
+/** Ink color for borders and hard shadows (near-black in light mode, light in dark mode). */
+@Composable
+fun inkColor(): Color = MaterialTheme.colorScheme.onBackground
+
+/** One rectangular choice chip: black with a yellow label when selected, white with a black outline when not. */
 @Composable
 fun PillChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    val bg by animateColorAsState(
-        if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerLowest,
-        label = "chipBg"
-    )
-    val fg by animateColorAsState(
-        if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-        label = "chipFg"
-    )
+    val ink = inkColor()
+    val bg by animateColorAsState(if (selected) ink else MaterialTheme.colorScheme.surfaceContainerLowest, label = "chipBg")
+    val fg by animateColorAsState(if (selected) SignYellow else MaterialTheme.colorScheme.onSurface, label = "chipFg")
     Surface(
         onClick = onClick,
-        shape = CircleShape,
+        shape = RoundedCornerShape(10.dp),
         color = bg,
-        border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        border = BorderStroke(1.5.dp, ink),
         modifier = Modifier.height(42.dp)
     ) {
         Row(
@@ -138,11 +145,17 @@ fun Pill(text: String, container: Color, content: Color) {
 }
 
 @Composable
-fun PricePill(price: Double?) = Pill(
-    priceText(price),
-    MaterialTheme.colorScheme.secondaryContainer,
-    MaterialTheme.colorScheme.onSecondaryContainer
-)
+fun PricePill(price: Double?) {
+    Text(
+        priceText(price),
+        color = Color(0xFF111111),
+        style = MaterialTheme.typography.titleSmall,
+        modifier = Modifier
+            .background(SignYellow, RoundedCornerShape(8.dp))
+            .border(1.5.dp, Color(0xFF111111), RoundedCornerShape(8.dp))
+            .padding(horizontal = 12.dp, vertical = 5.dp)
+    )
+}
 
 // ===== Seats =====
 
@@ -226,22 +239,33 @@ fun RouteTimeline(from: String, to: String, road: String = "") {
 @Composable
 fun Avatar(name: String, size: Dp = 44.dp) {
     Box(
-        Modifier.size(size).clip(CircleShape).background(
-            Brush.linearGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.tertiary))
-        ),
+        Modifier.size(size).clip(CircleShape).background(BoardBlack),
         contentAlignment = Alignment.Center
     ) {
         Text(
             name.trim().firstOrNull()?.toString() ?: "؟",
-            color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = (size.value / 2.3f).sp
+            color = SignYellow, fontWeight = FontWeight.ExtraBold, fontSize = (size.value / 2.3f).sp
         )
     }
+}
+
+/** Yellow square button with a black outline. */
+@Composable
+private fun YellowButton(onClick: () -> Unit, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(10.dp),
+        color = SignYellow,
+        contentColor = Color(0xFF111111),
+        border = BorderStroke(1.5.dp, Color(0xFF111111)),
+        modifier = modifier.height(44.dp)
+    ) { Box(Modifier.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) { content() } }
 }
 
 /** Round icon button used for call / message. */
 @Composable
 fun RoundAction(icon: ImageVector, desc: String, onClick: () -> Unit) {
-    FilledTonalIconButton(onClick = onClick, modifier = Modifier.size(44.dp)) {
+    YellowButton(onClick, Modifier.width(48.dp)) {
         Icon(icon, contentDescription = desc, modifier = Modifier.size(20.dp))
     }
 }
@@ -255,15 +279,42 @@ fun CallButton(phone: String) {
 @Composable
 fun WhatsAppButton(phone: String, message: String) {
     val ctx = LocalContext.current
-    RoundAction(Icons.AutoMirrored.Filled.Send, "واتساب") { openWhatsApp(ctx, phone, message) }
+    YellowButton({ openWhatsApp(ctx, phone, message) }) {
+        Text("واتساب", style = MaterialTheme.typography.labelLarge)
+    }
 }
 
-/** Big time with the day under it: «7:30» / «اليوم». */
+/** Departure-board time: yellow digits on black, the day under it. */
 @Composable
 fun TimeBlock(millis: Long) {
-    Column(horizontalAlignment = Alignment.Start) {
-        Text(clockText(millis), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
-        Text(dayName(millis), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Column(
+        Modifier.background(BoardBlack, RoundedCornerShape(10.dp)).padding(horizontal = 14.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(clockText(millis), style = MaterialTheme.typography.titleLarge, color = SignYellow)
+        Text(dayName(millis), style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.8f))
+    }
+}
+
+/** A highway-style sign: green panel, white inner frame, destination big, origin small. */
+@Composable
+fun RoadSign(from: String, to: String, road: String = "", modifier: Modifier = Modifier) {
+    Box(modifier.background(SignGreen, RoundedCornerShape(12.dp)).padding(5.dp)) {
+        Column(
+            Modifier.fillMaxWidth()
+                .border(2.dp, Color.White, RoundedCornerShape(8.dp))
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text("من $from", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.labelLarge)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("←", color = SignYellow, fontSize = 26.sp, fontWeight = FontWeight.Black)
+                Text(to, color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Black)
+            }
+            if (road.isNotBlank()) {
+                Text("عن طريق $road", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodySmall)
+            }
+        }
     }
 }
 
@@ -272,18 +323,17 @@ fun TimeBlock(millis: Long) {
 @Composable
 fun TripInfo(t: Trip, showCaptain: Boolean = true) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(verticalAlignment = Alignment.Top) {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            RoadSign(t.from, t.to, t.road, Modifier.weight(1f))
             TimeBlock(t.departAt)
-            Spacer(Modifier.weight(1f))
-            PricePill(t.price)
         }
-        RouteTimeline(t.from, t.to, t.road)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), itemVerticalAlignment = Alignment.CenterVertically) {
+            PricePill(t.price)
             when (t.status) {
                 TRIP_CANCELLED -> Pill("ملغاة", MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer)
                 TRIP_FULL -> Pill("مكتملة", MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
                 else -> Row(
-                    Modifier.background(MaterialTheme.colorScheme.primaryContainer, CircleShape).padding(horizontal = 12.dp, vertical = 5.dp),
+                    Modifier.background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(8.dp)).padding(horizontal = 10.dp, vertical = 5.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     SeatsRow(t.seatsTotal, t.seatsFree)
@@ -317,36 +367,50 @@ fun TripInfo(t: Trip, showCaptain: Boolean = true) {
     }
 }
 
+/** White card with a thick black outline and a hard offset shadow. */
 @Composable
 fun AppCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+    val ink = inkColor()
+    val shape = RoundedCornerShape(14.dp)
+    Box(
+        modifier
+            .fillMaxWidth()
+            .padding(end = 5.dp, bottom = 5.dp)
+            .drawBehind {
+                val o = 5.dp.toPx()
+                drawRoundRect(ink, topLeft = Offset(o, o), size = size, cornerRadius = CornerRadius(14.dp.toPx()))
+            }
+            .background(MaterialTheme.colorScheme.surfaceContainerLowest, shape)
+            .border(2.dp, ink, shape)
     ) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
     }
 }
 
-/** Green gradient header with a title and subtitle; content below it overlaps nicely. */
+/** Departure-board header: black, white title, yellow caption, hazard stripe underneath. */
 @Composable
 fun HeroHeader(title: String, subtitle: String, trailing: @Composable (() -> Unit)? = null) {
-    Box(
-        Modifier.fillMaxWidth()
-            .background(
-                Brush.linearGradient(listOf(Color(0xFF0B3F31), Color(0xFF0E5A45), Color(0xFF1A7A5C))),
-                RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
-            )
-            .statusBarsPadding()
-            .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 22.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(subtitle, color = Color.White.copy(alpha = 0.78f), style = MaterialTheme.typography.bodyMedium)
-                Text(title, color = Color.White, style = MaterialTheme.typography.headlineSmall)
+    Column(Modifier.fillMaxWidth()) {
+        Box(
+            Modifier.fillMaxWidth().background(BoardBlack).statusBarsPadding()
+                .padding(start = 20.dp, end = 12.dp, top = 12.dp, bottom = 16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(subtitle, color = SignYellow, style = MaterialTheme.typography.labelLarge)
+                    Text(title, color = Color.White, style = MaterialTheme.typography.headlineSmall)
+                }
+                trailing?.invoke()
             }
-            trailing?.invoke()
+        }
+        Canvas(Modifier.fillMaxWidth().height(10.dp)) {
+            val w = 18.dp.toPx()
+            drawRect(SignYellow)
+            var x = -size.height
+            while (x < size.width) {
+                drawLine(BoardBlack, Offset(x, size.height), Offset(x + size.height, 0f), strokeWidth = w / 2)
+                x += w
+            }
         }
     }
 }
@@ -375,11 +439,17 @@ fun LoadingBox() {
 
 @Composable
 fun BigButton(text: String, enabled: Boolean = true, onClick: () -> Unit) {
-    Button(
+    val ink = Color(0xFF111111)
+    Surface(
         onClick = onClick, enabled = enabled,
-        shape = MaterialTheme.shapes.medium,
+        shape = RoundedCornerShape(12.dp),
+        color = if (enabled) SignYellow else MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = ink,
+        border = BorderStroke(2.dp, if (enabled) ink else MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier.fillMaxWidth().height(58.dp)
-    ) { Text(text, style = MaterialTheme.typography.titleMedium) }
+    ) {
+        Box(contentAlignment = Alignment.Center) { Text(text, style = MaterialTheme.typography.titleMedium) }
+    }
 }
 
 /** Ask for a reason before cancelling. */

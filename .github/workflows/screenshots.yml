@@ -3,7 +3,7 @@ name: Design screenshots
 on:
   workflow_dispatch:
   push:
-    branches: [redesign]
+    branches: [redesign, redesign-road]
 
 permissions:
   contents: write
@@ -48,7 +48,7 @@ jobs:
         if: always()
         run: |
           cd app/build/design-shots || exit 0
-          git init -q && git checkout -q -b design-shots
+          git init -q && git checkout -q -b shots
           git config user.name "ci" && git config user.email "ci@example.com"
           git add . && git commit -qm "screenshots from run ${{ github.run_id }}"
-          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" design-shots
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" shots:refs/heads/design-shots-${{ github.ref_name }}

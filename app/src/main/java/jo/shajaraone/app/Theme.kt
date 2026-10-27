@@ -18,30 +18,30 @@ import androidx.compose.ui.unit.dp
 
 // Palette: deep olive-green (the village tree), warm amber (the road sun), warm paper background.
 private val LightColors = lightColorScheme(
-    primary = Color(0xFF0E5A45),
+    primary = Color(0xFF0A6B3B),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFD3F0E1),
-    onPrimaryContainer = Color(0xFF00281C),
-    secondary = Color(0xFF8A5A00),
-    onSecondary = Color.White,
-    secondaryContainer = Color(0xFFFFE3A8),
-    onSecondaryContainer = Color(0xFF2B1A00),
-    tertiary = Color(0xFFB4532A),
-    tertiaryContainer = Color(0xFFFFDBCB),
-    onTertiaryContainer = Color(0xFF3A0F00),
-    background = Color(0xFFF6F4EC),
-    onBackground = Color(0xFF1A1C19),
-    surface = Color(0xFFF6F4EC),
-    onSurface = Color(0xFF1A1C19),
-    surfaceVariant = Color(0xFFE4E3D6),
-    onSurfaceVariant = Color(0xFF4A4D45),
+    primaryContainer = Color(0xFFD6EFDF),
+    onPrimaryContainer = Color(0xFF00210F),
+    secondary = Color(0xFFE6A800),
+    onSecondary = Color(0xFF111111),
+    secondaryContainer = Color(0xFFFFD84D),
+    onSecondaryContainer = Color(0xFF1A1400),
+    tertiary = Color(0xFFD9381E),
+    tertiaryContainer = Color(0xFFFFDAD3),
+    onTertiaryContainer = Color(0xFF3A0800),
+    background = Color(0xFFF3F1E8),
+    onBackground = Color(0xFF111111),
+    surface = Color(0xFFF3F1E8),
+    onSurface = Color(0xFF111111),
+    surfaceVariant = Color(0xFFE2DFD3),
+    onSurfaceVariant = Color(0xFF4A4A44),
     surfaceContainerLowest = Color(0xFFFFFFFF),
-    surfaceContainerLow = Color(0xFFFBFAF4),
-    surfaceContainer = Color(0xFFF0EEE3),
-    surfaceContainerHigh = Color(0xFFEAE8DC),
-    surfaceContainerHighest = Color(0xFFE4E2D6),
-    outline = Color(0xFF7A7D72),
-    outlineVariant = Color(0xFFD3D2C4),
+    surfaceContainerLow = Color(0xFFFAF8F1),
+    surfaceContainer = Color(0xFFEBE8DC),
+    surfaceContainerHigh = Color(0xFFE4E1D4),
+    surfaceContainerHighest = Color(0xFFDDDACD),
+    outline = Color(0xFF6B6B63),
+    outlineVariant = Color(0xFFC9C6B8),
     error = Color(0xFFBA1A1A),
     errorContainer = Color(0xFFFFDAD6),
     onErrorContainer = Color(0xFF410002)
@@ -78,11 +78,11 @@ private val DarkColors = darkColorScheme(
 )
 
 private val AppShapes = Shapes(
-    extraSmall = RoundedCornerShape(10.dp),
-    small = RoundedCornerShape(14.dp),
-    medium = RoundedCornerShape(20.dp),
-    large = RoundedCornerShape(28.dp),
-    extraLarge = RoundedCornerShape(36.dp)
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(12.dp),
+    large = RoundedCornerShape(14.dp),
+    extraLarge = RoundedCornerShape(20.dp)
 )
 
 private val AppTypography = Typography().let { d ->
