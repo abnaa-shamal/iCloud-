@@ -83,7 +83,7 @@ fun LiveTrackDialog(tripId: String, captainName: String, captainPhone: String = 
 }
 
 @Composable
-private fun LiveInfo(live: LiveLoc?, me: Location?, nowMs: Long, captainName: String, captainPhone: String) {
+internal fun LiveInfo(live: LiveLoc?, me: Location?, nowMs: Long, captainName: String, captainPhone: String) {
     val ctx = LocalContext.current
     val cs = MaterialTheme.colorScheme
     Column(

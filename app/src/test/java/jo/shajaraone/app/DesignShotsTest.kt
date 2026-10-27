@@ -58,7 +58,7 @@ class DesignShotsTest {
 
     @Test fun riderHome() = shot("1-rider-home") {
         Column(Modifier.fillMaxSize()) {
-            HeroHeader("أهلاً محمد", "شجرة 1 • وين رايح اليوم؟")
+            HeroHeader("أهلاً محمد", "أبناء الشمال • وين رايح اليوم؟")
             Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 AppCard {
                     Text("وين رايح؟", style = MaterialTheme.typography.titleLarge)
@@ -97,7 +97,8 @@ class DesignShotsTest {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                 CarSeatMap(total = 4, free = 3, picked = setOf(1, 2), onToggle = {})
             }
-            Text("اخترت مقعدين", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            SeatLegend()
+            Text("اخترت مقعدين", style = MaterialTheme.typography.titleMedium, color = androidx.compose.ui.graphics.Color(0xFF2DE2C0))
             SectionLabel("وين بدك تنزل؟")
             ChoiceChips(listOf("الدوار الرابع", "وسط البلد", "حسب اتفاق الكابتن"), "وسط البلد") {}
             BigButton("أرسل الطلب") {}
@@ -106,7 +107,7 @@ class DesignShotsTest {
 
     @Test fun captainHome() = shot("4-captain-home") {
         Column(Modifier.fillMaxSize()) {
-            HeroHeader("أهلاً أحمد", "شجرة 1 • تطبيق الكابتن")
+            HeroHeader("أهلاً أحمد", "أبناء الشمال • تطبيق الكابتن")
             Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     StatTile("رحلاتك", "2", Modifier.weight(1f))
@@ -141,6 +142,17 @@ class DesignShotsTest {
                 }
                 ScrollChips(listOf("1", "1.5", "2", "3").map { it to "$it د.أ" }, "1") {}
             }
+        }
+    }
+
+    @Test fun liveTrackPanel() = shot("8-live-track-panel") {
+        val me = android.location.Location("x").apply { latitude = 32.5500; longitude = 35.8500 }
+        Column(Modifier.fillMaxSize()) {
+            Box(Modifier.weight(1f).fillMaxWidth())
+            LiveInfo(
+                LiveLoc(32.5560, 35.8540, 12.0, 10.0, System.currentTimeMillis() - 18_000), me,
+                System.currentTimeMillis(), "أحمد", "0791234567"
+            )
         }
     }
 }

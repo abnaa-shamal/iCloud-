@@ -325,11 +325,11 @@ internal fun StatTile(label: String, value: String, modifier: Modifier = Modifie
     Surface(
         modifier = modifier,
         shape = MaterialTheme.shapes.medium,
-        color = if (highlight) cs.secondaryContainer else cs.surfaceContainerLowest,
-        border = BorderStroke(1.dp, cs.outlineVariant.copy(alpha = 0.6f))
+        color = if (highlight) Color(0xFF6B4BFF).copy(alpha = 0.28f) else Color.White.copy(alpha = 0.07f),
+        border = BorderStroke(1.dp, if (highlight) Color(0xFF8E86FF).copy(alpha = 0.7f) else Color.White.copy(alpha = 0.14f))
     ) {
         Column(Modifier.padding(14.dp)) {
-            Text(value, style = MaterialTheme.typography.headlineSmall, color = if (highlight) cs.onSecondaryContainer else cs.primary)
+            Text(value, style = MaterialTheme.typography.headlineSmall, color = if (highlight) Color(0xFF2DE2C0) else Color.White)
             Text(label, style = MaterialTheme.typography.labelMedium, color = cs.onSurfaceVariant)
         }
     }

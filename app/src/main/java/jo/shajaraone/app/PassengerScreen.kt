@@ -185,18 +185,18 @@ internal fun CarSeatMap(total: Int, free: Int, picked: Set<Int>, onToggle: (Int)
         i in picked -> SeatState.PICKED
         else -> SeatState.FREE
     }
-    val seat = 52.dp
+    val seat = 50.dp
     val body = Color(0xFF8E86FF)
     Box(
         Modifier
-            .width(250.dp)
+            .width(236.dp)
             .drawBehind {
                 val w = size.width
                 val h = size.height
                 val side = 14.dp.toPx()
                 // Wheels poke out of the sides.
                 val wheelH = 46.dp.toPx()
-                listOf(h * 0.14f, h * 0.70f).forEach { y ->
+                listOf(h * 0.17f, h * 0.68f).forEach { y ->
                     drawRoundRect(body.copy(alpha = 0.30f), Offset(0f, y), Size(side + 4.dp.toPx(), wheelH), CornerRadius(6.dp.toPx()))
                     drawRoundRect(body.copy(alpha = 0.30f), Offset(w - side - 4.dp.toPx(), y), Size(side + 4.dp.toPx(), wheelH), CornerRadius(6.dp.toPx()))
                 }
@@ -206,11 +206,11 @@ internal fun CarSeatMap(total: Int, free: Int, picked: Set<Int>, onToggle: (Int)
                 // Body.
                 val bodyTl = Offset(side, 0f)
                 val bodySize = Size(w - side * 2, h)
-                drawRoundRect(Color.White.copy(alpha = 0.05f), bodyTl, bodySize, CornerRadius(64.dp.toPx(), 64.dp.toPx()))
-                drawRoundRect(body.copy(alpha = 0.6f), bodyTl, bodySize, CornerRadius(64.dp.toPx(), 64.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(1.5.dp.toPx()))
+                drawRoundRect(Color.White.copy(alpha = 0.05f), bodyTl, bodySize, CornerRadius(80.dp.toPx(), 80.dp.toPx()))
+                drawRoundRect(body.copy(alpha = 0.6f), bodyTl, bodySize, CornerRadius(80.dp.toPx(), 80.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(1.5.dp.toPx()))
                 // Windshield.
                 drawRoundRect(
-                    body.copy(alpha = 0.40f), Offset(side + 26.dp.toPx(), 22.dp.toPx()), Size(w - side * 2 - 52.dp.toPx(), 22.dp.toPx()),
+                    body.copy(alpha = 0.40f), Offset(side + 28.dp.toPx(), 26.dp.toPx()), Size(w - side * 2 - 56.dp.toPx(), 30.dp.toPx()),
                     CornerRadius(10.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(1.2.dp.toPx())
                 )
                 // Rear window.
@@ -219,9 +219,9 @@ internal fun CarSeatMap(total: Int, free: Int, picked: Set<Int>, onToggle: (Int)
                     CornerRadius(8.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(1.2.dp.toPx())
                 )
             }
-            .padding(start = 38.dp, end = 38.dp, top = 58.dp, bottom = 58.dp)
+            .padding(start = 40.dp, end = 40.dp, top = 84.dp, bottom = 80.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(34.dp)) {
             // Front row: passenger seat on the right, driver on the left (car seen from above, facing up).
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 if (total >= 1) SeatShape(state(0), seat, "1") { onToggle(0) } else Spacer(Modifier.size(seat))
@@ -245,7 +245,7 @@ internal fun CarSeatMap(total: Int, free: Int, picked: Set<Int>, onToggle: (Int)
 
 /** Seat legend: free, taken, yours. */
 @Composable
-private fun SeatLegend() {
+internal fun SeatLegend() {
     Row(
         Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.06f), RoundedCornerShape(16.dp))
             .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(16.dp)).padding(vertical = 10.dp),
