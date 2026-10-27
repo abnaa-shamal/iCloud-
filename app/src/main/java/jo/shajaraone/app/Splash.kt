@@ -69,6 +69,7 @@ fun SplashScreen(onDone: () -> Unit) {
                 )
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
+            AppLogo(96.dp, Modifier.alpha(appear.value).scale(0.85f + 0.15f * appear.value))
             Text(
                 APP_DISPLAY_NAME,
                 style = MaterialTheme.typography.displayMedium.copy(

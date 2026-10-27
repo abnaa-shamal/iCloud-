@@ -20,11 +20,14 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 private fun Brand() {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        GlowTitle(APP_DISPLAY_NAME, fontSize = 46.sp)
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        AppLogo(88.dp)
+        Text(APP_DISPLAY_NAME, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color.White)
+        Spacer(Modifier.height(18.dp))
+        GlowTitle(WELCOME_LINE, fontSize = 34.sp)
         Text(
-            if (IS_CAPTAIN_APP) "تطبيق الكابتن" else "كل رحلاتك بمكان واحد",
-            color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge
+            if (IS_CAPTAIN_APP) "تطبيق الكابتن" else "سجّل دخولك وكمّل مشوارك",
+            color = Color(0xFFB9B2FF), style = MaterialTheme.typography.bodyLarge
         )
     }
 }

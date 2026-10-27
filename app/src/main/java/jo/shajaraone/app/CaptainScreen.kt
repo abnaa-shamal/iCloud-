@@ -5,6 +5,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
@@ -39,16 +44,18 @@ fun CaptainHome(me: UserProfile) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             if (tab == 0) MyTrips(me, onPublish = { tab = 1 }) else PublishTrip(me, onPublished = { tab = 0 })
         }
-        NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest) {
+        NavigationBar(containerColor = navBarColor()) {
             NavigationBarItem(
                 selected = tab == 0, onClick = { tab = 0 },
                 icon = { BadgedBox(badge = { if (pending > 0) Badge { Text("$pending") } }) { Icon(Icons.AutoMirrored.Filled.List, null) } },
-                label = { Text("رحلاتي والطلبات") }
+                label = { Text("رحلاتي والطلبات") },
+                colors = navItemColors()
             )
             NavigationBarItem(
                 selected = tab == 1, onClick = { tab = 1 },
                 icon = { Icon(Icons.Filled.Add, null) },
-                label = { Text("نشر رحلة") }
+                label = { Text("نشر رحلة") },
+                colors = navItemColors()
             )
         }
     }
@@ -396,18 +403,39 @@ internal fun LiveShareControl(t: Trip) {
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { r ->
         if (r.values.any { it }) LiveShareService.start(ctx, t.id) else toast(ctx, "لازم توافق على الموقع عشان تشاركه")
     }
-    when {
-        active == t.id -> OutlinedButton(
-            onClick = { LiveShareService.stop(ctx) },
-            shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth().height(48.dp)
-        ) { Text("إيقاف مشاركة موقعي الحي", color = MaterialTheme.colorScheme.error) }
-        active != null -> Text("بتشارك موقعك لرحلة ثانية. وقّفها أول.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        else -> Button(
-            onClick = {
+    val sharing = active == t.id
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(16.dp)).padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                Modifier.size(40.dp).background((if (sharing) Color(0xFF2DE2C0) else Color.White).copy(alpha = 0.14f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Filled.LocationOn, null, tint = if (sharing) Color(0xFF2DE2C0) else Color.White.copy(alpha = 0.7f))
+            }
+            Column(Modifier.weight(1f)) {
+                Text(if (sharing) "المشاركة شغّالة" else "المشاركة متوقفة", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Text(
+                    if (sharing) "الركاب المقبولون بيشوفوا موقعك" else "شغّلها عند بدء الرحلة",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        when {
+            sharing -> OutlinedButton(
+                onClick = { LiveShareService.stop(ctx) },
+                shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth().height(50.dp)
+            ) { Text("إيقاف مشاركة موقعي", color = MaterialTheme.colorScheme.error) }
+            active != null -> Text("بتشارك موقعك لرحلة ثانية. وقّفها أول.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            else -> BigButton("بدء الرحلة ومشاركة الموقع") {
                 if (hasLocationPermission(ctx)) LiveShareService.start(ctx, t.id)
                 else ask.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
-            },
-            shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth().height(48.dp)
-        ) { Text("ابدأ مشاركة موقعي الحي") }
+            }
+        }
+        if (!sharing && active == null) {
+            Text("جهّز مشوارك قبل القيادة", style = MaterialTheme.typography.bodySmall, color = Color(0xFFB9B2FF), modifier = Modifier.align(Alignment.CenterHorizontally))
+        }
     }
 }

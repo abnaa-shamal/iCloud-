@@ -3,7 +3,12 @@ package jo.shajaraone.app
 import android.content.Intent
 import android.location.Location
 import android.net.Uri
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,7 +29,7 @@ import java.io.File
 
 /** Passenger side: the captain's live position on an OpenStreetMap map (free, no key), plus distance and accuracy. */
 @Composable
-fun LiveTrackDialog(tripId: String, captainName: String, onClose: () -> Unit) {
+fun LiveTrackDialog(tripId: String, captainName: String, captainPhone: String = "", onClose: () -> Unit) {
     val ctx = LocalContext.current
     var live by remember { mutableStateOf<LiveLoc?>(null) }
     var failed by remember { mutableStateOf(false) }
@@ -49,7 +54,10 @@ fun LiveTrackDialog(tripId: String, captainName: String, onClose: () -> Unit) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().systemBarsPadding()) {
                 Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("موقع الكابتن $captainName", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                    Column(Modifier.weight(1f)) {
+                        Text("موقع الكابتن", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                        Text("لحجزك المؤكد فقط", style = MaterialTheme.typography.bodyMedium, color = Color(0xFFB9B2FF))
+                    }
                     TextButton(onClick = onClose) { Text("إغلاق") }
                 }
                 Box(Modifier.weight(1f).fillMaxWidth()) {
@@ -68,45 +76,81 @@ fun LiveTrackDialog(tripId: String, captainName: String, onClose: () -> Unit) {
                         }
                     }
                 }
-                LiveInfo(live, me, nowMs)
+                LiveInfo(live, me, nowMs, captainName, captainPhone)
             }
         }
     }
 }
 
 @Composable
-private fun LiveInfo(live: LiveLoc?, me: Location?, nowMs: Long) {
+private fun LiveInfo(live: LiveLoc?, me: Location?, nowMs: Long, captainName: String, captainPhone: String) {
     val ctx = LocalContext.current
-    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (live != null) {
-            val age = ((nowMs - live.updatedAt) / 1000).coerceAtLeast(0)
-            val stale = age > 60
-            Text(
-                if (stale) "آخر تحديث قبل ${age / 60} دقيقة، ممكن الاتصال ضعيف" else "آخر تحديث قبل $age ثانية",
-                color = if (stale) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleSmall
-            )
-            val parts = mutableListOf<String>()
-            if (me != null) {
-                val d = Location("x").apply { latitude = live.lat; longitude = live.lng }.distanceTo(me)
-                parts += if (d >= 1000) "يبعد عنك %.1f كم".format(java.util.Locale.US, d / 1000) else "يبعد عنك ${d.toInt()} متر"
+    val cs = MaterialTheme.colorScheme
+    Column(
+        Modifier.fillMaxWidth().padding(14.dp)
+            .background(Color.White.copy(alpha = 0.07f), RoundedCornerShape(24.dp))
+            .border(1.dp, Color.White.copy(alpha = 0.14f), RoundedCornerShape(24.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Avatar(captainName, 46.dp)
+            Column(Modifier.weight(1f)) {
+                Text("الكابتن $captainName", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
-            if (live.speed > 1.0) parts += "السرعة ${(live.speed * 3.6).toInt()} كم/س"
-            parts += "دقة ±${live.accuracy.toInt()} متر"
-            Text(parts.joinToString("  •  "), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            OutlinedButton(
-                onClick = {
-                    val uri = Uri.parse("geo:${live.lat},${live.lng}?q=${live.lat},${live.lng}(${Uri.encode("الكابتن")})")
-                    try {
-                        ctx.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                    } catch (e: Exception) {
-                        toast(ctx, "ما لقيت تطبيق خرائط")
-                    }
-                },
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.fillMaxWidth().height(48.dp)
-            ) { Text("افتح بتطبيق الخرائط") }
+            if (live != null) {
+                val age = ((nowMs - live.updatedAt) / 1000).coerceAtLeast(0)
+                val stale = age > 60
+                val tone = if (stale) cs.error else Color(0xFF2DE2C0)
+                Column(
+                    Modifier.background(tone.copy(alpha = 0.12f), RoundedCornerShape(14.dp)).padding(horizontal = 12.dp, vertical = 6.dp),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Text(if (stale) "موقع قديم" else "موقع حديث", color = tone, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                    Text(
+                        if (stale) "آخر تحديث قبل ${age / 60} دقيقة" else "آخر تحديث قبل $age ثانية",
+                        style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant
+                    )
+                }
+            }
         }
+        if (live != null) {
+            HorizontalDivider(color = Color.White.copy(alpha = 0.10f))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                if (me != null) {
+                    val d = Location("x").apply { latitude = live.lat; longitude = live.lng }.distanceTo(me)
+                    LiveStat("مسافة مباشرة", if (d >= 1000) "%.1f كم".format(java.util.Locale.US, d / 1000) else "${d.toInt()} م")
+                }
+                LiveStat("السرعة", if (live.speed > 1.0) "${(live.speed * 3.6).toInt()} كم/س" else "واقف")
+                LiveStat("الدقة", "± ${live.accuracy.toInt()} م")
+            }
+            Text("قراءات تقديرية تعتمد على الهاتف", style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant, modifier = Modifier.align(Alignment.CenterHorizontally))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(
+                    onClick = {
+                        val uri = Uri.parse("geo:${live.lat},${live.lng}?q=${live.lat},${live.lng}(${Uri.encode("الكابتن")})")
+                        try {
+                            ctx.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                        } catch (e: Exception) {
+                            toast(ctx, "ما لقيت تطبيق خرائط")
+                        }
+                    },
+                    shape = MaterialTheme.shapes.medium, modifier = Modifier.weight(1f).height(48.dp)
+                ) { Text("افتح بتطبيق الخرائط") }
+                if (captainPhone.isNotBlank()) {
+                    CallButton(captainPhone)
+                    WhatsAppButton(captainPhone, "مرحبا كابتن $captainName، وينك هسه؟")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LiveStat(label: String, value: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
     }
 }
 

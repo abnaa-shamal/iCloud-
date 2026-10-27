@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,6 +34,21 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
+// ===== Bottom navigation =====
+
+/** Bottom bar styling shared by the rider and captain apps: deep navy, violet-tinted selection, teal badge. */
+@Composable
+fun navBarColor(): Color = Color(0xFF0B1030).copy(alpha = 0.94f)
+
+@Composable
+fun navItemColors() = NavigationBarItemDefaults.colors(
+    selectedIconColor = Color(0xFFB9B2FF),
+    selectedTextColor = Color(0xFFB9B2FF),
+    unselectedIconColor = Color.White.copy(alpha = 0.55f),
+    unselectedTextColor = Color.White.copy(alpha = 0.55f),
+    indicatorColor = Color(0xFF6B4BFF).copy(alpha = 0.28f)
+)
 
 // ===== Selection chips =====
 
@@ -157,33 +173,49 @@ fun PricePill(price: Double?) {
 
 // ===== Seats =====
 
-/** A small top-view car seat. */
+/** A top-view car seat: glass outline when free, violet when picked, dim with a lock when taken. */
 @Composable
-fun SeatShape(state: SeatState, size: Dp = 30.dp, onClick: (() -> Unit)? = null) {
-    val cs = MaterialTheme.colorScheme
+fun SeatShape(state: SeatState, size: Dp = 30.dp, label: String? = null, onClick: (() -> Unit)? = null) {
+    val violet = Color(0xFF6B4BFF)
     val fill = when (state) {
-        SeatState.FREE -> cs.primaryContainer
-        SeatState.TAKEN -> cs.surfaceContainerHighest
-        SeatState.PICKED -> cs.primary
-        SeatState.DRIVER -> cs.onSurfaceVariant
+        SeatState.FREE -> Color.White.copy(alpha = 0.06f)
+        SeatState.TAKEN -> Color.White.copy(alpha = 0.10f)
+        SeatState.PICKED -> violet
+        SeatState.DRIVER -> Color.White.copy(alpha = 0.05f)
     }
     val line = when (state) {
-        SeatState.FREE -> cs.primary
-        SeatState.PICKED -> cs.primary
-        else -> Color.Transparent
+        SeatState.FREE -> Color(0xFF8E86FF).copy(alpha = 0.75f)
+        SeatState.PICKED -> Color(0xFFB9B2FF)
+        SeatState.TAKEN -> Color.White.copy(alpha = 0.18f)
+        SeatState.DRIVER -> Color.White.copy(alpha = 0.28f)
     }
-    val shape = RoundedCornerShape(topStart = size / 2.5f, topEnd = size / 2.5f, bottomStart = size / 6, bottomEnd = size / 6)
-    val m = Modifier.size(size, size * 1.1f)
-    if (onClick != null && (state == SeatState.FREE || state == SeatState.PICKED)) {
-        Surface(onClick = onClick, shape = shape, color = fill, border = BorderStroke(1.5.dp, line), modifier = m) {
-            if (state == SeatState.PICKED) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Filled.Check, null, tint = cs.onPrimary, modifier = Modifier.size(size / 2))
+    val shape = RoundedCornerShape(topStart = size / 3f, topEnd = size / 3f, bottomStart = size / 5, bottomEnd = size / 5)
+    val m = Modifier.size(size, size * 1.15f)
+    val inner: @Composable () -> Unit = {
+        if (label != null || state == SeatState.PICKED || state == SeatState.TAKEN) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                when (state) {
+                    SeatState.PICKED -> Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(size * 0.38f))
+                    SeatState.TAKEN -> Icon(Icons.Filled.Lock, null, tint = Color.White.copy(alpha = 0.55f), modifier = Modifier.size(size * 0.3f))
+                    else -> {}
+                }
+                if (label != null) {
+                    Text(
+                        label, fontWeight = FontWeight.Bold, fontSize = (size.value * 0.36f).sp,
+                        color = if (state == SeatState.TAKEN) Color.White.copy(alpha = 0.55f) else Color.White
+                    )
                 }
             }
         }
+    }
+    if (onClick != null && (state == SeatState.FREE || state == SeatState.PICKED)) {
+        Surface(onClick = onClick, shape = shape, color = fill, border = BorderStroke(1.5.dp, line), modifier = m) {
+            Box(contentAlignment = Alignment.Center) { inner() }
+        }
     } else {
-        Surface(shape = shape, color = fill, border = if (line == Color.Transparent) null else BorderStroke(1.5.dp, line), modifier = m) {}
+        Surface(shape = shape, color = fill, border = BorderStroke(1.dp, line), modifier = m) {
+            Box(contentAlignment = Alignment.Center) { inner() }
+        }
     }
 }
 
@@ -316,51 +348,64 @@ fun RoadSign(from: String, to: String, road: String = "", modifier: Modifier = M
     }
 }
 
-/** Route, road, time, seats and captain — shared by all trip cards. */
+/** Route, road, time, seats and captain — shared by all trip cards. Time and route on one side, the price on the other, captain and seats underneath. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TripInfo(t: Trip, showCaptain: Boolean = true) {
+    val cs = MaterialTheme.colorScheme
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            RoadSign(t.from, t.to, t.road, Modifier.weight(1f))
-            TimeBlock(t.departAt)
+        Row(verticalAlignment = Alignment.Top) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(clockText(t.departAt), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text(dayName(t.departAt), style = MaterialTheme.typography.labelLarge, color = cs.onSurfaceVariant, modifier = Modifier.padding(bottom = 3.dp))
+                }
+                Text("${t.from}  ←  ${t.to}", style = MaterialTheme.typography.titleMedium)
+                if (t.road.isNotBlank()) {
+                    Text("عن طريق ${t.road}", style = MaterialTheme.typography.bodyMedium, color = Color(0xFFB9B2FF))
+                }
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    priceText(t.price), style = MaterialTheme.typography.titleLarge,
+                    color = Color(0xFF2DE2C0), fontWeight = FontWeight.Bold
+                )
+                if (t.price != null) Text("للمقعد", style = MaterialTheme.typography.labelMedium, color = cs.onSurfaceVariant)
+            }
         }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), itemVerticalAlignment = Alignment.CenterVertically) {
-            PricePill(t.price)
+        HorizontalDivider(color = Color.White.copy(alpha = 0.10f))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (showCaptain) {
+                Avatar(t.captainName, 38.dp)
+                Column(Modifier.weight(1f)) {
+                    Text("الكابتن ${t.captainName}", style = MaterialTheme.typography.titleSmall)
+                    if (t.carText.isNotBlank()) {
+                        Text(t.carText, style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
+                    }
+                }
+            } else {
+                Spacer(Modifier.weight(1f))
+            }
             when (t.status) {
-                TRIP_CANCELLED -> Pill("ملغاة", MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer)
-                TRIP_FULL -> Pill("مكتملة", MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
-                else -> Row(
-                    Modifier.background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(8.dp)).padding(horizontal = 10.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                TRIP_CANCELLED -> Pill("ملغاة", cs.errorContainer, cs.onErrorContainer)
+                TRIP_FULL -> Pill("مكتملة", cs.tertiaryContainer, cs.onTertiaryContainer)
+                else -> Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     SeatsRow(t.seatsTotal, t.seatsFree)
                     Text(
-                        "باقي ${seatsText(t.seatsFree)}", style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        "${seatsText(t.seatsFree)} شاغرة", style = MaterialTheme.typography.labelLarge,
+                        color = Color(0xFF2DE2C0), fontWeight = FontWeight.Bold
                     )
                 }
             }
-            if (t.acceptsParcels) {
-                Pill("يقبل أمانات", MaterialTheme.colorScheme.surfaceContainerHighest, MaterialTheme.colorScheme.onSurface)
-            }
         }
-        if (showCaptain) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Avatar(t.captainName, 38.dp)
-                Column {
-                    Text("الكابتن ${t.captainName}", style = MaterialTheme.typography.titleSmall)
-                    if (t.carText.isNotBlank()) {
-                        Text(t.carText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-            }
+        if (t.acceptsParcels) {
+            Pill("يقبل أمانات", Color.White.copy(alpha = 0.10f), cs.onSurface)
         }
         if (t.note.isNotBlank()) {
-            Text(t.note, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+            Text(t.note, color = cs.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
         }
         if (t.status == TRIP_CANCELLED && t.cancelReason.isNotBlank()) {
-            Text("السبب: ${t.cancelReason}", color = MaterialTheme.colorScheme.error)
+            Text("السبب: ${t.cancelReason}", color = cs.error)
         }
     }
 }
@@ -389,7 +434,8 @@ fun HeroHeader(title: String, subtitle: String, trailing: @Composable (() -> Uni
             Modifier.fillMaxWidth().statusBarsPadding()
                 .padding(start = 20.dp, end = 12.dp, top = 12.dp, bottom = 14.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                AppLogo(46.dp)
                 Column(Modifier.weight(1f)) {
                     Text(subtitle, color = SignYellow, style = MaterialTheme.typography.labelLarge)
                     Text(title, color = Color.White, style = MaterialTheme.typography.headlineSmall)

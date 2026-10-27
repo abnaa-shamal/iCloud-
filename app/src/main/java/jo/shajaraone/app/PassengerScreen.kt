@@ -1,6 +1,15 @@
 package jo.shajaraone.app
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,6 +24,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,11 +47,12 @@ fun PassengerHome(me: UserProfile) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             if (tab == 0) TripsList(me, myBookings, onBooked = { tab = 1 }) else MyBookings(myBookings)
         }
-        NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest) {
+        NavigationBar(containerColor = navBarColor()) {
             NavigationBarItem(
                 selected = tab == 0, onClick = { tab = 0 },
                 icon = { Icon(Icons.Filled.Search, null) },
-                label = { Text("الرحلات") }
+                label = { Text("الرحلات") },
+                colors = navItemColors()
             )
             NavigationBarItem(
                 selected = tab == 1, onClick = { tab = 1 },
@@ -50,7 +61,8 @@ fun PassengerHome(me: UserProfile) {
                         Icon(Icons.AutoMirrored.Filled.List, null)
                     }
                 },
-                label = { Text("حجوزاتي") }
+                label = { Text("حجوزاتي") },
+                colors = navItemColors()
             )
         }
     }
@@ -92,8 +104,13 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
         modifier = Modifier.fillMaxSize()
     ) {
         item {
+            Column(Modifier.padding(horizontal = 4.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("وين مشوارك؟", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text("اختر وجهتك، والباقي بسيط", style = MaterialTheme.typography.bodyLarge, color = Color(0xFFB9B2FF))
+            }
+        }
+        item {
             AppCard {
-                Text("وين رايح؟", style = MaterialTheme.typography.titleLarge)
                 SectionLabel("من")
                 ScrollChips(placeOptions, from) { from = it }
                 SectionLabel("إلى")
@@ -152,14 +169,14 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
         }
     }
 
-    tracking?.let { t -> LiveTrackDialog(t.id, t.captainName) { tracking = null } }
+    tracking?.let { t -> LiveTrackDialog(t.id, t.captainName, t.captainPhone) { tracking = null } }
 
     booking?.let { t ->
         BookingDialog(t, me, onClose = { booking = null }, onBooked = { booking = null; onBooked() })
     }
 }
 
-/** Top-view car: tap the free seats you want. Taken seats are greyed, the driver is fixed. */
+/** Top-view car drawn as a glass outline: tap the free seats you want. Taken seats are locked, the driver is fixed. */
 @Composable
 internal fun CarSeatMap(total: Int, free: Int, picked: Set<Int>, onToggle: (Int) -> Unit) {
     val taken = (total - free).coerceAtLeast(0)
@@ -168,25 +185,83 @@ internal fun CarSeatMap(total: Int, free: Int, picked: Set<Int>, onToggle: (Int)
         i in picked -> SeatState.PICKED
         else -> SeatState.FREE
     }
-    Column(
+    val seat = 52.dp
+    val body = Color(0xFF8E86FF)
+    Box(
         Modifier
-            .width(210.dp)
-            .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(40.dp))
-            .padding(horizontal = 22.dp, vertical = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+            .width(250.dp)
+            .drawBehind {
+                val w = size.width
+                val h = size.height
+                val side = 14.dp.toPx()
+                // Wheels poke out of the sides.
+                val wheelH = 46.dp.toPx()
+                listOf(h * 0.14f, h * 0.70f).forEach { y ->
+                    drawRoundRect(body.copy(alpha = 0.30f), Offset(0f, y), Size(side + 4.dp.toPx(), wheelH), CornerRadius(6.dp.toPx()))
+                    drawRoundRect(body.copy(alpha = 0.30f), Offset(w - side - 4.dp.toPx(), y), Size(side + 4.dp.toPx(), wheelH), CornerRadius(6.dp.toPx()))
+                }
+                // Side mirrors.
+                drawRoundRect(body.copy(alpha = 0.45f), Offset(2.dp.toPx(), h * 0.20f), Size(12.dp.toPx(), 8.dp.toPx()), CornerRadius(4.dp.toPx()))
+                drawRoundRect(body.copy(alpha = 0.45f), Offset(w - 14.dp.toPx(), h * 0.20f), Size(12.dp.toPx(), 8.dp.toPx()), CornerRadius(4.dp.toPx()))
+                // Body.
+                val bodyTl = Offset(side, 0f)
+                val bodySize = Size(w - side * 2, h)
+                drawRoundRect(Color.White.copy(alpha = 0.05f), bodyTl, bodySize, CornerRadius(64.dp.toPx(), 64.dp.toPx()))
+                drawRoundRect(body.copy(alpha = 0.6f), bodyTl, bodySize, CornerRadius(64.dp.toPx(), 64.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(1.5.dp.toPx()))
+                // Windshield.
+                drawRoundRect(
+                    body.copy(alpha = 0.40f), Offset(side + 26.dp.toPx(), 22.dp.toPx()), Size(w - side * 2 - 52.dp.toPx(), 22.dp.toPx()),
+                    CornerRadius(10.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(1.2.dp.toPx())
+                )
+                // Rear window.
+                drawRoundRect(
+                    body.copy(alpha = 0.30f), Offset(side + 30.dp.toPx(), h - 40.dp.toPx()), Size(w - side * 2 - 60.dp.toPx(), 16.dp.toPx()),
+                    CornerRadius(8.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(1.2.dp.toPx())
+                )
+            }
+            .padding(start = 38.dp, end = 38.dp, top = 58.dp, bottom = 58.dp)
     ) {
-        // Front row: passenger seat on the right, driver on the left (as seen from above, car facing up).
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            if (total >= 1) SeatShape(state(0), 40.dp) { onToggle(0) } else Spacer(Modifier.size(40.dp))
-            Text("الكابتن", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            SeatShape(SeatState.DRIVER, 40.dp)
-        }
-        (1 until total).toList().chunked(3).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                row.forEach { i -> SeatShape(state(i), 40.dp) { onToggle(i) } }
-                repeat(3 - row.size) { Spacer(Modifier.size(40.dp)) }
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            // Front row: passenger seat on the right, driver on the left (car seen from above, facing up).
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                if (total >= 1) SeatShape(state(0), seat, "1") { onToggle(0) } else Spacer(Modifier.size(seat))
+                Box(contentAlignment = Alignment.Center) {
+                    SeatShape(SeatState.DRIVER, seat)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Filled.Person, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(18.dp))
+                        Text("الكابتن", fontSize = 10.sp, color = Color.White.copy(alpha = 0.8f), fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+            (1 until total).toList().chunked(3).forEach { row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    row.forEach { i -> SeatShape(state(i), seat, "${i + 1}") { onToggle(i) } }
+                    repeat(3 - row.size) { Spacer(Modifier.size(seat)) }
+                }
             }
         }
+    }
+}
+
+/** Seat legend: free, taken, yours. */
+@Composable
+private fun SeatLegend() {
+    Row(
+        Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.06f), RoundedCornerShape(16.dp))
+            .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(16.dp)).padding(vertical = 10.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically
+    ) {
+        LegendItem("شاغر") { Box(Modifier.size(18.dp).border(1.5.dp, Color(0xFF8E86FF), CircleShape)) }
+        LegendItem("محجوز") { Icon(Icons.Filled.Lock, null, tint = Color.White.copy(alpha = 0.6f), modifier = Modifier.size(18.dp)) }
+        LegendItem("اختيارك") { Box(Modifier.size(18.dp).background(Color(0xFF6B4BFF), CircleShape)) }
+    }
+}
+
+@Composable
+private fun LegendItem(text: String, icon: @Composable () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        icon()
+        Text(text, style = MaterialTheme.typography.labelLarge)
     }
 }
 
@@ -228,9 +303,10 @@ private fun BookingDialog(t: Trip, me: UserProfile, onClose: () -> Unit, onBooke
                     } else picked + i
                 }
             }
+            SeatLegend()
             Text(
                 "اخترت ${seatsText(picked.size.toLong())}",
-                style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary
+                style = MaterialTheme.typography.titleMedium, color = Color(0xFF2DE2C0)
             )
 
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -349,7 +425,7 @@ private fun MyBookings(list: List<Booking>) {
         }
     }
 
-    tracking?.let { b -> LiveTrackDialog(b.tripId, b.captainName) { tracking = null } }
+    tracking?.let { b -> LiveTrackDialog(b.tripId, b.captainName, b.captainPhone) { tracking = null } }
 
     toCancel?.let { b ->
         AlertDialog(
