@@ -13,13 +13,25 @@ fun toast(ctx: Context, msg: String) = Toast.makeText(ctx, msg, Toast.LENGTH_SHO
 
 // ===== Phone =====
 
-/** Valid Jordanian mobile: 07XXXXXXXX */
-fun isValidPhone(p: String) = Regex("^07[789]\\d{7}$").matches(p.trim())
+/**
+ * Turns every accepted way of writing a Jordanian mobile into the one stored form 07XXXXXXXX:
+ * 079xxxxxxx, 79xxxxxxx, 962 79xxxxxxx, 00962 79xxxxxxx (also with a leading +, spaces or dashes).
+ * Anything else is returned as plain digits so validation fails on it.
+ */
+fun normalizePhone(p: String): String {
+    var d = p.filter { it.isDigit() }
+    if (d.startsWith("00962")) d = d.drop(5) else if (d.startsWith("962")) d = d.drop(3)
+    if (d.startsWith("7") && d.length == 9) d = "0$d"
+    return d
+}
+
+/** Valid Jordanian mobile (077, 078 or 079) in any accepted writing, see [normalizePhone]. */
+fun isValidPhone(p: String) = Regex("^07[789]\\d{7}$").matches(normalizePhone(p))
 
 /** Firebase Auth needs an email; the user only ever sees the phone number. */
 /** Hidden login email. Different per app, so the rider account and the captain account of one number are separate. */
 fun phoneToLoginEmail(phone: String) =
-    "${phone.trim()}@${if (IS_CAPTAIN_APP) "captain.shajaraone.app" else "shajaraone.app"}"
+    "${normalizePhone(phone)}@${if (IS_CAPTAIN_APP) "captain.shajaraone.app" else "shajaraone.app"}"
 
 /** 07XXXXXXXX -> 9627XXXXXXXX for WhatsApp links */
 fun intlPhone(p: String): String {

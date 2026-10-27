@@ -35,8 +35,8 @@ private fun Brand() {
 @Composable
 private fun PhoneField(value: String, onChange: (String) -> Unit) = OutlinedTextField(
     value = value,
-    onValueChange = { onChange(it.filter { c -> c.isDigit() }.take(10)) },
-    label = { Text("رقم الهاتف") }, placeholder = { Text("07xxxxxxxx") },
+    onValueChange = { onChange(it.filter { c -> c.isDigit() }.take(14)) },
+    label = { Text("رقم الهاتف") }, placeholder = { Text("079xxxxxxx") },
     singleLine = true, shape = MaterialTheme.shapes.medium,
     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
     modifier = Modifier.fillMaxWidth()
@@ -96,7 +96,7 @@ private fun LoginForm() {
     PasswordField(password, "كلمة السر") { password = it }
     BigButton(if (busy) "لحظة..." else "دخول", enabled = !busy) {
         when {
-            !isValidPhone(phone) -> toast(ctx, "اكتب رقمك صح: 07xxxxxxxx")
+            !isValidPhone(phone) -> toast(ctx, "اكتب رقمك صح: 077 أو 078 أو 079 (أو 00962)")
             password.isBlank() -> toast(ctx, "اكتب كلمة السر")
             else -> {
                 busy = true
@@ -157,7 +157,7 @@ fun ProfileForm(needAccount: Boolean) {
         val captain = role == ROLE_CAPTAIN
         when {
             name.trim().length < 3 -> toast(ctx, "اكتب اسمك")
-            !isValidPhone(phone) -> toast(ctx, "اكتب رقمك صح: 07xxxxxxxx")
+            !isValidPhone(phone) -> toast(ctx, "اكتب رقمك صح: 077 أو 078 أو 079 (أو 00962)")
             needAccount && password.length < 6 -> toast(ctx, "كلمة السر لازم تكون 6 أحرف أو أكثر")
             needAccount && password != password2 -> toast(ctx, "كلمتين السر مش متطابقات")
             captain && (carType.isBlank() || carColor.isBlank() || carPlate.isBlank()) ->
@@ -165,7 +165,7 @@ fun ProfileForm(needAccount: Boolean) {
             else -> {
                 busy = true
                 val profile = UserProfile(
-                    role = role, name = name.trim(), phone = phone.trim(),
+                    role = role, name = name.trim(), phone = normalizePhone(phone),
                     carType = if (captain) carType.trim() else "",
                     carColor = if (captain) carColor.trim() else "",
                     carPlate = if (captain) carPlate.trim() else ""
