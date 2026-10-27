@@ -132,6 +132,8 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
                             ) { Text("احجز مقعد", style = MaterialTheme.typography.titleMedium) }
                             else -> Spacer(Modifier.weight(1f))
                         }
+                        OpenMapButton(t.to)
+                        if (mine != null) ShareLocationButton(t.captainPhone)
                         CallButton(t.captainPhone)
                         WhatsAppButton(
                             t.captainPhone,
@@ -321,6 +323,7 @@ private fun MyBookings(list: List<Booking>) {
                                 shape = MaterialTheme.shapes.medium,
                                 modifier = Modifier.weight(1f).height(48.dp)
                             ) { Text("إلغاء الحجز", color = cs.error) }
+                            ShareLocationButton(b.captainPhone)
                             CallButton(b.captainPhone)
                             WhatsAppButton(b.captainPhone, "مرحبا كابتن ${b.captainName}، بخصوص حجزي برحلة ${b.tripSummary}")
                         }

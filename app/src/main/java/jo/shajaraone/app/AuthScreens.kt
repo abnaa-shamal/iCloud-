@@ -83,12 +83,12 @@ fun AuthScreen() {
         if (registering) {
             ProfileForm(needAccount = true)
             TextButton(onClick = { registering = false }, modifier = Modifier.fillMaxWidth()) {
-                Text("عندي حساب، بدي أسجّل دخول")
+                Text("عندي حساب، بدي أسجّل دخول", color = Color(0xFF2DE2C0))
             }
         } else {
             LoginForm()
             TextButton(onClick = { registering = true }, modifier = Modifier.fillMaxWidth()) {
-                Text("ما عندي حساب، بدي أسجّل جديد")
+                Text("ما عندي حساب، بدي أسجّل جديد", color = Color(0xFF2DE2C0))
             }
         }
     }

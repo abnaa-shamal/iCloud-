@@ -368,6 +368,7 @@ internal fun BookingRow(b: Booking, onCancel: () -> Unit) {
                             shape = MaterialTheme.shapes.medium, modifier = Modifier.weight(1f).height(48.dp)
                         ) { Text("إلغاء الحجز") }
                     }
+                    ShareLocationButton(b.passengerPhone)
                     CallButton(b.passengerPhone)
                     WhatsAppButton(b.passengerPhone, "مرحبا ${b.passengerName}، بخصوص حجزك برحلة ${b.tripSummary}")
                 }
