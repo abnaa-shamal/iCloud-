@@ -893,7 +893,7 @@ test('verify code: 6 digits accepted at sign-up, anything else rejected; `verifi
 });
 test('verify code: only the admin marks a number verified; the owner cannot change the code or verify himself', async () => {
   await env.withSecurityRulesDisabled(async (c) => {
-    await setDoc(doc(c.firestore(), 'users/vp'), { ...user('passenger', 'active', '0792111111'), verifyCode: '111222' });
+    await setDoc(doc(c.firestore(), 'users/vp'), { ...user('passenger', 'active', '0792111111'), verified: false, verifyCode: '111222' });
   });
   await assertFails(updateDoc(doc(as('vp', '0792111111'), 'users/vp'), { verified: true }));
   await assertFails(updateDoc(doc(as('vp', '0792111111'), 'users/vp'), { verifyCode: '999999' }));
