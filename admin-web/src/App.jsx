@@ -11,9 +11,9 @@ import {
 } from './lib.js';
 
 /* ---------- small helpers ---------- */
-const fmtTime = (ms) => (ms ? new Intl.DateTimeFormat('ar-JO', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(ms)) : '—');
-const num = (n) => new Intl.NumberFormat('ar-JO').format(n ?? 0);
-const fmtDay = (ms) => new Intl.DateTimeFormat('ar-JO', { weekday: 'short' }).format(new Date(ms));
+const fmtTime = (ms) => (ms ? new Intl.DateTimeFormat('ar-JO-u-nu-latn', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(ms)) : '—');
+const num = (n) => new Intl.NumberFormat('ar-JO-u-nu-latn').format(n ?? 0);
+const fmtDay = (ms) => new Intl.DateTimeFormat('ar-JO-u-nu-latn', { weekday: 'short' }).format(new Date(ms));
 
 /** Saves text as a file in the browser (used for the CSV exports). */
 function download(filename, text) {
