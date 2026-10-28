@@ -99,20 +99,23 @@ fun ShareLocationButton(phone: String) {
     }
 }
 
+/** Opens a place in the maps app already on the phone. */
+fun openMapFor(ctx: android.content.Context, place: String) {
+    val q = Uri.encode("$place، الأردن")
+    try {
+        ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=$q")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    } catch (e: Exception) {
+        try {
+            ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://maps.google.com/?q=$q")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } catch (e2: Exception) {
+            toast(ctx, "ما لقيت تطبيق خرائط")
+        }
+    }
+}
+
 /** Small optional button: opens a place in the maps app already on the phone. */
 @Composable
 fun OpenMapButton(place: String) {
     val ctx = LocalContext.current
-    RoundAction(Icons.Filled.Place, "افتح الخريطة") {
-        val q = Uri.encode("$place، الأردن")
-        try {
-            ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=$q")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        } catch (e: Exception) {
-            try {
-                ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://maps.google.com/?q=$q")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            } catch (e2: Exception) {
-                toast(ctx, "ما لقيت تطبيق خرائط")
-            }
-        }
-    }
+    RoundAction(Icons.Filled.Place, "افتح الخريطة") { openMapFor(ctx, place) }
 }

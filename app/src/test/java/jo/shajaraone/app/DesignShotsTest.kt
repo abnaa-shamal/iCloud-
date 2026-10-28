@@ -60,23 +60,32 @@ class DesignShotsTest {
         Column(Modifier.fillMaxSize()) {
             HeroHeader("أهلاً محمد", "أبناء الشمال • وين رايح اليوم؟")
             Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                FilterSummaryBar("الشجرة  ←  إربد  •  اليوم", false) {}
+                Text("2 رحلة متاحة", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 4.dp))
+                listOf(t1, t2).forEach { t ->
+                    AppCard {
+                        TripInfo(t)
+                        HorizontalDivider()
+                        Button(onClick = {}, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text("احجز مقعد", style = MaterialTheme.typography.titleMedium) }
+                        ContactRow(t.to, "0790000000", "")
+                    }
+                }
+            }
+        }
+    }
+
+    @Test fun riderHomeFilterOpen() = shot("1b-rider-home-filter-open") {
+        Column(Modifier.fillMaxSize()) {
+            HeroHeader("أهلاً محمد", "أبناء الشمال • وين رايح اليوم؟")
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                FilterSummaryBar("الشجرة  ←  إربد  •  اليوم", true) {}
                 AppCard {
-                    Text("وين رايح؟", style = MaterialTheme.typography.titleLarge)
                     SectionLabel("من")
                     ScrollChips(listOf("all" to "الكل", "a" to "الشجرة", "b" to "الذنيبة"), "a") {}
                     SectionLabel("إلى")
                     ScrollChips(listOf("all" to "الكل", "a" to "إربد", "b" to "عمّان"), "a") {}
                     SectionLabel("متى؟")
                     ScrollChips(listOf("all" to "كل الأيام", "0" to "اليوم", "1" to "غداً"), "0") {}
-                }
-                AppCard {
-                    TripInfo(t1)
-                    HorizontalDivider()
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Button(onClick = {}, modifier = Modifier.weight(1f).height(48.dp)) { Text("احجز مقعد") }
-                        CallButton("0790000000")
-                        WhatsAppButton("0790000000", "")
-                    }
                 }
             }
         }

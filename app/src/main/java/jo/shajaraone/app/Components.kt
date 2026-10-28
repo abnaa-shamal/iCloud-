@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -391,12 +392,12 @@ fun TripInfo(t: Trip, showCaptain: Boolean = true) {
             when (t.status) {
                 TRIP_CANCELLED -> Pill("ملغاة", cs.errorContainer, cs.onErrorContainer)
                 TRIP_FULL -> Pill("مكتملة", cs.tertiaryContainer, cs.onTertiaryContainer)
-                else -> Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    SeatsRow(t.seatsTotal, t.seatsFree)
+                else -> Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        "${seatsText(t.seatsFree)} شاغرة", style = MaterialTheme.typography.labelLarge,
+                        "${t.seatsFree} من ${t.seatsTotal}", style = MaterialTheme.typography.titleLarge,
                         color = Brand.Teal, fontWeight = FontWeight.Bold
                     )
+                    Text("مقاعد شاغرة", style = MaterialTheme.typography.labelMedium, color = cs.onSurfaceVariant)
                 }
             }
         }
@@ -544,5 +545,48 @@ fun VerifyBar(me: UserProfile) {
             },
             shape = MaterialTheme.shapes.medium
         ) { Text("إرسال الرمز عبر واتساب") }
+    }
+}
+
+
+// ===== Contact buttons =====
+
+@Composable
+private fun ContactBtn(label: String, icon: ImageVector?, modifier: Modifier, onClick: () -> Unit) {
+    OutlinedButton(
+        onClick, modifier.height(44.dp), shape = MaterialTheme.shapes.medium,
+        contentPadding = PaddingValues(horizontal = 6.dp),
+        border = BorderStroke(1.dp, Brand.VioletSoft.copy(alpha = 0.6f))
+    ) {
+        if (icon != null) { Icon(icon, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)) }
+        Text(label, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+    }
+}
+
+/** One row of equal buttons with visible labels: map (optional), call, WhatsApp. Goes under the main action. */
+@Composable
+fun ContactRow(place: String?, phone: String, waMessage: String) {
+    val ctx = LocalContext.current
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (place != null) ContactBtn("الموقع", Icons.Filled.Place, Modifier.weight(1f)) { openMapFor(ctx, place) }
+        ContactBtn("اتصال", Icons.Filled.Call, Modifier.weight(1f)) { callPhone(ctx, phone) }
+        ContactBtn("واتساب", null, Modifier.weight(1f)) { openWhatsApp(ctx, phone, waMessage) }
+    }
+}
+
+/** One-line summary of the filters, with an edit button; the full filter card opens from it. */
+@Composable
+fun FilterSummaryBar(summary: String, open: Boolean, onToggle: () -> Unit) {
+    AppCard {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.weight(1f)) {
+                Text("وين مشوارك؟", style = MaterialTheme.typography.labelMedium, color = Brand.VioletLight)
+                Text(summary, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            }
+            OutlinedButton(
+                onToggle, shape = MaterialTheme.shapes.medium, contentPadding = PaddingValues(horizontal = 14.dp),
+                border = BorderStroke(1.dp, Brand.VioletSoft.copy(alpha = 0.6f))
+            ) { Text(if (open) "إخفاء" else "تعديل") }
+        }
     }
 }

@@ -81,6 +81,7 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
     var booking by remember { mutableStateOf<Trip?>(null) }
     var tracking by remember { mutableStateOf<Trip?>(null) }
     var needVerify by remember { mutableStateOf(false) }
+    var filterOpen by rememberSaveable { mutableStateOf(false) }
 
     DisposableEffect(Unit) {
         val r = Repo.listenTrips(
@@ -104,12 +105,12 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
         modifier = Modifier.fillMaxSize()
     ) {
         item {
-            Column(Modifier.padding(horizontal = 4.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("وين مشوارك؟", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                Text("اختر وجهتك، والباقي بسيط", style = MaterialTheme.typography.bodyLarge, color = Brand.VioletLight)
-            }
+            val routeText = if (route.kind.isBlank()) "كل الخطوط"
+                else listOf(route.from().ifBlank { "أي مكان" }, route.to().ifBlank { "أي مكان" }).joinToString("  ←  ")
+            val dayText = if (day < 0) "كل الأيام" else dateLongText(dayStart(day))
+            FilterSummaryBar("$routeText  •  $dayText", filterOpen) { filterOpen = !filterOpen }
         }
-        item {
+        if (filterOpen) item {
             AppCard {
                 RoutePicker(route, allowAll = true)
                 SectionLabel("متى؟")
@@ -141,29 +142,26 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
                         ) { Text("تتبّع الكابتن على الخريطة") }
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        when {
-                            mine != null -> Box(Modifier.weight(1f)) {
+                    when {
+                        mine != null -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Box(Modifier.weight(1f)) {
                                 Pill(
                                     "حجزك: ${seatsText(mine.seats)} — ${bookingStatusText(mine.status)}",
                                     MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
-                            t.isBookable -> Button(
-                                onClick = { if (me.verified) booking = t else needVerify = true },
-                                shape = MaterialTheme.shapes.medium,
-                                modifier = Modifier.weight(1f).height(48.dp)
-                            ) { Text("احجز مقعد", style = MaterialTheme.typography.titleMedium) }
-                            else -> Spacer(Modifier.weight(1f))
+                            ShareLocationButton(t.captainPhone)
                         }
-                        OpenMapButton(t.to)
-                        if (mine != null) ShareLocationButton(t.captainPhone)
-                        CallButton(t.captainPhone)
-                        WhatsAppButton(
-                            t.captainPhone,
-                            "مرحبا كابتن ${t.captainName}، بخصوص رحلة ${t.from} ← ${t.to} (${timeText(t.departAt)})"
-                        )
+                        t.isBookable -> Button(
+                            onClick = { if (me.verified) booking = t else needVerify = true },
+                            shape = MaterialTheme.shapes.medium,
+                            modifier = Modifier.fillMaxWidth().height(52.dp)
+                        ) { Text("احجز مقعد", style = MaterialTheme.typography.titleMedium) }
                     }
+                    ContactRow(
+                        t.to, t.captainPhone,
+                        "مرحبا كابتن ${t.captainName}، بخصوص رحلة ${t.from} ← ${t.to} (${timeText(t.departAt)})"
+                    )
                 }
             }
         }
