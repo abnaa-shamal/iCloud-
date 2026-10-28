@@ -100,6 +100,13 @@ jobs:
           check captain jo.shajaraone.captain
           exit $FAIL
 
+      - name: Put the version in the APK file names
+        run: |
+          for f in rider captain; do
+            APK=$(find "app/build/outputs/apk/$f/release" -name '*.apk' | head -1)
+            mv "$APK" "app/build/outputs/apk/$f/release/shajara-$f-1.5.${{ github.run_number }}.apk"
+          done
+
       - name: Clean up key
         if: always()
         run: rm -f "$RUNNER_TEMP/release.jks" app/google-services.json

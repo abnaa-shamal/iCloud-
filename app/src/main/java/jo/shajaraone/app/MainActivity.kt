@@ -135,6 +135,7 @@ private fun HomeScaffold(me: UserProfile, onShowGuide: () -> Unit) {
             title = "أهلاً ${me.name}",
             subtitle = if (IS_CAPTAIN_APP) "$APP_DISPLAY_NAME • تطبيق الكابتن" else "$APP_DISPLAY_NAME • وين رايح اليوم؟",
             trailing = {
+                Text("v${BuildConfig.VERSION_NAME}", color = Color.White.copy(alpha = 0.6f), style = MaterialTheme.typography.labelSmall)
                 Box {
                     IconButton(onClick = { menu = true }) {
                         Icon(Icons.Filled.MoreVert, contentDescription = "القائمة", tint = Color.White)

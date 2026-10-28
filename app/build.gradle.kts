@@ -18,7 +18,8 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = (System.getenv("VERSION_CODE") ?: "1").toInt()
-        versionName = "1.5"
+        // Shown inside both apps (top bar) so a tester can tell which build is installed: 1.5.<CI run number>.
+        versionName = "1.5.${System.getenv("VERSION_CODE") ?: "0"}"
     }
 
     // Two apps from the same code, one flavor each (the admin dashboard is a separate web app, not part of these):
