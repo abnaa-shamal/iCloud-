@@ -11,9 +11,9 @@ import {
 } from './lib.js';
 
 /* ---------- small helpers ---------- */
-const fmtTime = (ms) => (ms ? new Intl.DateTimeFormat('ar-JO', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(ms)) : '—');
-const num = (n) => new Intl.NumberFormat('ar-JO').format(n ?? 0);
-const fmtDay = (ms) => new Intl.DateTimeFormat('ar-JO', { weekday: 'short' }).format(new Date(ms));
+const fmtTime = (ms) => (ms ? new Intl.DateTimeFormat('ar-JO-u-nu-latn', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(ms)) : '—');
+const num = (n) => new Intl.NumberFormat('ar-JO-u-nu-latn').format(n ?? 0);
+const fmtDay = (ms) => new Intl.DateTimeFormat('ar-JO-u-nu-latn', { weekday: 'short' }).format(new Date(ms));
 
 /** Saves text as a file in the browser (used for the CSV exports). */
 function download(filename, text) {
@@ -30,7 +30,7 @@ const THEMES = ['auto', 'light', 'dark'];
 const THEME_LABEL = { auto: '◐ تلقائي', light: '☀ فاتح', dark: '☾ داكن' };
 function useTheme() {
   const [theme, setTheme] = useState(() => {
-    try { const t = localStorage.getItem('shajara-admin-theme'); return THEMES.includes(t) ? t : 'auto'; } catch { return 'auto'; }
+    try { const t = localStorage.getItem('shajara-admin-theme'); return THEMES.includes(t) ? t : 'dark'; } catch { return 'dark'; }
   });
   useEffect(() => {
     if (theme === 'auto') document.documentElement.removeAttribute('data-theme');
@@ -70,6 +70,40 @@ function useCollection(name, enabled) {
       (e) => setError(e.message));
   }, [name, enabled]);
   return { rows, error };
+}
+
+
+/* ---------- brand mark and icons (drawn inline, no image files) ---------- */
+function Logo({ size = 36 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
+      <defs>
+        <linearGradient id="lgV" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#8C73FF" /><stop offset="1" stopColor="#6B4BFF" /></linearGradient>
+        <linearGradient id="lgT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#2DE2C0" /><stop offset="1" stopColor="#1FA89A" /></linearGradient>
+      </defs>
+      <path d="M42 90 L70 30 L98 90 Z" fill="url(#lgT)" />
+      <path d="M2 90 L34 20 L66 90 Z" fill="url(#lgV)" />
+      <path d="M30 90 C62 80 18 60 40 44" fill="none" stroke="#0B1030" strokeWidth="8.5" strokeLinecap="round" />
+      <path d="M30 90 C62 80 18 60 40 44" fill="none" stroke="#fff" strokeOpacity=".9" strokeWidth="1.6" strokeLinecap="round" strokeDasharray="5 5" />
+      <path d="M20 4 Q20 12 28.5 12 Q20 12 20 20.5 Q20 12 11.5 12 Q20 12 20 4 Z" fill="#fff" />
+    </svg>
+  );
+}
+
+const ICONS = {
+  overview: 'M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z',
+  captains: 'M5 16l1.5-5.5A2 2 0 0 1 8.4 9h7.2a2 2 0 0 1 1.9 1.5L19 16M4 16h16v3H4zM7 19v1.5M17 19v1.5M7.5 13h.01M16.5 13h.01',
+  riders: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 20a7.5 7.5 0 0 1 15 0',
+  trips: 'M6 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM8 17h6.5a3 3 0 0 0 0-6H9.5a3 3 0 0 1 0-6H16',
+  bookings: 'M3 9V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2.5 2.5 0 0 0 0 6v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2.5 2.5 0 0 0 0-6zM14 5v14',
+  places: 'M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z',
+};
+function NavIcon({ name }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={ICONS[name]} />
+    </svg>
+  );
 }
 
 /* ---------- UI atoms ---------- */
@@ -157,9 +191,9 @@ function Login({ error }) {
   return (
     <main className="login">
       <form className="card login-card" onSubmit={submit}>
-        <div className="logo">🌳</div>
+        <div className="logo"><Logo size={84} /></div>
         <h1>لوحة المشرف</h1>
-        <p className="muted">شجرة 1</p>
+        <p className="muted">أبناء الشمال</p>
         {!configured && <div className="alert bad">إعدادات Firebase ناقصة (VITE_FIREBASE_*). راجع ADMIN_SETUP.md.</div>}
         <label>الإيميل<input type="email" dir="ltr" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
         <label>كلمة السر<input type="password" dir="ltr" autoComplete="current-password" value={pass} onChange={(e) => setPass(e.target.value)} required /></label>
@@ -542,12 +576,12 @@ function Places({ act }) {
 
 /* ---------- shell ---------- */
 const NAV = [
-  { key: 'overview', label: 'نظرة عامة', icon: '◧' },
-  { key: 'captains', label: 'الكباتن', icon: '🚗' },
-  { key: 'riders', label: 'الركاب', icon: '👤' },
-  { key: 'trips', label: 'الرحلات', icon: '🛣️' },
-  { key: 'bookings', label: 'الحجوزات', icon: '🎫' },
-  { key: 'places', label: 'الأماكن', icon: '📍' },
+  { key: 'overview', label: 'نظرة عامة', icon: 'overview' },
+  { key: 'captains', label: 'الكباتن', icon: 'captains' },
+  { key: 'riders', label: 'الركاب', icon: 'riders' },
+  { key: 'trips', label: 'الرحلات', icon: 'trips' },
+  { key: 'bookings', label: 'الحجوزات', icon: 'bookings' },
+  { key: 'places', label: 'الأماكن', icon: 'places' },
 ];
 
 function Dashboard({ user }) {
@@ -571,7 +605,7 @@ function Dashboard({ user }) {
   return (
     <div className="shell">
       <header className="top">
-        <div className="brand"><span>🌳</span> شجرة 1 <small>مشرف</small></div>
+        <div className="brand"><Logo size={36} /> أبناء الشمال <small>مشرف</small></div>
         <div className="who">
           <span dir="ltr">{user.email}</span>
           <button className="btn ghost small" onClick={cycleTheme} aria-label="تغيير المظهر">{THEME_LABEL[theme]}</button>
@@ -582,7 +616,7 @@ function Dashboard({ user }) {
       <nav className="nav" aria-label="التنقل">
         {NAV.map((n) => (
           <button key={n.key} className={`nav-item ${page === n.key ? 'on' : ''}`} onClick={() => setPage(n.key)}>
-            <span aria-hidden>{n.icon}</span>{n.label}
+            <NavIcon name={n.icon} />{n.label}
             {n.key === 'captains' && pendingCount > 0 && <i className="dot">{num(pendingCount)}</i>}
           </button>
         ))}
@@ -617,7 +651,7 @@ export default function App() {
     } catch { setIsAdmin(false); }
   }), []);
 
-  if (user === undefined || (user && isAdmin === null)) return <div className="splash">🌳</div>;
+  if (user === undefined || (user && isAdmin === null)) return <div className="splash"><Logo size={88} /></div>;
   if (!user) return <Login />;
   if (!isAdmin) {
     return (
