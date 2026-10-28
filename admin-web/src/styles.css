@@ -76,6 +76,7 @@ a { color: inherit; }
 .brand small { font-weight: 600; font-size: 12px; background: var(--accent-soft); color: var(--accent-light); padding: 2px 10px; border-radius: 99px; }
 .brand svg { flex: none; }
 .who { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; min-width: 0; }
+.who .btn { white-space: nowrap; }
 .who span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
 
 .nav {
