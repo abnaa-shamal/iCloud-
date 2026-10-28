@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "ShajaraOne"
-include(":app")
+include(":app", ":admin-app")

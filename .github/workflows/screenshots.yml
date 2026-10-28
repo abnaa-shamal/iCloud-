@@ -52,3 +52,19 @@ jobs:
           git config user.name "ci" && git config user.email "ci@example.com"
           git add . && git commit -qm "screenshots from run ${{ github.run_id }}"
           git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" shots:refs/heads/design-shots-${{ github.ref_name }}
+
+      - name: Render admin app screenshots
+        if: always()
+        run: gradle :admin-app:testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee admin-test.log; exit ${PIPESTATUS[0]}
+      - name: Report admin errors
+        if: failure()
+        run: |
+          grep -E "^e: |error:|FAILED|Exception|Caused by" admin-test.log | head -25 | sed 's/[A-Za-z0-9+\/=]\{40,\}/[redacted]/g' | while read -r l; do echo "::error::$l"; done
+      - name: Publish admin PNGs to branch design-shots-<branch>-adminapp
+        if: always()
+        run: |
+          cd admin-app/build/design-shots || exit 0
+          git init -q && git checkout -q -b shots
+          git config user.name "ci" && git config user.email "ci@example.com"
+          git add . && git commit -qm "admin app screenshots from run ${{ github.run_id }}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" shots:refs/heads/design-shots-${{ github.ref_name }}-adminapp

@@ -70,8 +70,12 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           VERSION_CODE: ${{ github.run_number }}
+          # The admin app uses the same public Firebase settings as the rider app (no extra secret)
+          SHAJARA_FIREBASE_API_KEY: ${{ secrets.SHAJARA_FIREBASE_API_KEY }}
+          SHAJARA_RIDER_APP_ID: ${{ secrets.SHAJARA_RIDER_APP_ID }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID || 'shajara-rides-security-t-2632f' }}
         run: |
-          gradle :app:assembleRiderRelease :app:assembleCaptainRelease --no-daemon --stacktrace 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
+          gradle :app:assembleRiderRelease :app:assembleCaptainRelease :admin-app:assembleRelease --no-daemon --stacktrace 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
 
       # Short error summary: ONE annotation with the real compiler/Gradle errors (not the task list)
       - name: Report build errors
@@ -94,10 +98,17 @@ jobs:
             "$BT/aapt2" dump badging "$APK" | grep -E "^package:|application-label:"
             "$BT/aapt2" dump badging "$APK" | grep -q "name='$2' " || { echo "::error::$1 package name is not $2"; FAIL=1; }
             # The apps must not contain any admin code (the admin is a separate web app)
-            if unzip -p "$APK" 'classes*.dex' | strings | grep -E "AdminScreen|RealFirebase"; then echo "::error::admin code found in $1 apk"; FAIL=1; else echo "OK: no admin code in $1"; fi
+            if unzip -p "$APK" 'classes*.dex' | strings | grep -E "AdminScreen|RealFirebase|AdminActions|RoyalFooter"; then echo "::error::admin code found in $1 apk"; FAIL=1; else echo "OK: no admin code in $1"; fi
           }
           check rider jo.shajaraone.rider
           check captain jo.shajaraone.captain
+          # the admin app
+          AAPK=$(find admin-app/build/outputs/apk/release -name '*.apk' 2>/dev/null | head -1)
+          if [ -z "$AAPK" ]; then echo "::error::admin APK not found"; FAIL=1; else
+            "$BT/apksigner" verify --print-certs "$AAPK" | grep -E "Verifies|SHA-256" || { echo "::error::admin signature check failed"; FAIL=1; }
+            "$BT/aapt2" dump badging "$AAPK" | grep -E "^package:|application-label:"
+            "$BT/aapt2" dump badging "$AAPK" | grep -q "name='jo.shajaraone.admin' " || { echo "::error::admin package name wrong"; FAIL=1; }
+          fi
           exit $FAIL
 
       - name: Put the version in the APK file names
@@ -106,6 +117,11 @@ jobs:
             APK=$(find "app/build/outputs/apk/$f/release" -name '*.apk' | head -1)
             mv "$APK" "app/build/outputs/apk/$f/release/shajara-$f-1.5.${{ github.run_number }}.apk"
           done
+
+      - name: Put the version in the admin APK name
+        run: |
+          APK=$(find admin-app/build/outputs/apk/release -name '*.apk' | head -1)
+          mv "$APK" "admin-app/build/outputs/apk/release/shajara-admin-1.0.${{ github.run_number }}.apk"
 
       - name: Clean up key
         if: always()
@@ -122,6 +138,13 @@ jobs:
         with:
           name: shajara-one-captain-apk
           path: app/build/outputs/apk/captain/release/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: shajara-admin-apk
+          path: admin-app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 30
 
