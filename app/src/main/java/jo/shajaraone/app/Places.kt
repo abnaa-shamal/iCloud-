@@ -14,7 +14,7 @@ const val KIND_NN = "nn"
 const val NORTH_INNER = "داخل الشمال"
 
 /** Northern places (edit here to add / remove / reorder). */
-val northPlaces = listOf("إربد", "الرمثا", "المفرق", "البويضة", "الشجرة", "الطرة", "عمراوة", "الذنيبة")
+val northPlaces = listOf("إربد", "الرمثا", "المفرق", "البويضة", "الشجرة", "الطرة", "عمراوة", "الذنيبة", "المغيّر")
 
 /** Villages and towns that travel to Irbid inside the north (everything in the north except Irbid itself). */
 val northVillages = northPlaces.filter { it != "إربد" }
