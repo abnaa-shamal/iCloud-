@@ -132,3 +132,25 @@ class Prefs(context: Context) {
         get() = sp.getString("watchCaptainUid", "") ?: ""
         set(v) = sp.edit().putString("watchCaptainUid", v).apply()
 }
+
+/** e.g. «الأحد 1 تشرين الثاني» */
+fun dateLongText(millis: Long): String = SimpleDateFormat("EEEE d MMMM", arLocale).format(Date(millis))
+
+/** Day offset (0 = today) of a date chosen in the calendar, which reports UTC midnight of the picked day. */
+fun dayOffsetFromPicker(utcMillis: Long): Int {
+    val u = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")).apply { timeInMillis = utcMillis }
+    val local = Calendar.getInstance().apply {
+        clear()
+        set(u.get(Calendar.YEAR), u.get(Calendar.MONTH), u.get(Calendar.DAY_OF_MONTH), 0, 0, 0)
+    }.timeInMillis
+    return Math.round((local - dayStart(0)) / 86_400_000.0).toInt()
+}
+
+/** The calendar's UTC midnight for the local date that is [offset] days from today. */
+fun pickerMillisOfOffset(offset: Int): Long {
+    val l = Calendar.getInstance().apply { timeInMillis = dayStart(offset) }
+    return Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")).apply {
+        clear()
+        set(l.get(Calendar.YEAR), l.get(Calendar.MONTH), l.get(Calendar.DAY_OF_MONTH), 0, 0, 0)
+    }.timeInMillis
+}

@@ -74,14 +74,9 @@ fun CaptainHome(me: UserProfile) {
 @Composable
 private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
     val ctx = LocalContext.current
-    var from by rememberSaveable { mutableStateOf("الشجرة") }
-    var to by rememberSaveable { mutableStateOf("إربد") }
-    var road by rememberSaveable { mutableStateOf(tripRoads[0]) }
-    var day by rememberSaveable { mutableStateOf("0") }
-    var hour by rememberSaveable { mutableIntStateOf(7) }
-    var minute by rememberSaveable { mutableIntStateOf(0) }
-    var timeChosen by rememberSaveable { mutableStateOf(false) }
-    var showTime by remember { mutableStateOf(false) }
+    val route = rememberRouteState()
+    var day by rememberSaveable { mutableIntStateOf(-1) }
+    var minutes by rememberSaveable { mutableIntStateOf(-1) }
     var seats by rememberSaveable { mutableIntStateOf(4) }
     var fixedPrice by rememberSaveable { mutableStateOf(true) }
     var priceStr by rememberSaveable { mutableStateOf("1") }
@@ -89,10 +84,9 @@ private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
     var note by rememberSaveable { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
 
-    fun setRoute(f: String, t: String) {
-        from = f
-        to = t
-        val d = defaultFixedPrice(f, t)
+    // Inside-north trips default to a fixed 1 JD; everything else to «حسب الاتفاق», until the captain touches the price.
+    LaunchedEffect(route.kind) {
+        val d = defaultFixedPrice(route.kind)
         fixedPrice = d != null
         priceStr = if (d != null) "1" else ""
     }
@@ -104,36 +98,15 @@ private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
         Text("نشر رحلة جديدة", style = MaterialTheme.typography.headlineSmall)
         AppCard {
             Text("١. الخط", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-            SectionLabel("من وين؟")
-            ChoiceChips(allPlaces, from) { setRoute(it, to) }
-            SectionLabel("لوين؟")
-            ChoiceChips(allPlaces, to) { setRoute(from, it) }
-            if (!isValidRoute(from, to)) {
-                Text(
-                    "الرحلة لازم تكون بين منطقة (الشجرة، الذنيبة، عمراوة، الطرة، الرمثا) ومدينة (إربد، عمّان، الزرقاء).",
-                    color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall
-                )
-            }
-            if (needsRoadChoice(from, to)) {
-                SectionLabel("الطريق")
-                ChoiceChips(tripRoads, road) { road = it }
-            }
+            RoutePicker(route, allowAll = false)
         }
 
         AppCard {
             Text("٢. الوقت", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-            SectionLabel("اليوم")
-            ScrollChips(nextDays(), day) { day = it }
-            OutlinedButton(
-                onClick = { showTime = true },
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.fillMaxWidth().height(48.dp)
-            ) {
-                Text(
-                    if (timeChosen) "الساعة ${clockText(departMillis(day.toInt(), hour, minute))}"
-                    else "اختار ساعة الانطلاق"
-                )
-            }
+            WhenPicker(
+                dayOffset = day.takeIf { it >= 0 }, minutes = minutes.takeIf { it >= 0 },
+                onDay = { day = it ?: -1 }, onMinutes = { minutes = it ?: -1 }, allowClear = false
+            )
         }
 
         AppCard {
@@ -179,10 +152,11 @@ private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
 
         BigButton(if (sending) "جاري النشر..." else "انشر الرحلة", enabled = !sending) {
             val price = if (fixedPrice) priceStr.toDoubleOrNull() else null
-            val departAt = departMillis(day.toInt(), hour, minute)
+            val departAt = if (day >= 0 && minutes >= 0) dayStart(day) + minutes * 60_000L else 0L
             when {
-                !isValidRoute(from, to) -> toast(ctx, "اختار خط صحيح")
-                !timeChosen -> toast(ctx, "اختار ساعة الانطلاق")
+                !route.complete() -> toast(ctx, "كمّل اختيار الخط")
+                day < 0 -> toast(ctx, "اختار اليوم")
+                minutes < 0 -> toast(ctx, "اختار ساعة الانطلاق")
                 departAt < System.currentTimeMillis() -> toast(ctx, "هالوقت فات، اختار وقت جاي")
                 fixedPrice && (price == null || price <= 0.0) -> toast(ctx, "اكتب السعر صح")
                 else -> {
@@ -190,7 +164,7 @@ private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
                     Repo.publishTrip(
                         Trip(
                             captainName = me.name, captainPhone = me.phone, carText = me.carText,
-                            from = from, to = to, road = if (needsRoadChoice(from, to)) road else "",
+                            from = route.from(), to = route.to(), road = route.roadField(),
                             departAt = departAt, seatsTotal = seats.toLong(), price = price,
                             acceptsParcels = parcels, note = note.trim()
                         )
@@ -198,7 +172,7 @@ private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
                         sending = false
                         if (ok) {
                             toast(ctx, "تم نشر الرحلة ✅")
-                            timeChosen = false
+                            minutes = -1
                             note = ""
                             onPublished()
                         } else {
@@ -209,28 +183,6 @@ private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
             }
         }
         Spacer(Modifier.height(8.dp))
-    }
-
-    if (showTime) {
-        val st = rememberTimePickerState(initialHour = hour, initialMinute = minute, is24Hour = false)
-        AlertDialog(
-            onDismissRequest = { showTime = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    hour = st.hour
-                    minute = st.minute
-                    timeChosen = true
-                    showTime = false
-                }) { Text("تم") }
-            },
-            dismissButton = { TextButton(onClick = { showTime = false }) { Text("إلغاء") } },
-            text = {
-                // The clock face reads better left-to-right
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                    TimePicker(state = st)
-                }
-            }
-        )
     }
 }
 

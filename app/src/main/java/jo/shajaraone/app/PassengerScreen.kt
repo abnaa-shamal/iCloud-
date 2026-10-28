@@ -75,9 +75,9 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
     val ctx = LocalContext.current
     var trips by remember { mutableStateOf<List<Trip>?>(null) }
     var failed by remember { mutableStateOf(false) }
-    var from by rememberSaveable { mutableStateOf(ALL) }
-    var to by rememberSaveable { mutableStateOf(ALL) }
-    var day by rememberSaveable { mutableStateOf(ALL) }
+    val route = rememberRouteState()
+    var day by rememberSaveable { mutableIntStateOf(-1) }
+    var mins by rememberSaveable { mutableIntStateOf(-1) }
     var booking by remember { mutableStateOf<Trip?>(null) }
     var tracking by remember { mutableStateOf<Trip?>(null) }
     var needVerify by remember { mutableStateOf(false) }
@@ -90,13 +90,12 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
         onDispose { r.remove() }
     }
 
-    val placeOptions = listOf(ALL to "الكل") + allPlaces.map { it to it }
-    val dayOptions = listOf(ALL to "كل الأيام") + nextDays()
     val now = System.currentTimeMillis()
     val shown = trips.orEmpty().filter { t ->
         t.captainUid.isNotBlank() && t.captainUid != me.uid && t.status != TRIP_CANCELLED && t.departAt > now &&
-            (from == ALL || t.from == from) && (to == ALL || t.to == to) &&
-            (day == ALL || dayOffsetOf(t.departAt) == day.toInt())
+            route.matches(t) &&
+            (day < 0 || dayOffsetOf(t.departAt) == day) &&
+            (mins < 0 || (t.departAt - dayStart(dayOffsetOf(t.departAt))) / 60_000L >= mins)
     }
 
     LazyColumn(
@@ -112,12 +111,12 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
         }
         item {
             AppCard {
-                SectionLabel("من")
-                ScrollChips(placeOptions, from) { from = it }
-                SectionLabel("إلى")
-                ScrollChips(placeOptions, to) { to = it }
+                RoutePicker(route, allowAll = true)
                 SectionLabel("متى؟")
-                ScrollChips(dayOptions, day) { day = it }
+                WhenPicker(
+                    dayOffset = day.takeIf { it >= 0 }, minutes = mins.takeIf { it >= 0 },
+                    onDay = { day = it ?: -1 }, onMinutes = { mins = it ?: -1 }, allowClear = true
+                )
             }
         }
         item {
@@ -347,7 +346,7 @@ private fun BookingDialog(t: Trip, me: UserProfile, onClose: () -> Unit, onBooke
                 } else {
                     OutlinedTextField(
                         value = other, onValueChange = { other = it.take(60) },
-                        label = { Text("نقطة النزول") }, placeholder = { Text("مثلاً: مجمع الشمال") },
+                        label = { Text(if (t.to == IRBID_OTHER) "وين بالضبط بإربد؟" else "نقطة النزول (اختياري)") }, placeholder = { Text("مثلاً: مجمع الشمال") },
                         singleLine = true, shape = MaterialTheme.shapes.medium,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -358,10 +357,10 @@ private fun BookingDialog(t: Trip, me: UserProfile, onClose: () -> Unit, onBooke
                 val dropoff = if (areas != null && point.isNotBlank() && point != OTHER_PLACE) point
                     else if (areas != null && point.isBlank()) ANY_PLACE else other.trim()
                 when {
-                    dropoff.isBlank() -> toast(ctx, "اكتب نقطة النزول")
+                    dropoff.isBlank() && t.to == IRBID_OTHER -> toast(ctx, "اكتب نقطة النزول")
                     else -> {
                         sending = true
-                        Repo.book(t, me, picked.size.toLong(), dropoff) { ok ->
+                        Repo.book(t, me, picked.size.toLong(), dropoff.ifBlank { ANY_PLACE }) { ok ->
                             sending = false
                             if (ok) {
                                 AppFeedback.success(ctx)

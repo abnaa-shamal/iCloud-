@@ -106,6 +106,30 @@ class DesignShotsTest {
         }
     }
 
+    @Test fun routeSouthRoad() = shot("10-route-north-to-south") {
+        Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            AppCard {
+                RoutePicker(RouteState(kind = KIND_NS, north = "الشجرة", road = "طريق صويلح", south = "دابوق"), allowAll = false)
+            }
+        }
+    }
+
+    @Test fun routeInsideNorth() = shot("11-route-inside-north") {
+        Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            AppCard {
+                RoutePicker(RouteState(kind = KIND_NN, north = "الرمثا", spot = IRBID_OTHER), allowAll = true)
+            }
+        }
+    }
+
+    @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+    @Test fun calendarAndClock() = shot("12-calendar") {
+        Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            AppCard { WhenPicker(dayOffset = 2, minutes = 7 * 60 + 30, onDay = {}, onMinutes = {}, allowClear = false) }
+            androidx.compose.material3.DatePicker(state = androidx.compose.material3.rememberDatePickerState(initialSelectedDateMillis = pickerMillisOfOffset(2)))
+        }
+    }
+
     @Test fun riderTrips() = shot("2-rider-trips") {
         Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             AppCard { TripInfo(t1) }
