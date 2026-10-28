@@ -91,6 +91,43 @@ class DesignShotsTest {
         }
     }
 
+    private fun ledgerShot(name: String, content: @Composable () -> Unit) {
+        rule.mainClock.autoAdvance = false
+        rule.setContent { LedgerTheme { content() } }
+        rule.mainClock.advanceTimeBy(400)
+        val bmp = rule.onRoot().captureToImage().asAndroidBitmap()
+        val dir = File("build/design-shots").apply { mkdirs() }
+        File(dir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
+    @Test fun ledgerHome() = ledgerShot("L1-ledger-home") {
+        Column(Modifier.fillMaxSize()) {
+            LedgerTopBar("أهلاً محمد", "أبناء الشمال")
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                LedgerSearchBar("الشجرة  ←  إربد  •  اليوم") {}
+                Text("2 رحلة متاحة", style = MaterialTheme.typography.titleMedium)
+                listOf(t1, t2).forEach { t ->
+                    TicketCard(t) {
+                        LedgerPrimaryButton("احجز مقعد", {})
+                        LedgerSecondaryRow(listOf("الموقع", "اتصال", "واتساب"))
+                    }
+                }
+            }
+        }
+    }
+
+    @Test fun ledgerSeats() = ledgerShot("L2-ledger-seats") {
+        Column(Modifier.fillMaxSize()) {
+            LedgerTopBar("اختر مقعدك", "الشجرة ← إربد")
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                LedgerSeatChart(total = 7, taken = setOf(1, 4), picked = setOf(2, 3))
+                LedgerLegend()
+                Text("اخترت مقعدين: 02 ، 03", style = MaterialTheme.typography.titleMedium)
+                LedgerPrimaryButton("أرسل الطلب", {})
+            }
+        }
+    }
+
     @Test fun riderUnverified() = shot("9-rider-unverified") {
         val places = listOf("all" to "الكل", "1" to "الشجرة", "2" to "الذنيبة", "3" to "عمراوة", "4" to "الطرة", "5" to "الرمثا", "6" to "إربد", "7" to "عمّان", "8" to "الزرقاء")
         Column(Modifier.fillMaxSize()) {
