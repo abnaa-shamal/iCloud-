@@ -170,3 +170,14 @@ jobs:
           VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY || 'ci-placeholder' }}
           VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID || 'ci-placeholder' }}
           VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID || 'ci-placeholder' }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+      # Ready-to-deploy folder for Firebase Hosting (free): public/ = the built dashboard, firebase.json = hosting settings
+      - name: Prepare admin-site (Firebase Hosting)
+        run: |
+          mkdir -p ../admin-site/public
+          cp -r dist/* ../admin-site/public/
+          printf '%s' '{"hosting":{"public":"public","ignore":["firebase.json","**/.*"],"rewrites":[{"source":"**","destination":"/index.html"}]}}' > ../admin-site/firebase.json
+      - uses: actions/upload-artifact@v5
+        with:
+          name: admin-site
+          path: admin-site
