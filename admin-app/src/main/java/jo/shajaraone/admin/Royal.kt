@@ -74,8 +74,8 @@ fun RoyalFooter(modifier: Modifier = Modifier) {
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            "Developed by Abotala  ◆  Managed by Abotala",
-            color = Royal.Gold, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, letterSpacing = 0.5.sp, textAlign = TextAlign.Center
+            "Developed by Khubaib Alramdan  ◆  Managed by Khubaib Alramdan",
+            color = Royal.Gold, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp, letterSpacing = 0.5.sp, textAlign = TextAlign.Center
         )
         Text("أبناء الشمال", color = Royal.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
     }
