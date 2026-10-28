@@ -20,16 +20,9 @@
   --info: #B9B2FF; --info-bg: rgba(185, 178, 255, .16);
   --shadow: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 10px 30px rgba(3, 5, 25, .35);
   --glow: 0 6px 22px rgba(107, 75, 255, .45);
-  --blur: blur(14px);
+  --blur: none; /* light mode: no glass blur, much easier on slow phones */
   --r: 20px;
-  --page-bg:
-    radial-gradient(1px 1px at 12% 18%, #fff, transparent), radial-gradient(1px 1px at 82% 12%, #fff, transparent),
-    radial-gradient(1.5px 1.5px at 64% 34%, #cfd3ff, transparent), radial-gradient(1px 1px at 30% 62%, #fff, transparent),
-    radial-gradient(1px 1px at 90% 72%, #fff, transparent), radial-gradient(1.5px 1.5px at 8% 86%, #cfd3ff, transparent),
-    radial-gradient(1px 1px at 48% 8%, #fff, transparent), radial-gradient(1px 1px at 72% 90%, #fff, transparent),
-    radial-gradient(900px 620px at 8% 0%, rgba(107, 75, 255, .38), transparent 62%),
-    radial-gradient(820px 640px at 100% 45%, rgba(45, 226, 192, .20), transparent 62%),
-    linear-gradient(180deg, #0B1030, #0A1B2E);
+  --page-bg: radial-gradient(700px 420px at 10% 0%, rgba(107, 75, 255, .32), transparent 65%), linear-gradient(180deg, #0B1030, #0A1B2E);
   color-scheme: dark;
 }
 :root[data-theme='light'] {
@@ -60,7 +53,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body {
-  background: var(--page-bg); background-color: var(--bg); background-attachment: fixed; color: var(--text);
+  background: var(--page-bg); background-color: var(--bg); background-attachment: scroll; color: var(--text);
   font-family: 'Tajawal', system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
@@ -171,7 +164,7 @@ a { color: inherit; }
 .splash { min-height: 100svh; display: grid; place-items: center; font-size: 56px; animation: pulse 1.2s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .4; transform: scale(.94); } }
 .skeleton { display: grid; gap: 12px; }
-.skeleton i { height: 84px; border-radius: var(--r); background: linear-gradient(90deg, var(--surface-2), var(--surface), var(--surface-2)); background-size: 200% 100%; animation: shine 1.3s linear infinite; }
+.skeleton i { height: 84px; border-radius: var(--r); background: linear-gradient(90deg, var(--surface-2), var(--surface), var(--surface-2)); background-size: 200% 100%; animation: none; }
 @keyframes shine { to { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) { .splash, .skeleton i { animation: none; } }
 
