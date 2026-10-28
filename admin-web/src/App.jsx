@@ -594,6 +594,8 @@ function Dashboard({ user }) {
   const bookings = useCollection('bookings', true);
   const loadError = users.error || trips.error || bookings.error;
   const ready = users.rows && trips.rows && bookings.rows;
+  const [slow, setSlow] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setSlow(true), 10000); return () => clearTimeout(t); }, []);
   const pendingCount = (users.rows || []).filter((u) => u.role === 'captain' && u.status === 'pending').length;
 
   const act = async (fn, okText) => {
@@ -625,6 +627,7 @@ function Dashboard({ user }) {
         <h1 className="page-title">{NAV.find((n) => n.key === page).label}</h1>
         {loadError && <div className="alert bad">تعذّر تحميل البيانات: {loadError}</div>}
         {!ready && !loadError && <div className="skeleton"><i /><i /><i /></div>}
+        {!ready && !loadError && slow && <div className="alert warn" role="status">التحميل تأخر. تأكد من الإنترنت، وجرّب تحديث الصفحة.</div>}
         {ready && page === 'overview' && <Overview users={users.rows} trips={trips.rows} bookings={bookings.rows} go={setPage} />}
         {ready && page === 'captains' && <Captains users={users.rows} trips={trips.rows} bookings={bookings.rows} act={act} />}
         {ready && page === 'riders' && <Riders users={users.rows} act={act} />}
