@@ -341,9 +341,13 @@ private fun BookingDialog(t: Trip, me: UserProfile, onClose: () -> Unit, onBooke
                         Repo.book(t, me, picked.size.toLong(), dropoff) { ok ->
                             sending = false
                             if (ok) {
+                                AppFeedback.success(ctx)
                                 toast(ctx, "تم إرسال طلبك، الكابتن رح يرد عليك")
                                 onBooked()
-                            } else toast(ctx, "ما قدرت أرسل، تأكد من الإنترنت")
+                            } else {
+                                AppFeedback.error(ctx)
+                                toast(ctx, "ما قدرت أرسل، تأكد من الإنترنت")
+                            }
                         }
                     }
                 }

@@ -472,8 +472,9 @@ fun LoadingBox() {
 /** Primary action: solid violet, white label. */
 @Composable
 fun BigButton(text: String, enabled: Boolean = true, onClick: () -> Unit) {
+    val ctx = LocalContext.current
     Surface(
-        onClick = onClick, enabled = enabled,
+        onClick = { AppFeedback.tap(ctx); onClick() }, enabled = enabled,
         shape = RoundedCornerShape(16.dp),
         color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
         contentColor = Color.White,

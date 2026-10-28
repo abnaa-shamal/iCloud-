@@ -40,6 +40,13 @@ fun CaptainHome(me: UserProfile) {
         onDispose { r.remove() }
     }
     val pending = bookings.count { it.status == BK_PENDING && it.departAt > System.currentTimeMillis() }
+    // Feedback when a NEW request arrives (not on the first load).
+    val feedbackCtx = LocalContext.current
+    var lastPending by remember { mutableIntStateOf(-1) }
+    LaunchedEffect(pending) {
+        if (lastPending >= 0 && pending > lastPending) AppFeedback.newRequest(feedbackCtx)
+        lastPending = pending
+    }
     Column(Modifier.fillMaxSize()) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             if (tab == 0) MyTrips(me, onPublish = { tab = 1 }) else PublishTrip(me, onPublished = { tab = 0 })
