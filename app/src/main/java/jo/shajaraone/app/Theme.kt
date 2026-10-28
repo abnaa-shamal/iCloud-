@@ -22,26 +22,40 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
-// Palette: deep olive-green (the village tree), warm amber (the road sun), warm paper background.
+/**
+ * THE place to change the app's colors. Every screen and component reads these names instead of hex values,
+ * so a new look is mostly a matter of editing this block (plus NightColors below for the Material roles).
+ */
+object Brand {
+    val Violet = Color(0xFF6B4BFF)       // main actions, selected items, logo
+    val VioletSoft = Color(0xFF8E86FF)   // outlines and the car drawing
+    val VioletLight = Color(0xFFB9B2FF)  // subtitles, selected navigation, soft highlights
+    val Teal = Color(0xFF2DE2C0)         // highlights: prices, free seats, links, live status
+    val Navy = Color(0xFF0B1030)         // base background
+    val Ink = Color(0xFFF5F6FF)          // main text
+    val Muted = Color(0xFFB7BBE0)        // secondary text
+    val OnTeal = Color(0xFF06251F)       // text on top of teal
+}
+
 // "Night" palette: deep navy, violet actions, teal highlights. The app is always dark.
 private val NightColors = darkColorScheme(
-    primary = Color(0xFF6B4BFF),
+    primary = Brand.Violet,
     onPrimary = Color.White,
     primaryContainer = Color(0xFF2A2370),
     onPrimaryContainer = Color(0xFFE4DEFF),
-    secondary = Color(0xFF2DE2C0),
-    onSecondary = Color(0xFF06251F),
+    secondary = Brand.Teal,
+    onSecondary = Brand.OnTeal,
     secondaryContainer = Color(0xFF0F4D47),
     onSecondaryContainer = Color(0xFFB9F6EA),
     tertiary = Color(0xFFFF8A7A),
     tertiaryContainer = Color(0xFF5A2018),
     onTertiaryContainer = Color(0xFFFFDAD3),
-    background = Color(0xFF0B1030),
-    onBackground = Color(0xFFF5F6FF),
-    surface = Color(0xFF0B1030),
-    onSurface = Color(0xFFF5F6FF),
+    background = Brand.Navy,
+    onBackground = Brand.Ink,
+    surface = Brand.Navy,
+    onSurface = Brand.Ink,
     surfaceVariant = Color(0xFF2A2F5C),
-    onSurfaceVariant = Color(0xFFB7BBE0),
+    onSurfaceVariant = Brand.Muted,
     surfaceContainerLowest = Color(0xFF11163A),
     surfaceContainerLow = Color(0xFF151A42),
     surfaceContainer = Color(0xFF1B2050),
@@ -117,8 +131,8 @@ fun AppBackground(content: @Composable () -> Unit) {
                     radius = rad, center = androidx.compose.ui.geometry.Offset(cx * w + dx, cy * h + dy)
                 )
             }
-            orb(0.15f, 0.18f, w * 0.75f, Color(0xFF6B4BFF), 0f)
-            orb(0.92f, 0.52f, w * 0.7f, Color(0xFF2DE2C0), 0.33f)
+            orb(0.15f, 0.18f, w * 0.75f, Brand.Violet, 0f)
+            orb(0.92f, 0.52f, w * 0.7f, Brand.Teal, 0.33f)
             orb(0.25f, 0.92f, w * 0.8f, Color(0xFF2F6BFF), 0.66f)
             stars.forEach { s ->
                 val a = 0.25f + 0.75f * ((kotlin.math.sin((tw + s[3]) * two) + 1f) / 2f)
@@ -126,7 +140,7 @@ fun AppBackground(content: @Composable () -> Unit) {
             }
         }
         androidx.compose.runtime.CompositionLocalProvider(
-            androidx.compose.material3.LocalContentColor provides Color(0xFFF5F6FF)
+            androidx.compose.material3.LocalContentColor provides Brand.Ink
         ) { content() }
     }
 }

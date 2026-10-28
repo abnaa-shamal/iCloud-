@@ -27,19 +27,19 @@ private fun Brand() {
         GlowTitle(WELCOME_LINE, fontSize = 34.sp)
         Text(
             if (IS_CAPTAIN_APP) "تطبيق الكابتن" else "سجّل دخولك وكمّل مشوارك",
-            color = Color(0xFFB9B2FF), style = MaterialTheme.typography.bodyLarge
+            color = Brand.VioletLight, style = MaterialTheme.typography.bodyLarge
         )
     }
 }
 
 @Composable
 private fun glassFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = Color(0xFF2DE2C0),
+    focusedBorderColor = Brand.Teal,
     unfocusedBorderColor = Color.White.copy(alpha = 0.22f),
     focusedContainerColor = Color.White.copy(alpha = 0.10f),
     unfocusedContainerColor = Color.White.copy(alpha = 0.06f),
-    cursorColor = Color(0xFF2DE2C0),
-    focusedLabelColor = Color(0xFF2DE2C0),
+    cursorColor = Brand.Teal,
+    focusedLabelColor = Brand.Teal,
     unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
     focusedTextColor = Color.White,
     unfocusedTextColor = Color.White
@@ -86,12 +86,12 @@ fun AuthScreen() {
         if (registering) {
             ProfileForm(needAccount = true)
             TextButton(onClick = { registering = false }, modifier = Modifier.fillMaxWidth()) {
-                Text("عندي حساب، بدي أسجّل دخول", color = Color(0xFF2DE2C0))
+                Text("عندي حساب، بدي أسجّل دخول", color = Brand.Teal)
             }
         } else {
             LoginForm()
             TextButton(onClick = { registering = true }, modifier = Modifier.fillMaxWidth()) {
-                Text("ما عندي حساب، بدي أسجّل جديد", color = Color(0xFF2DE2C0))
+                Text("ما عندي حساب، بدي أسجّل جديد", color = Brand.Teal)
             }
         }
     }

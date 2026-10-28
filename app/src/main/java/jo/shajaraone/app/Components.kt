@@ -39,22 +39,22 @@ import androidx.compose.ui.unit.sp
 
 /** Bottom bar styling shared by the rider and captain apps: deep navy, violet-tinted selection, teal badge. */
 @Composable
-fun navBarColor(): Color = Color(0xFF0B1030).copy(alpha = 0.94f)
+fun navBarColor(): Color = Brand.Navy.copy(alpha = 0.94f)
 
 @Composable
 fun navItemColors() = NavigationBarItemDefaults.colors(
-    selectedIconColor = Color(0xFFB9B2FF),
-    selectedTextColor = Color(0xFFB9B2FF),
+    selectedIconColor = Brand.VioletLight,
+    selectedTextColor = Brand.VioletLight,
     unselectedIconColor = Color.White.copy(alpha = 0.55f),
     unselectedTextColor = Color.White.copy(alpha = 0.55f),
-    indicatorColor = Color(0xFF6B4BFF).copy(alpha = 0.28f)
+    indicatorColor = Brand.Violet.copy(alpha = 0.28f)
 )
 
 // ===== Selection chips =====
 
-val SignYellow = Color(0xFF2DE2C0)
-val SignGreen = Color(0xFF6B4BFF)
-val BoardBlack = Color(0xFF0B1030)
+val SignYellow = Brand.Teal
+val SignGreen = Brand.Violet
+val BoardBlack = Brand.Navy
 
 /** Ink color for borders and hard shadows (near-black in light mode, light in dark mode). */
 @Composable
@@ -163,7 +163,7 @@ fun Pill(text: String, container: Color, content: Color) {
 fun PricePill(price: Double?) {
     Text(
         priceText(price),
-        color = Color(0xFF06251F),
+        color = Brand.OnTeal,
         style = MaterialTheme.typography.titleSmall,
         modifier = Modifier
             .background(SignYellow, RoundedCornerShape(10.dp))
@@ -176,7 +176,7 @@ fun PricePill(price: Double?) {
 /** A top-view car seat: glass outline when free, violet when picked, dim with a lock when taken. */
 @Composable
 fun SeatShape(state: SeatState, size: Dp = 30.dp, label: String? = null, onClick: (() -> Unit)? = null) {
-    val violet = Color(0xFF6B4BFF)
+    val violet = Brand.Violet
     val fill = when (state) {
         SeatState.FREE -> Color.White.copy(alpha = 0.06f)
         SeatState.TAKEN -> Color.White.copy(alpha = 0.10f)
@@ -184,8 +184,8 @@ fun SeatShape(state: SeatState, size: Dp = 30.dp, label: String? = null, onClick
         SeatState.DRIVER -> Color.White.copy(alpha = 0.05f)
     }
     val line = when (state) {
-        SeatState.FREE -> Color(0xFF8E86FF).copy(alpha = 0.75f)
-        SeatState.PICKED -> Color(0xFFB9B2FF)
+        SeatState.FREE -> Brand.VioletSoft.copy(alpha = 0.75f)
+        SeatState.PICKED -> Brand.VioletLight
         SeatState.TAKEN -> Color.White.copy(alpha = 0.18f)
         SeatState.DRIVER -> Color.White.copy(alpha = 0.28f)
     }
@@ -329,7 +329,7 @@ fun TimeBlock(millis: Long) {
 /** A highway-style sign: green panel, white inner frame, destination big, origin small. */
 @Composable
 fun RoadSign(from: String, to: String, road: String = "", modifier: Modifier = Modifier) {
-    Box(modifier.background(Brush.linearGradient(listOf(Color(0xFF6B4BFF), Color(0xFF3D2BD6))), RoundedCornerShape(18.dp)).padding(5.dp)) {
+    Box(modifier.background(Brush.linearGradient(listOf(Brand.Violet, Color(0xFF3D2BD6))), RoundedCornerShape(18.dp)).padding(5.dp)) {
         Column(
             Modifier.fillMaxWidth()
                 .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
@@ -362,13 +362,13 @@ fun TripInfo(t: Trip, showCaptain: Boolean = true) {
                 }
                 Text("${t.from}  ←  ${t.to}", style = MaterialTheme.typography.titleMedium)
                 if (t.road.isNotBlank()) {
-                    Text("عن طريق ${t.road}", style = MaterialTheme.typography.bodyMedium, color = Color(0xFFB9B2FF))
+                    Text("عن طريق ${t.road}", style = MaterialTheme.typography.bodyMedium, color = Brand.VioletLight)
                 }
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     priceText(t.price), style = MaterialTheme.typography.titleLarge,
-                    color = Color(0xFF2DE2C0), fontWeight = FontWeight.Bold
+                    color = Brand.Teal, fontWeight = FontWeight.Bold
                 )
                 if (t.price != null) Text("للمقعد", style = MaterialTheme.typography.labelMedium, color = cs.onSurfaceVariant)
             }
@@ -393,7 +393,7 @@ fun TripInfo(t: Trip, showCaptain: Boolean = true) {
                     SeatsRow(t.seatsTotal, t.seatsFree)
                     Text(
                         "${seatsText(t.seatsFree)} شاغرة", style = MaterialTheme.typography.labelLarge,
-                        color = Color(0xFF2DE2C0), fontWeight = FontWeight.Bold
+                        color = Brand.Teal, fontWeight = FontWeight.Bold
                     )
                 }
             }
@@ -443,7 +443,7 @@ fun HeroHeader(title: String, subtitle: String, trailing: @Composable (() -> Uni
                 trailing?.invoke()
             }
         }
-        Box(Modifier.fillMaxWidth().height(2.dp).background(Brush.horizontalGradient(listOf(Color(0xFF6B4BFF), Color(0xFF2DE2C0)))))
+        Box(Modifier.fillMaxWidth().height(2.dp).background(Brush.horizontalGradient(listOf(Brand.Violet, Brand.Teal))))
     }
 }
 

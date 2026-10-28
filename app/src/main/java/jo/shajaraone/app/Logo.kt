@@ -13,8 +13,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-private val LogoViolet = Color(0xFF6B4BFF)
-private val LogoTeal = Color(0xFF2DE2C0)
+private val LogoViolet = Brand.Violet
+private val LogoTeal = Brand.Teal
 
 /** The app mark: two northern peaks (violet and teal) with a road winding between them and a small star. Drawn in code so it stays sharp at any size. */
 @Composable
@@ -46,7 +46,7 @@ fun AppLogo(size: Dp = 56.dp, modifier: Modifier = Modifier) {
             moveTo(w * 0.30f, h * 0.90f)
             cubicTo(w * 0.62f, h * 0.80f, w * 0.18f, h * 0.60f, w * 0.40f, h * 0.44f)
         }
-        drawPath(road, Color(0xFF0B1030), style = Stroke(width = w * 0.085f, cap = StrokeCap.Round))
+        drawPath(road, Brand.Navy, style = Stroke(width = w * 0.085f, cap = StrokeCap.Round))
         drawPath(
             road, Color.White.copy(alpha = 0.9f),
             style = Stroke(

@@ -56,7 +56,7 @@ fun LiveTrackDialog(tripId: String, captainName: String, captainPhone: String = 
                 Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("موقع الكابتن", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                        Text("لحجزك المؤكد فقط", style = MaterialTheme.typography.bodyMedium, color = Color(0xFFB9B2FF))
+                        Text("لحجزك المؤكد فقط", style = MaterialTheme.typography.bodyMedium, color = Brand.VioletLight)
                     }
                     TextButton(onClick = onClose) { Text("إغلاق") }
                 }
@@ -101,7 +101,7 @@ internal fun LiveInfo(live: LiveLoc?, me: Location?, nowMs: Long, captainName: S
             if (live != null) {
                 val age = ((nowMs - live.updatedAt) / 1000).coerceAtLeast(0)
                 val stale = age > 60
-                val tone = if (stale) cs.error else Color(0xFF2DE2C0)
+                val tone = if (stale) cs.error else Brand.Teal
                 Column(
                     Modifier.background(tone.copy(alpha = 0.12f), RoundedCornerShape(14.dp)).padding(horizontal = 12.dp, vertical = 6.dp),
                     horizontalAlignment = Alignment.Start

@@ -106,7 +106,7 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
         item {
             Column(Modifier.padding(horizontal = 4.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text("وين مشوارك؟", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                Text("اختر وجهتك، والباقي بسيط", style = MaterialTheme.typography.bodyLarge, color = Color(0xFFB9B2FF))
+                Text("اختر وجهتك، والباقي بسيط", style = MaterialTheme.typography.bodyLarge, color = Brand.VioletLight)
             }
         }
         item {
@@ -186,7 +186,7 @@ internal fun CarSeatMap(total: Int, free: Int, picked: Set<Int>, onToggle: (Int)
         else -> SeatState.FREE
     }
     val seat = 50.dp
-    val body = Color(0xFF8E86FF)
+    val body = Brand.VioletSoft
     Box(
         Modifier
             .width(236.dp)
@@ -251,9 +251,9 @@ internal fun SeatLegend() {
             .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(16.dp)).padding(vertical = 10.dp),
         horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically
     ) {
-        LegendItem("شاغر") { Box(Modifier.size(18.dp).border(1.5.dp, Color(0xFF8E86FF), CircleShape)) }
+        LegendItem("شاغر") { Box(Modifier.size(18.dp).border(1.5.dp, Brand.VioletSoft, CircleShape)) }
         LegendItem("محجوز") { Icon(Icons.Filled.Lock, null, tint = Color.White.copy(alpha = 0.6f), modifier = Modifier.size(18.dp)) }
-        LegendItem("اختيارك") { Box(Modifier.size(18.dp).background(Color(0xFF6B4BFF), CircleShape)) }
+        LegendItem("اختيارك") { Box(Modifier.size(18.dp).background(Brand.Violet, CircleShape)) }
     }
 }
 
@@ -306,7 +306,7 @@ private fun BookingDialog(t: Trip, me: UserProfile, onClose: () -> Unit, onBooke
             SeatLegend()
             Text(
                 "اخترت ${seatsText(picked.size.toLong())}",
-                style = MaterialTheme.typography.titleMedium, color = Color(0xFF2DE2C0)
+                style = MaterialTheme.typography.titleMedium, color = Brand.Teal
             )
 
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -325,11 +325,11 @@ internal fun StatTile(label: String, value: String, modifier: Modifier = Modifie
     Surface(
         modifier = modifier,
         shape = MaterialTheme.shapes.medium,
-        color = if (highlight) Color(0xFF6B4BFF).copy(alpha = 0.28f) else Color.White.copy(alpha = 0.07f),
-        border = BorderStroke(1.dp, if (highlight) Color(0xFF8E86FF).copy(alpha = 0.7f) else Color.White.copy(alpha = 0.14f))
+        color = if (highlight) Brand.Violet.copy(alpha = 0.28f) else Color.White.copy(alpha = 0.07f),
+        border = BorderStroke(1.dp, if (highlight) Brand.VioletSoft.copy(alpha = 0.7f) else Color.White.copy(alpha = 0.14f))
     ) {
         Column(Modifier.padding(14.dp)) {
-            Text(value, style = MaterialTheme.typography.headlineSmall, color = if (highlight) Color(0xFF2DE2C0) else Color.White)
+            Text(value, style = MaterialTheme.typography.headlineSmall, color = if (highlight) Brand.Teal else Color.White)
             Text(label, style = MaterialTheme.typography.labelMedium, color = cs.onSurfaceVariant)
         }
     }
@@ -410,10 +410,10 @@ internal fun LiveShareControl(t: Trip) {
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Box(
-                Modifier.size(40.dp).background((if (sharing) Color(0xFF2DE2C0) else Color.White).copy(alpha = 0.14f), CircleShape),
+                Modifier.size(40.dp).background((if (sharing) Brand.Teal else Color.White).copy(alpha = 0.14f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Filled.LocationOn, null, tint = if (sharing) Color(0xFF2DE2C0) else Color.White.copy(alpha = 0.7f))
+                Icon(Icons.Filled.LocationOn, null, tint = if (sharing) Brand.Teal else Color.White.copy(alpha = 0.7f))
             }
             Column(Modifier.weight(1f)) {
                 Text(if (sharing) "المشاركة شغّالة" else "المشاركة متوقفة", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -435,7 +435,7 @@ internal fun LiveShareControl(t: Trip) {
             }
         }
         if (!sharing && active == null) {
-            Text("جهّز مشوارك قبل القيادة", style = MaterialTheme.typography.bodySmall, color = Color(0xFFB9B2FF), modifier = Modifier.align(Alignment.CenterHorizontally))
+            Text("جهّز مشوارك قبل القيادة", style = MaterialTheme.typography.bodySmall, color = Brand.VioletLight, modifier = Modifier.align(Alignment.CenterHorizontally))
         }
     }
 }
