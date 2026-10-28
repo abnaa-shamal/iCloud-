@@ -250,3 +250,84 @@ fun LedgerLegend() {
         }
     }
 }
+
+// ===== Welcome screen: two question cards =====
+
+/** Header with a soft ochre glow so the olive is not flat. */
+@Composable
+fun LedgerWelcomeHeader(greeting: String, line: String) {
+    Box(
+        Modifier.fillMaxWidth().background(
+            androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color(0xFF1C3226), Ledger.Olive, Color(0xFF3C5B49)))
+        )
+    ) {
+        Canvas(Modifier.matchParentSize()) {
+            drawCircle(
+                androidx.compose.ui.graphics.Brush.radialGradient(
+                    listOf(Ledger.Ochre.copy(alpha = 0.40f), Color.Transparent),
+                    center = Offset(size.width * 0.15f, size.height * 0.1f), radius = size.width * 0.7f
+                ),
+                radius = size.width * 0.7f, center = Offset(size.width * 0.15f, size.height * 0.1f)
+            )
+        }
+        Column(Modifier.statusBarsPadding().padding(horizontal = 20.dp, vertical = 22.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("أبناء الشمال", color = Ledger.Ochre, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
+            Text(greeting, color = Ledger.Parchment, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold)
+            Text(line, color = Ledger.Parchment.copy(alpha = 0.8f), fontSize = 15.sp)
+        }
+        Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(3.dp).background(Ledger.Ochre))
+    }
+}
+
+/** One question as a card: number, question, the answer (or a hint), a chevron. */
+@Composable
+fun LedgerStepCard(step: String, question: String, answer: String?, hint: String, enabled: Boolean = true, content: (@Composable ColumnScope.() -> Unit)? = null) {
+    val shape = RoundedCornerShape(10.dp)
+    Column(
+        Modifier.fillMaxWidth().background(if (enabled) Ledger.Stock else Ledger.Pressed.copy(alpha = 0.5f), shape)
+            .border(if (answer == null && enabled) 1.5.dp else 1.dp, if (answer == null && enabled) Ledger.Olive else Ledger.Rule, shape)
+            .padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Box(
+                Modifier.size(38.dp).background(if (enabled) Ledger.Olive else Ledger.Rule, androidx.compose.foundation.shape.CircleShape),
+                contentAlignment = Alignment.Center
+            ) { Text(step, color = Color.White, fontFamily = numberFont, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp) }
+            Column(Modifier.weight(1f)) {
+                Text(question, style = MaterialTheme.typography.titleLarge, color = if (enabled) Ledger.Basalt else Ledger.Muted)
+                Text(answer ?: hint, fontSize = 14.sp, color = if (answer != null) Ledger.Terracotta else Ledger.Muted,
+                    fontWeight = if (answer != null) FontWeight.ExtraBold else FontWeight.Normal)
+            }
+            Text(if (content != null) "⌃" else "⌄", fontSize = 22.sp, color = Ledger.Olive, fontWeight = FontWeight.ExtraBold)
+        }
+        if (content != null) content()
+    }
+}
+
+/** Big answer button with a plain-words explanation, for people who do not know «شمال/جنوب» or road names. */
+@Composable
+fun LedgerChoice(title: String, explain: String, selected: Boolean = false) {
+    val shape = RoundedCornerShape(8.dp)
+    Column(
+        Modifier.fillMaxWidth().background(if (selected) Ledger.Olive else Ledger.Parchment, shape)
+            .border(1.5.dp, if (selected) Ledger.Olive else Ledger.Rule, shape).padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        Text(title, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = if (selected) Ledger.Parchment else Ledger.Basalt)
+        Text(explain, fontSize = 13.sp, lineHeight = 19.sp, color = if (selected) Ledger.Parchment.copy(alpha = 0.85f) else Ledger.Muted)
+    }
+}
+
+/** «Not sure of the road? type the place»: the road is found from the stop name. */
+@Composable
+fun LedgerFindBox(hint: String) {
+    Row(
+        Modifier.fillMaxWidth().background(Ledger.Stock, RoundedCornerShape(8.dp)).border(1.5.dp, Ledger.Ochre, RoundedCornerShape(8.dp))
+            .padding(horizontal = 14.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Text("🔍", fontSize = 18.sp)
+        Text(hint, color = Ledger.Muted, fontSize = 15.sp)
+    }
+}

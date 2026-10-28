@@ -128,6 +128,44 @@ class DesignShotsTest {
         }
     }
 
+    @Test fun ledgerWelcome() = ledgerShot("L3-welcome") {
+        Column(Modifier.fillMaxSize()) {
+            LedgerWelcomeHeader("أهلاً محمد", "وين رايح اليوم؟")
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                LedgerStepCard("1", "أنت وين هسه؟", null, "اضغط واختار مكانك")
+                LedgerStepCard("2", "لوين رايح؟", null, "اختار مكانك أول", enabled = false)
+            }
+        }
+    }
+
+    @Test fun ledgerWhereOpen() = ledgerShot("L4-where-open") {
+        Column(Modifier.fillMaxSize()) {
+            LedgerWelcomeHeader("أهلاً محمد", "وين رايح اليوم؟")
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                LedgerStepCard("1", "أنت وين هسه؟", null, "") {
+                    LedgerChoice("أنا بالشمال", "إربد، الرمثا، المفرق، الشجرة، الطرة، عمراوة، الذنيبة، المغيّر...")
+                    LedgerChoice("أنا بعمّان أو الزرقاء", "صويلح، خلدا، الجامعة الأردنية، الشميساني، رصيفة، سحاب...")
+                }
+                LedgerStepCard("2", "لوين رايح؟", null, "اختار مكانك أول", enabled = false)
+            }
+        }
+    }
+
+    @Test fun ledgerRoads() = ledgerShot("L5-roads") {
+        Column(Modifier.fillMaxSize()) {
+            LedgerWelcomeHeader("أهلاً محمد", "وين رايح اليوم؟")
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                LedgerStepCard("1", "أنت وين هسه؟", "عمّان أو الزرقاء", "") {
+                    LedgerFindBox("اكتب اسم منطقتك (مثلاً: خلدا)")
+                    Text("أو اختار الطريق اللي بتركب منه:", fontSize = 13.sp, color = Ledger.Muted)
+                    LedgerChoice("طريق صويلح", "صويلح، دابوق، خلدا، المدينة الطبية، جسر ناعور، دوار السابع...")
+                    LedgerChoice("شارع الأردن", "الجامعة الأردنية، الشميساني، الجاردنز، الدوار الأول، مطار الملكة علياء...")
+                    LedgerChoice("طريق الزرقاء", "رصيفة، ماركا، الموقر، سحاب، طبربور...")
+                }
+            }
+        }
+    }
+
     @Test fun riderUnverified() = shot("9-rider-unverified") {
         val places = listOf("all" to "الكل", "1" to "الشجرة", "2" to "الذنيبة", "3" to "عمراوة", "4" to "الطرة", "5" to "الرمثا", "6" to "إربد", "7" to "عمّان", "8" to "الزرقاء")
         Column(Modifier.fillMaxSize()) {
