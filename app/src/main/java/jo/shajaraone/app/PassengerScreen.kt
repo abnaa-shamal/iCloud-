@@ -80,6 +80,7 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
     var day by rememberSaveable { mutableStateOf(ALL) }
     var booking by remember { mutableStateOf<Trip?>(null) }
     var tracking by remember { mutableStateOf<Trip?>(null) }
+    var needVerify by remember { mutableStateOf(false) }
 
     DisposableEffect(Unit) {
         val r = Repo.listenTrips(
@@ -150,7 +151,7 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
                                 )
                             }
                             t.isBookable -> Button(
-                                onClick = { booking = t },
+                                onClick = { if (me.verified) booking = t else needVerify = true },
                                 shape = MaterialTheme.shapes.medium,
                                 modifier = Modifier.weight(1f).height(48.dp)
                             ) { Text("احجز مقعد", style = MaterialTheme.typography.titleMedium) }
@@ -170,6 +171,28 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
     }
 
     tracking?.let { t -> LiveTrackDialog(t.id, t.captainName, t.captainPhone) { tracking = null } }
+
+    if (needVerify) {
+        val ctx = LocalContext.current
+        AlertDialog(
+            onDismissRequest = { needVerify = false },
+            title = { Text("وثّق رقمك أولاً") },
+            text = {
+                Text(
+                    if (me.verifyCode.isNotBlank()) "ما بتقدر تحجز قبل ما نتأكد من رقمك. ابعت الرمز ${me.verifyCode} من رقمك على واتساب الدعم، وأول ما المشرف يوثّقه بتفتحلك الحجوزات."
+                    else "ما بتقدر تحجز قبل ما نتأكد من رقمك. تواصل مع المشرف على واتساب ليوثّقه."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    needVerify = false
+                    if (me.verifyCode.isNotBlank()) sendVerifyWhatsApp(ctx, me)
+                    else openWhatsApp(ctx, SUPPORT_PHONE, "مرحبا، بدي أوثّق رقمي: ${me.phone}")
+                }) { Text("إرسال عبر واتساب") }
+            },
+            dismissButton = { TextButton(onClick = { needVerify = false }) { Text("لاحقاً") } }
+        )
+    }
 
     booking?.let { t ->
         BookingDialog(t, me, onClose = { booking = null }, onBooked = { booking = null; onBooked() })

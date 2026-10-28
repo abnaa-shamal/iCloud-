@@ -150,6 +150,7 @@ private fun HomeScaffold(me: UserProfile, onShowGuide: () -> Unit) {
                 }
             }
         )
+        if (!me.verified) VerifyBar(me)
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when {
                 IS_CAPTAIN_APP && me.isCaptain && me.status == USER_APPROVED -> CaptainHome(me)
@@ -157,7 +158,6 @@ private fun HomeScaffold(me: UserProfile, onShowGuide: () -> Unit) {
                 else -> PassengerHome(me) // rider app: approved captains also see the passenger screens
             }
         }
-        if (me.needsVerification) VerifyBar(me)
     }
 
     if (confirmLogout) {

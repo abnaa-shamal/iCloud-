@@ -30,9 +30,11 @@ service cloud.firestore {
     // The admin account has no passenger profile of its own (it is a separate account), so it is
     // allowed through here only for the admin's own seat-return writes; creating a booking still
     // needs a profile and therefore fails for the admin.
+    // Booking also needs a verified number: `verified` is set by the admin only, after the WhatsApp code arrived.
     function canBook() {
       return signedIn() && (isAdmin()
         || (hasProfile() && !riderBlocked(myProfile())
+            && myProfile().get('verified', false) == true
             && (myProfile().role == 'captain' || myProfile().status in ['active', 'approved'])));
     }
 

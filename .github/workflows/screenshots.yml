@@ -3,7 +3,7 @@ name: Design screenshots
 on:
   workflow_dispatch:
   push:
-    branches: [redesign, redesign-road, redesign-night, redesign-aurora, aurora-ready]
+    branches: [redesign, redesign-road, redesign-night, redesign-aurora, aurora-ready, verify-gate]
 
 permissions:
   contents: write

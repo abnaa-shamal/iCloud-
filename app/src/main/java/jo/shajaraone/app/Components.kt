@@ -95,12 +95,14 @@ fun ChoiceChips(options: List<String>, selected: String, onSelect: (String) -> U
     }
 }
 
-/** Chips in one horizontally scrolling line. */
+/** Chips that wrap onto more lines instead of running off the edge of the screen. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ScrollChips(options: List<Pair<String, String>>, selectedKey: String, onSelect: (String) -> Unit) {
-    Row(
-        Modifier.horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    FlowRow(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         options.forEach { (key, label) -> PillChip(label, key == selectedKey) { onSelect(key) } }
     }
@@ -508,31 +510,39 @@ fun ReasonDialog(title: String, confirmText: String, onDismiss: () -> Unit, onCo
 }
 
 
-/** Bottom bar: reverse number verification. One tap opens WhatsApp to the support number with the code ready. */
+/** Opens WhatsApp to the support number with the verification code ready (reverse number verification). */
+fun sendVerifyWhatsApp(ctx: android.content.Context, me: UserProfile) {
+    openWhatsApp(
+        ctx, SUPPORT_PHONE,
+        "رمز التحقق: ${me.verifyCode}\nالاسم: ${me.name}\nالرقم: ${me.phone}\n" +
+            if (IS_CAPTAIN_APP) "تطبيق الكابتن" else "تطبيق الراكب"
+    )
+}
+
+/** Glass card under the header: tells the user how to verify his number (WhatsApp code, or the admin). */
 @Composable
 fun VerifyBar(me: UserProfile) {
     val ctx = LocalContext.current
-    Surface(color = MaterialTheme.colorScheme.primaryContainer, tonalElevation = 3.dp) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text("وثّق رقمك", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                Text(
-                    "ابعت رمزك ${me.verifyCode} من رقمك على واتساب الدعم",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-            Button(onClick = {
-                openWhatsApp(
-                    ctx, SUPPORT_PHONE,
-                    "رمز التحقق: ${me.verifyCode}\nالاسم: ${me.name}\nالرقم: ${me.phone}\n" +
-                        if (IS_CAPTAIN_APP) "تطبيق الكابتن" else "تطبيق الراكب"
-                )
-            }) { Text("إرسال") }
-        }
+    val shape = RoundedCornerShape(20.dp)
+    Column(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+            .background(Brush.linearGradient(listOf(Brand.Violet.copy(alpha = 0.40f), Brand.Teal.copy(alpha = 0.14f))), shape)
+            .border(1.dp, Color.White.copy(alpha = 0.20f), shape)
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text("وثّق رقمك عشان تقدر تحجز", fontWeight = FontWeight.Bold, color = Brand.Ink)
+        Text(
+            if (me.verifyCode.isNotBlank()) "ابعت رمزك ${me.verifyCode} من رقمك على واتساب الدعم، وأول ما المشرف يتأكد بتفتحلك الحجوزات."
+            else "تواصل مع المشرف على واتساب عشان يوثّق رقمك.",
+            style = MaterialTheme.typography.bodySmall, color = Brand.Muted
+        )
+        Button(
+            onClick = {
+                if (me.verifyCode.isNotBlank()) sendVerifyWhatsApp(ctx, me)
+                else openWhatsApp(ctx, SUPPORT_PHONE, "مرحبا، بدي أوثّق رقمي: ${me.phone}")
+            },
+            shape = MaterialTheme.shapes.medium
+        ) { Text("إرسال الرمز عبر واتساب") }
     }
 }

@@ -82,6 +82,30 @@ class DesignShotsTest {
         }
     }
 
+    @Test fun riderUnverified() = shot("9-rider-unverified") {
+        val places = listOf("all" to "الكل", "1" to "الشجرة", "2" to "الذنيبة", "3" to "عمراوة", "4" to "الطرة", "5" to "الرمثا", "6" to "إربد", "7" to "عمّان", "8" to "الزرقاء")
+        Column(Modifier.fillMaxSize()) {
+            HeroHeader("أهلاً محمد", "أبناء الشمال • وين رايح اليوم؟")
+            VerifyBar(UserProfile(name = "محمد", phone = "0790000000", verifyCode = "432244"))
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                AppCard {
+                    Text("وين مشوارك؟", style = MaterialTheme.typography.titleLarge)
+                    SectionLabel("من")
+                    ScrollChips(places, "1") {}
+                    SectionLabel("إلى")
+                    ScrollChips(places, "6") {}
+                    SectionLabel("متى؟")
+                    ScrollChips(listOf("all" to "كل الأيام", "0" to "اليوم", "1" to "غداً", "2" to "بعد غد", "3" to "الجمعة"), "0") {}
+                }
+                AppCard {
+                    TripInfo(t1)
+                    HorizontalDivider()
+                    Button(onClick = {}, modifier = Modifier.fillMaxWidth().height(48.dp)) { Text("احجز مقعد") }
+                }
+            }
+        }
+    }
+
     @Test fun riderTrips() = shot("2-rider-trips") {
         Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             AppCard { TripInfo(t1) }
