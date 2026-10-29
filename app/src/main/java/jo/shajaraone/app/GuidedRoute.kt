@@ -54,7 +54,7 @@ fun GuidedRoutePicker(route: RouteState) {
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        LedgerStepCard("1", "أنت وين هسه؟", fromAnswer, "اضغط واختار مكانك", onToggle = { open = if (open == 1) 0 else 1 }, content = if (open == 1) ({
+        LedgerStepCard("1", "أنت وين هسه؟", fromAnswer, "اختار شمال أو جنوب. الباقي اختياري", onToggle = { open = if (open == 1) 0 else 1 }, content = if (open == 1) ({
             LedgerChoice("أنا بالشمال", "إربد، الرمثا، المفرق، الشجرة، الطرة، عمراوة، الذنيبة، المغيّر...", selected = side1 == "n") {
                 if (side1 != "n") { side1 = "n"; northFrom = ""; roadFrom = ""; stopFrom = ""; clearTo() }
             }
@@ -62,7 +62,7 @@ fun GuidedRoutePicker(route: RouteState) {
                 if (side1 != "s") { side1 = "s"; northFrom = ""; roadFrom = ""; stopFrom = ""; clearTo(); side2 = "n" }
             }
             if (side1 == "n") {
-                Text("اختار بلدك:", fontSize = 13.sp, color = Ledger.Muted)
+                Text("اختار بلدك (اختياري):", fontSize = 13.sp, color = Ledger.Muted)
                 ChoiceChips(northPlaces, northFrom) { northFrom = it; clearTo(); open = 2 }
             }
             if (side1 == "s") {
@@ -70,8 +70,8 @@ fun GuidedRoutePicker(route: RouteState) {
             }
         }) else null)
 
-        val ready = side1 == "n" && northFrom.isNotBlank() || side1 == "s" && roadFrom.isNotBlank()
-        LedgerStepCard("2", "لوين رايح؟", toAnswer, if (ready) "اضغط واختار وجهتك" else "اختار مكانك أول", enabled = ready,
+        val ready = side1.isNotBlank()
+        LedgerStepCard("2", "لوين رايح؟", toAnswer, if (ready) "اختياري: حدد وجهتك أو اتركها وشوف كل الرحلات" else "اختار مكانك أول", enabled = ready,
             onToggle = { open = if (open == 2) 0 else 2 }, content = if (open == 2 && ready) ({
                 if (side1 == "n") {
                     LedgerChoice("عمّان أو الزرقاء", "صويلح، شارع الأردن، طريق الزرقاء...", selected = side2 == "s") {
@@ -92,7 +92,7 @@ fun GuidedRoutePicker(route: RouteState) {
                         "village" -> ChoiceChips(northVillages, northTo) { northTo = it; open = 0 }
                     }
                 } else {
-                    Text("اختار وجهتك بالشمال:", fontSize = 13.sp, color = Ledger.Muted)
+                    Text("اختار وجهتك بالشمال (اختياري):", fontSize = 13.sp, color = Ledger.Muted)
                     ChoiceChips(northPlaces, northTo) { northTo = it; side2 = "n"; open = 0 }
                 }
             }) else null)
@@ -117,7 +117,7 @@ private fun SouthPicker(road: String, stop: String, onPick: (String, String) -> 
     } else if (q.isNotBlank()) {
         Text("ما لقيت هالاسم، اختار الطريق من تحت", fontSize = 13.sp, color = Ledger.Muted)
     }
-    Text("أو اختار الطريق اللي بتركب منه:", fontSize = 13.sp, color = Ledger.Muted)
+    Text("أو اختار الطريق (اختياري):", fontSize = 13.sp, color = Ledger.Muted)
     val hints = mapOf(
         "طريق صويلح" to "صويلح، دابوق، خلدا، المدينة الطبية، جسر ناعور، دوار السابع...",
         "شارع الأردن" to "الجامعة الأردنية، الشميساني، الجاردنز، الدوار الأول، مطار الملكة علياء...",

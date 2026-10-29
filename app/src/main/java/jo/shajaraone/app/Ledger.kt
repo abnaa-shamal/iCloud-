@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -126,16 +127,18 @@ fun CaptainStamp(modifier: Modifier = Modifier) {
 /** A trip as a boarding pass. [actions] is the area under the stub (book button, contact buttons...). */
 @Composable
 fun TicketCard(t: Trip, modifier: Modifier = Modifier, actions: @Composable ColumnScope.() -> Unit) {
-    val shape = RoundedCornerShape(8.dp)
+    val shape = RoundedCornerShape(22.dp)
     Column(
-        modifier.fillMaxWidth().background(Ledger.Stock, shape).border(1.dp, Ledger.Rule, shape)
+        modifier.fillMaxWidth().clip(shape)
+            .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0x26FFFFFF), Color(0x0AFFFFFF))))
+            .border(1.dp, androidx.compose.ui.graphics.Brush.linearGradient(listOf(Brand.Violet.copy(alpha = .55f), Color(0x22FFFFFF), Brand.Teal.copy(alpha = .55f))), shape)
     ) {
         // top stub: time and route
         Column(Modifier.padding(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(dayName(t.departAt), fontSize = 12.sp, color = Ledger.Muted, fontWeight = FontWeight.Bold)
-                    Text(clockText(t.departAt), fontFamily = numberFont, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = Ledger.Olive)
+                    Text(clockText(t.departAt), fontFamily = numberFont, fontSize = 34.sp, fontWeight = FontWeight.Light, color = Color.White)
                 }
                 if (t.acceptsParcels) {
                     Box(
@@ -164,7 +167,8 @@ fun TicketCard(t: Trip, modifier: Modifier = Modifier, actions: @Composable Colu
                     if (t.status == "full") {
                         Text("مكتملة", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = Ledger.Terracotta)
                     } else {
-                        Text("${t.seatsFree} من ${t.seatsTotal}", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Ledger.Olive)
+                        SeatDots(t.seatsFree.toInt(), t.seatsTotal.toInt())
+                        Text("${t.seatsFree} من ${t.seatsTotal}", fontSize = 18.sp, fontWeight = FontWeight.Light, color = Color.White)
                         Text("مقاعد شاغرة", fontSize = 11.sp, color = Ledger.Muted)
                     }
                 }
@@ -177,10 +181,29 @@ fun TicketCard(t: Trip, modifier: Modifier = Modifier, actions: @Composable Colu
 
 @Composable
 fun LedgerPrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Button(
-        onClick, modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(6.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = Ledger.Olive, contentColor = Ledger.Parchment)
-    ) { Text(text, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold) }
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val shape = RoundedCornerShape(18.dp)
+    Box(
+        modifier.fillMaxWidth().heightIn(min = 54.dp).clip(shape)
+            .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(Brand.Violet, Brand.Teal)))
+            .clickable { AppFeedback.tap(ctx); onClick() },
+        contentAlignment = Alignment.Center
+    ) { Text(text, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White) }
+}
+
+/** Seat lamps: lit = free seat (cyan to pink glow), dim = taken. */
+@Composable
+fun SeatDots(free: Int, total: Int) {
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        repeat(total.coerceIn(0, 8)) { i ->
+            Box(
+                Modifier.size(12.dp).clip(androidx.compose.foundation.shape.CircleShape).background(
+                    if (i < free) androidx.compose.ui.graphics.Brush.linearGradient(listOf(Brand.Violet, Brand.Teal))
+                    else androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color(0x33FFFFFF), Color(0x33FFFFFF)))
+                )
+            )
+        }
+    }
 }
 
 @Composable

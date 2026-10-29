@@ -27,16 +27,16 @@ import androidx.compose.ui.unit.dp
  * so a new look is mostly a matter of editing this block (plus NightColors below for the Material roles).
  */
 object Brand {
-    val Violet = Color(0xFF6B4BFF)       // main actions, selected items, logo
-    val VioletSoft = Color(0xFF8E86FF)   // outlines and the car drawing
-    val VioletLight = Color(0xFFB9B2FF)  // subtitles, selected navigation, soft highlights
-    val Teal = Color(0xFF2DE2C0)         // highlights: prices, free seats, links, live status
-    val Navy = Color(0xFF0B1030)         // base background
-    val Ink = Color(0xFFF5F6FF)          // main text
-    val Muted = Color(0xFFB7BBE0)        // secondary text
-    val OnTeal = Color(0xFF06251F)       // text on top of teal
+    val Violet = Color(0xFF29D9FF)       // main actions, selected items, logo
+    val VioletSoft = Color(0xFF6FD3EA)   // outlines and the car drawing
+    val VioletLight = Color(0xFF9BE7FF)  // subtitles, selected navigation, soft highlights
+    val Teal = Color(0xFFFF4D7E)         // highlights: prices, free seats, links, live status
+    val Navy = Color(0xFF05070D)         // base background
+    val Ink = Color(0xFFF4F7FF)          // main text
+    val Muted = Color(0xFFA9B4CC)        // secondary text
+    val OnTeal = Color(0xFFFFFFFF)       // text on top of teal
     // extra tokens used by the newer components (ticket cards, wells, rules) - glass look on the dark sky
-    val Ochre = Color(0xFFF5C76B)        // gold highlight
+    val Ochre = Color(0xFFFFC857)        // gold highlight
     val Stock = Color(0x1FFFFFFF)        // glass card surface
     val Pressed = Color(0x33000000)      // recessed wells, inactive seats
     val Rule = Color(0x33FFFFFF)         // borders and perforation lines
@@ -45,13 +45,13 @@ object Brand {
 // "Night" palette: deep navy, violet actions, teal highlights. The app is always dark.
 private val NightColors = darkColorScheme(
     primary = Brand.Violet,
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFF2A2370),
-    onPrimaryContainer = Color(0xFFE4DEFF),
+    onPrimary = Color(0xFF03121A),
+    primaryContainer = Color(0xFF0B3F4E),
+    onPrimaryContainer = Color(0xFFCFF6FF),
     secondary = Brand.Teal,
     onSecondary = Brand.OnTeal,
-    secondaryContainer = Color(0xFF0F4D47),
-    onSecondaryContainer = Color(0xFFB9F6EA),
+    secondaryContainer = Color(0xFF5A1230),
+    onSecondaryContainer = Color(0xFFFFD6E2),
     tertiary = Color(0xFFFF8A7A),
     tertiaryContainer = Color(0xFF5A2018),
     onTertiaryContainer = Color(0xFFFFDAD3),
@@ -123,7 +123,7 @@ fun AppBackground(content: @Composable () -> Unit) {
         val r = kotlin.random.Random(7)
         List(90) { floatArrayOf(r.nextFloat(), r.nextFloat(), 0.6f + r.nextFloat() * 1.6f, r.nextFloat()) }
     }
-    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF050818), Color(0xFF0B0F2E), Color(0xFF0A1B2E))))) {
+    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF05070D), Color(0xFF070B14), Color(0xFF0A0710))))) {
         androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
             val w = size.width
             val h = size.height
@@ -138,7 +138,7 @@ fun AppBackground(content: @Composable () -> Unit) {
             }
             orb(0.15f, 0.18f, w * 0.75f, Brand.Violet, 0f)
             orb(0.92f, 0.52f, w * 0.7f, Brand.Teal, 0.33f)
-            orb(0.25f, 0.92f, w * 0.8f, Color(0xFF2F6BFF), 0.66f)
+            orb(0.25f, 0.92f, w * 0.8f, Brand.Teal.copy(alpha = 0.5f), 0.66f)
             stars.forEach { s ->
                 val a = 0.25f + 0.75f * ((kotlin.math.sin((tw + s[3]) * two) + 1f) / 2f)
                 drawCircle(Color.White.copy(alpha = a), radius = s[2], center = androidx.compose.ui.geometry.Offset(s[0] * w, s[1] * h))
