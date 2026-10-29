@@ -14,7 +14,7 @@ android {
 
     defaultConfig {
         // The rider app id; the captain flavor below replaces it. Both are registered in the Firebase project.
-        applicationId = "jo.shajaraone.rider"
+        applicationId = "jo.abnaashamal.rider"
         minSdk = 26
         targetSdk = 36
         versionCode = (System.getenv("VERSION_CODE") ?: "1").toInt()
@@ -23,8 +23,8 @@ android {
     }
 
     // Two apps from the same code, one flavor each (the admin dashboard is a separate web app, not part of these):
-    //   rider   = jo.shajaraone.rider     (riders' app)
-    //   captain = jo.shajaraone.captain   (captains' app)
+    //   rider   = jo.abnaashamal.rider     (riders' app)
+    //   captain = jo.abnaashamal.Cap   (captains' app)
     // Both use the same Firebase project and are registered in it with exactly these package names.
     // The Kotlin namespace (source package) is jo.shajaraone.app; the app ids are the two above.
     flavorDimensions += "app"
@@ -35,7 +35,7 @@ android {
         }
         create("captain") {
             dimension = "app"
-            applicationId = "jo.shajaraone.captain"
+            applicationId = "jo.abnaashamal.Cap"
             buildConfigField("boolean", "CAPTAIN_APP", "true")
         }
     }

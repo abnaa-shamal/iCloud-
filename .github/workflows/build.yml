@@ -29,13 +29,13 @@ jobs:
       # The google-services.json is BUILT here from 4 secrets (+ the public project id).
       - name: Write google-services.json files
         env:
-          SHAJARA_FIREBASE_API_KEY: ${{ secrets.SHAJARA_FIREBASE_API_KEY }}
-          SHAJARA_FIREBASE_SENDER_ID: ${{ secrets.SHAJARA_FIREBASE_SENDER_ID }}
-          SHAJARA_RIDER_APP_ID: ${{ secrets.SHAJARA_RIDER_APP_ID }}
-          SHAJARA_CAPTAIN_APP_ID: ${{ secrets.SHAJARA_CAPTAIN_APP_ID }}
+          ABNAA_FIREBASE_API_KEY: ${{ secrets.ABNAA_FIREBASE_API_KEY }}
+          ABNAA_FIREBASE_SENDER_ID: ${{ secrets.ABNAA_FIREBASE_SENDER_ID }}
+          ABNAA_RIDER_APP_ID: ${{ secrets.ABNAA_RIDER_APP_ID }}
+          ABNAA_CAPTAIN_APP_ID: ${{ secrets.ABNAA_CAPTAIN_APP_ID }}
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID || 'shajara-rides-security-t-2632f' }}
         run: |
-          for v in SHAJARA_FIREBASE_API_KEY SHAJARA_FIREBASE_SENDER_ID SHAJARA_RIDER_APP_ID SHAJARA_CAPTAIN_APP_ID; do
+          for v in ABNAA_FIREBASE_API_KEY ABNAA_FIREBASE_SENDER_ID ABNAA_RIDER_APP_ID ABNAA_CAPTAIN_APP_ID; do
             if [ -z "${!v}" ]; then echo "::error::Secret $v is missing"; exit 1; fi
           done
           python3 - <<'PY'
@@ -43,10 +43,10 @@ jobs:
           e = os.environ
           def client(app_id, pkg):
               return {"client_info": {"mobilesdk_app_id": e[app_id], "android_client_info": {"package_name": pkg}},
-                      "api_key": [{"current_key": e["SHAJARA_FIREBASE_API_KEY"]}], "services": {}}
-          cfg = {"project_info": {"project_number": e["SHAJARA_FIREBASE_SENDER_ID"], "project_id": e["FIREBASE_PROJECT_ID"],
+                      "api_key": [{"current_key": e["ABNAA_FIREBASE_API_KEY"]}], "services": {}}
+          cfg = {"project_info": {"project_number": e["ABNAA_FIREBASE_SENDER_ID"], "project_id": e["FIREBASE_PROJECT_ID"],
                                   "storage_bucket": e["FIREBASE_PROJECT_ID"] + ".firebasestorage.app"},
-                 "client": [client("SHAJARA_RIDER_APP_ID", "jo.shajaraone.rider"), client("SHAJARA_CAPTAIN_APP_ID", "jo.shajaraone.captain")],
+                 "client": [client("ABNAA_RIDER_APP_ID", "jo.abnaashamal.rider"), client("ABNAA_CAPTAIN_APP_ID", "jo.abnaashamal.Cap")],
                  "configuration_version": "1"}
           json.dump(cfg, open("app/google-services.json", "w"))
           PY
@@ -71,8 +71,8 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           VERSION_CODE: ${{ github.run_number }}
           # The admin app uses the same public Firebase settings as the rider app (no extra secret)
-          SHAJARA_FIREBASE_API_KEY: ${{ secrets.SHAJARA_FIREBASE_API_KEY }}
-          SHAJARA_RIDER_APP_ID: ${{ secrets.SHAJARA_RIDER_APP_ID }}
+          ABNAA_FIREBASE_API_KEY: ${{ secrets.ABNAA_FIREBASE_API_KEY }}
+          ABNAA_RIDER_APP_ID: ${{ secrets.ABNAA_RIDER_APP_ID }}
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID || 'shajara-rides-security-t-2632f' }}
         run: |
           gradle :app:assembleRiderRelease :app:assembleCaptainRelease :admin-app:assembleRelease --no-daemon --stacktrace 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
@@ -100,14 +100,14 @@ jobs:
             # The apps must not contain any admin code (the admin is a separate web app)
             if unzip -p "$APK" 'classes*.dex' | strings | grep -E "AdminScreen|RealFirebase|AdminActions|RoyalFooter"; then echo "::error::admin code found in $1 apk"; FAIL=1; else echo "OK: no admin code in $1"; fi
           }
-          check rider jo.shajaraone.rider
-          check captain jo.shajaraone.captain
+          check rider jo.abnaashamal.rider
+          check captain jo.abnaashamal.Cap
           # the admin app
           AAPK=$(find admin-app/build/outputs/apk/release -name '*.apk' 2>/dev/null | head -1)
           if [ -z "$AAPK" ]; then echo "::error::admin APK not found"; FAIL=1; else
             "$BT/apksigner" verify --print-certs "$AAPK" | grep -E "Verifies|SHA-256" || { echo "::error::admin signature check failed"; FAIL=1; }
             "$BT/aapt2" dump badging "$AAPK" | grep -E "^package:|application-label:"
-            "$BT/aapt2" dump badging "$AAPK" | grep -q "name='jo.shajaraone.admin' " || { echo "::error::admin package name wrong"; FAIL=1; }
+            "$BT/aapt2" dump badging "$AAPK" | grep -q "name='jo.abnaashamal.admin' " || { echo "::error::admin package name wrong"; FAIL=1; }
           fi
           exit $FAIL
 

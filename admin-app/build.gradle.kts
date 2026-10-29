@@ -3,7 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
-// Admin app «المشرف»: a separate app (jo.shajaraone.admin). It shares the existing Firebase project and
+// Admin app «المشرف»: a separate app (jo.abnaashamal.admin). It shares the existing Firebase project and
 // uses the same web/API settings as the rider app, passed in as environment variables by GitHub Actions.
 // No google-services.json and no extra secret are needed. Nothing secret lives in this file.
 val keystoreFile: String? = System.getenv("KEYSTORE_FILE")
@@ -14,13 +14,13 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "jo.shajaraone.admin"
+        applicationId = "jo.abnaashamal.admin"
         minSdk = 26
         targetSdk = 36
         versionCode = (System.getenv("VERSION_CODE") ?: "1").toInt()
         versionName = "1.0.${System.getenv("VERSION_CODE") ?: "0"}"
-        buildConfigField("String", "FB_API_KEY", env("SHAJARA_FIREBASE_API_KEY", "placeholder"))
-        buildConfigField("String", "FB_APP_ID", env("SHAJARA_RIDER_APP_ID", "1:1:android:1"))
+        buildConfigField("String", "FB_API_KEY", env("ABNAA_FIREBASE_API_KEY", "placeholder"))
+        buildConfigField("String", "FB_APP_ID", env("ABNAA_RIDER_APP_ID", "1:1:android:1"))
         buildConfigField("String", "FB_PROJECT_ID", env("FIREBASE_PROJECT_ID", "shajara-rides-security-t-2632f"))
     }
 

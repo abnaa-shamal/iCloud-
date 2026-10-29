@@ -30,7 +30,7 @@ jobs:
           import json
           def c(pkg): return {"client_info": {"mobilesdk_app_id": "1:1:android:1", "android_client_info": {"package_name": pkg}}, "api_key": [{"current_key": "x"}], "services": {}}
           json.dump({"project_info": {"project_number": "1", "project_id": "demo", "storage_bucket": "demo.appspot.com"},
-                     "client": [c("jo.shajaraone.rider"), c("jo.shajaraone.captain")], "configuration_version": "1"}, open("app/google-services.json", "w"))
+                     "client": [c("jo.abnaashamal.rider"), c("jo.abnaashamal.Cap")], "configuration_version": "1"}, open("app/google-services.json", "w"))
           PY
       - name: Render screenshots
         run: gradle :app:testRiderDebugUnitTest --no-daemon --stacktrace 2>&1 | tee test.log; exit ${PIPESTATUS[0]}
