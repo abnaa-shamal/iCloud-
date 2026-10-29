@@ -124,7 +124,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
                             Text("${t.from}  ←  ${t.to}", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = CapInk)
                             Text("${dayName(t.departAt)} • ${clockText(t.departAt)} • ${priceText(t.price)}", fontSize = 12.sp, color = CapMute)
                         }
-                        Box(Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFFE3F4EC)).padding(horizontal = 12.dp, vertical = 7.dp)) {
+                        Box(Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFF3A3B41)).padding(horizontal = 12.dp, vertical = 7.dp)) {
                             Text(if (t.seatsFree <= 0L) "مكتملة" else "${t.seatsFree} فاضية", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CapAccent)
                         }
                     }
