@@ -95,7 +95,7 @@ private fun TripsTab(me: UserProfile, myBookings: List<Booking>, flow: RiderFlow
 
     val now = System.currentTimeMillis()
     val shown = trips?.filter { t ->
-        t.captainUid.isNotBlank() && t.captainUid != me.uid && t.status != TRIP_CANCELLED && t.departAt > now && flowMatches(t, flow)
+        t.captainUid.isNotBlank() && t.captainUid != me.uid && t.status != TRIP_CANCELLED && t.seatsFree > 0 && t.departAt > now && flowMatches(t, flow)
     }
 
     RiderFlow(me.name.trim().substringBefore(" "), flow, shown, failed) { t ->

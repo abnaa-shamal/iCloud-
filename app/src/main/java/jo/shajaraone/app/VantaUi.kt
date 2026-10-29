@@ -207,8 +207,9 @@ fun TripCard(t: Trip, modifier: Modifier = Modifier, index: Int = 0, nearest: Bo
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column {
-                Text(clockText(t.departAt), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text("${dayName(t.departAt)} • ${t.from}", fontSize = 12.sp, color = Dim)
+                val win = tripWindow(t.note) != null
+                Text(tripTimeLabel(t.note, t.departAt), fontSize = if (win) 16.sp else 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("${dayName(t.departAt)} • ${t.from}" + if (win) " • أو لحد اكتمال العدد" else "", fontSize = 12.sp, color = Dim)
             }
             Box(Modifier.weight(1f).padding(horizontal = 10.dp), contentAlignment = Alignment.Center) {
                 Canvas(Modifier.fillMaxWidth().height(2.dp)) {

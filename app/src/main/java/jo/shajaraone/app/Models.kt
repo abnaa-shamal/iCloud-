@@ -83,7 +83,7 @@ data class Trip(
     val cancelReason: String = ""
 ) {
     val isBookable get() = status == TRIP_OPEN && seatsFree > 0 && departAt > System.currentTimeMillis()
-    val summary get() = "$from ← $to • ${timeText(departAt)}"
+    val summary get() = "$from ← $to • ${dayName(departAt)} ${tripTimeLabel(note, departAt)}"
 }
 
 fun DocumentSnapshot.toTrip() = Trip(

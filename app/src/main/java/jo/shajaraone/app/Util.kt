@@ -154,3 +154,24 @@ fun pickerMillisOfOffset(offset: Int): Long {
         set(l.get(Calendar.YEAR), l.get(Calendar.MONTH), l.get(Calendar.DAY_OF_MONTH), 0, 0, 0)
     }.timeInMillis
 }
+
+// ----- Optional availability window, stored in the trip's existing «note» field as "@T:from,to" (minutes from midnight, -1 = not set).
+// No new Firestore fields are needed. departAt then holds the END of the window (or the end of the day), so the trip expires by itself.
+fun tripWindow(note: String): Pair<Int, Int>? {
+    if (!note.startsWith("@T:")) return null
+    val p = note.removePrefix("@T:").split(",")
+    return (p.getOrNull(0)?.toIntOrNull() ?: -1) to (p.getOrNull(1)?.toIntOrNull() ?: -1)
+}
+
+private fun minText(m: Int) = clockText(dayStart(0) + m * 60_000L)
+
+/** Big time label of a trip: a single clock time, a window, or «وقت مفتوح». */
+fun tripTimeLabel(note: String, departAt: Long): String {
+    val w = tripWindow(note) ?: return clockText(departAt)
+    return when {
+        w.first >= 0 && w.second >= 0 -> "${minText(w.first)} – ${minText(w.second)}"
+        w.first >= 0 -> "من ${minText(w.first)}"
+        w.second >= 0 -> "حتى ${minText(w.second)}"
+        else -> "وقت مفتوح"
+    }
+}

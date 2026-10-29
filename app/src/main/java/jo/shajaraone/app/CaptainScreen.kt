@@ -94,7 +94,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
                             Text("${seatsText(b.seats)} • ${b.tripSummary}", fontSize = 12.sp, color = Color(0xFF6B5E4F))
                             if (b.dropoff.isNotBlank()) Text("وجهته: ${b.dropoff}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = CapDark)
                         }
-                        Text(clockText(b.departAt), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = CapDark)
+                        Text(trips?.firstOrNull { it.id == b.tripId }?.let { tripTimeLabel(it.note, it.departAt) } ?: clockText(b.departAt), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = CapDark)
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         CapBtn("قبول", Modifier.weight(1.4f), color = CapDark) {
@@ -126,7 +126,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
                     ) {
                         Column(Modifier.weight(1f)) {
                             Text("${t.from}  ←  ${t.to}", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = CapInk)
-                            Text("${dayName(t.departAt)} • ${clockText(t.departAt)} • ${priceText(t.price)}", fontSize = 12.sp, color = CapMute)
+                            Text("${dayName(t.departAt)} • ${tripTimeLabel(t.note, t.departAt)} • ${priceText(t.price)}", fontSize = 12.sp, color = CapMute)
                         }
                         Box(Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFF3A3B41)).padding(horizontal = 12.dp, vertical = 7.dp)) {
                             Text(if (t.seatsFree <= 0L) "مكتملة" else "${t.seatsFree} فاضية", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CapAccent)
@@ -163,7 +163,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
                         ) {
                             Column(Modifier.weight(1f)) {
                                 Text("${t.from}  ←  ${t.to}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = CapInk)
-                                Text("${dayName(t.departAt)} • ${clockText(t.departAt)} • ${priceText(t.price)}", fontSize = 12.sp, color = CapMute)
+                                Text("${dayName(t.departAt)} • ${tripTimeLabel(t.note, t.departAt)} • ${priceText(t.price)}", fontSize = 12.sp, color = CapMute)
                             }
                             Text(if (t.status == TRIP_CANCELLED) "ملغية" else if (t.seatsFree <= 0L) "اكتملت" else "${riders.sumOf { it.seats }} راكب",
                                 fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (t.status == TRIP_CANCELLED) CapRed else CapAccent)
@@ -247,10 +247,11 @@ private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
     var village by rememberSaveable { mutableStateOf("") }
     var spot by rememberSaveable { mutableStateOf("") }
     var day by rememberSaveable { mutableIntStateOf(0) }
-    var minutes by rememberSaveable { mutableIntStateOf(-1) }
+    var fromMin by rememberSaveable { mutableIntStateOf(-1) }
+    var toMin by rememberSaveable { mutableIntStateOf(-1) }
     var seats by rememberSaveable { mutableIntStateOf(3) }
     var priceStr by rememberSaveable { mutableStateOf("") }
-    var showTime by remember { mutableStateOf(false) }
+    var pick by remember { mutableIntStateOf(0) }   // 0 = closed, 1 = from, 2 = to
     var sending by remember { mutableStateOf(false) }
 
     val inner = group == "داخل الشمال"
@@ -296,15 +297,26 @@ private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
         }
         else -> Column(colMod, verticalArrangement = Arrangement.spacedBy(14.dp)) {
             CapBackBar(listOf(group, road.takeIf { !inner }, village, spot).filter { !it.isNullOrBlank() }.joinToString(" • ")) { goBack() }
-            CapSection("اليوم والساعة") {
+            CapSection("اليوم والوقت (اختياري)") {
                 CapDays(pillDays(5), day) { day = it }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.weight(1f).height(52.dp).clip(RoundedCornerShape(16.dp)).background(Color(0x14FFFFFF)).clickable { showTime = true }, contentAlignment = Alignment.Center) {
-                        Text(if (minutes >= 0) "الساعة ${clockText(dayStart(day) + minutes * 60_000L)}" else "اختر الساعة", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (minutes >= 0) CapInk else CapAccent)
+                    listOf(1 to fromMin, 2 to toMin).forEach { (which, v) ->
+                        Box(Modifier.weight(1f).height(52.dp).clip(RoundedCornerShape(16.dp)).background(Color(0x14FFFFFF)).clickable { pick = which }, contentAlignment = Alignment.Center) {
+                            Text(
+                                (if (which == 1) "من " else "إلى ") + if (v >= 0) clockText(dayStart(0) + v * 60_000L) else "—",
+                                fontSize = 15.sp, fontWeight = FontWeight.Bold, color = if (v >= 0) CapInk else CapAccent
+                            )
+                        }
                     }
+                    if (fromMin >= 0 || toMin >= 0) Box(Modifier.size(44.dp).clickable { fromMin = -1; toMin = -1 }, contentAlignment = Alignment.Center) { Text("✕", fontSize = 18.sp, color = CapRed) }
+                }
+                Text(if (fromMin >= 0 || toMin >= 0) "متواجد بهالفترة، أو لحد ما يكتمل العدد" else "بدون وقت: متاح لحد ما يكتمل العدد", fontSize = 12.sp, color = CapMute)
+            }
+            CapSection("المقاعد") {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                     Row(Modifier.clip(RoundedCornerShape(16.dp)).background(Color(0x14FFFFFF)).height(52.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(44.dp).clickable { if (seats < maxSeats) seats++ }, contentAlignment = Alignment.Center) { Text("+", fontSize = 24.sp, color = CapInk) }
-                        Text("$seats مقاعد", Modifier.padding(horizontal = 4.dp), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = CapInk)
+                        Text("$seats مقاعد", Modifier.padding(horizontal = 14.dp), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = CapInk)
                         Box(Modifier.size(44.dp).clickable { if (seats > 1) seats-- }, contentAlignment = Alignment.Center) { Text("−", fontSize = 24.sp, color = CapInk) }
                     }
                 }
@@ -316,12 +328,12 @@ private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
             }
 
             CapBtn(if (sending) "جاري النشر..." else "انشر الرحلة", Modifier.fillMaxWidth(), height = 58.dp) {
-                val departAt = if (minutes >= 0) dayStart(day) + minutes * 60_000L else 0L
+                val departAt = dayStart(day) + (if (toMin >= 0) toMin else 1439) * 60_000L
                 when {
                     group.isBlank() -> toast(ctx, "اختر وين رايح")
                     !inner && road.isBlank() -> toast(ctx, "اختر الطريق")
                     village.isBlank() -> toast(ctx, "اختر البلد")
-                    minutes < 0 -> toast(ctx, "اختر الساعة")
+                    fromMin >= 0 && toMin >= 0 && toMin <= fromMin -> toast(ctx, "وقت النهاية لازم يكون بعد البداية")
                     departAt < System.currentTimeMillis() -> toast(ctx, "هالوقت فات، اختر وقت جاي")
                     sending -> {}
                     else -> {
@@ -337,7 +349,7 @@ private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
                                 captainName = me.name, captainPhone = me.phone, carText = me.carText,
                                 from = from, to = to, road = roadField,
                                 departAt = departAt, seatsTotal = seats.toLong(), price = priceStr.toDoubleOrNull(),
-                                acceptsParcels = false, note = ""
+                                acceptsParcels = false, note = "@T:$fromMin,$toMin"
                             )
                         ) { ok ->
                             sending = false
@@ -350,12 +362,13 @@ private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
         }
     }
 
-    if (showTime) {
-        val st = rememberTimePickerState(initialHour = if (minutes >= 0) minutes / 60 else 7, initialMinute = if (minutes >= 0) minutes % 60 else 0, is24Hour = false)
+    if (pick != 0) {
+        val cur = if (pick == 1) fromMin else toMin
+        val st = rememberTimePickerState(initialHour = if (cur >= 0) cur / 60 else 7, initialMinute = if (cur >= 0) cur % 60 else 0, is24Hour = false)
         AlertDialog(
-            onDismissRequest = { showTime = false },
-            confirmButton = { TextButton(onClick = { minutes = st.hour * 60 + st.minute; showTime = false }) { Text("تم") } },
-            dismissButton = { TextButton(onClick = { showTime = false }) { Text("إلغاء") } },
+            onDismissRequest = { pick = 0 },
+            confirmButton = { TextButton(onClick = { val v = st.hour * 60 + st.minute; if (pick == 1) fromMin = v else toMin = v; pick = 0 }) { Text("تم") } },
+            dismissButton = { TextButton(onClick = { pick = 0 }) { Text("إلغاء") } },
             text = { CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) { TimePicker(state = st) } }
         )
     }
@@ -367,7 +380,7 @@ internal fun LiveShareControl(t: Trip) {
     val ctx = LocalContext.current
     val active by LiveShareService.active.collectAsState()
     val now = System.currentTimeMillis()
-    val inWindow = t.status != TRIP_CANCELLED && now >= t.departAt - 60 * 60_000L && now <= t.departAt + 4 * 3_600_000L
+    val inWindow = t.status != TRIP_CANCELLED && (tripWindow(t.note) != null || now >= t.departAt - 60 * 60_000L) && now <= t.departAt + 4 * 3_600_000L
     if (!inWindow) return
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { r ->
         if (r.values.any { it }) LiveShareService.start(ctx, t.id) else toast(ctx, "لازم توافق على الموقع عشان تشاركه")

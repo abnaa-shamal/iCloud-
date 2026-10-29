@@ -404,7 +404,7 @@ fun TripInfo(t: Trip, showCaptain: Boolean = true) {
         if (t.acceptsParcels) {
             Pill("يقبل أمانات", Brand.Teal.copy(alpha = 0.12f), Brand.Teal)
         }
-        if (t.note.isNotBlank()) {
+        if (t.note.isNotBlank() && !t.note.startsWith("@T:")) {
             Text(t.note, color = cs.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
         }
         if (t.status == TRIP_CANCELLED && t.cancelReason.isNotBlank()) {
