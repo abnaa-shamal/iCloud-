@@ -44,7 +44,8 @@ class RiderFlowState(step: Int = 0, group: String = "", road: String = "", place
     fun back() {
         when (step) {
             2 -> { step = 1; day = -1 }
-            1 -> { step = 0; group = ""; road = ""; place = ""; spot = ""; origin = "" }
+            1 -> if (group == G_SOUTH && road.isNotBlank()) { road = ""; place = "" }
+                 else { step = 0; group = ""; road = ""; place = ""; spot = ""; origin = "" }
         }
     }
 
@@ -163,12 +164,16 @@ fun RiderFlow(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(bottom = 120.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            BackBar(when (fs.group) { G_SOUTH -> "الجنوب"; G_NORTH -> "الشمال"; else -> "داخل الشمال" }) { fs.back() }
+            BackBar(when (fs.group) { G_SOUTH -> fs.road.ifBlank { "الجنوب" }; G_NORTH -> "الشمال"; else -> "داخل الشمال" }) { fs.back() }
             when (fs.group) {
-                G_SOUTH -> southRoads.forEach { (road, stops) ->
-                    GlassSection(road) {
-                        GlassGrid(listOf("كل المناطق") + stops, "") { p ->
-                            fs.road = road; fs.place = if (p == "كل المناطق") "" else p; fs.step = 2
+                G_SOUTH -> if (fs.road.isBlank()) {
+                    southRoads.entries.forEachIndexed { i, (road, stops) ->
+                        BigChoice(road, stops.take(4).joinToString(" • "), i) { fs.road = road }
+                    }
+                } else {
+                    GlassSection("وين وجهتك؟ (اختياري)") {
+                        GlassGrid(listOf("كل المناطق") + (southRoads[fs.road] ?: emptyList()), "") { p ->
+                            fs.place = if (p == "كل المناطق") "" else p; fs.step = 2
                         }
                     }
                 }
