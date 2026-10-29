@@ -351,10 +351,11 @@ class CapMeterService : Service() {
 // ---------- screens ----------
 
 @Composable
-fun CapToolsScreen() {
+fun CapToolsScreen(trips: List<Trip>?, bookings: List<Booking>) {
     var section by rememberSaveable { mutableStateOf("") }
     BackHandler(enabled = section.isNotEmpty()) { section = "" }
     when (section) {
+        "trips" -> CapTripHistory(trips, bookings) { section = "" }
         "meter" -> CapMeterScreen { section = "" }
         "finance" -> CapFinanceScreen { section = "" }
         "history" -> CapHistoryScreen { section = "" }
@@ -363,12 +364,13 @@ fun CapToolsScreen() {
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 44.dp, bottom = 170.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Text("أدوات الكابتن", Modifier.padding(bottom = 6.dp), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk)
-            Text("خاصة بك وعلى جوالك بس. ما إلها علاقة بأسعار المقاعد ولا بالحجوزات.", fontSize = 13.sp, color = CapMute)
-            CapBigChoice("العداد", "السرعة والمسافة والزمن والأجرة", 0) { section = "meter" }
-            CapBigChoice("المالية", "الدخل والمصاريف وصافي الربح", 1) { section = "finance" }
-            CapBigChoice("السجل", "رحلات العداد وتفاصيلها", 2) { section = "history" }
-            CapBigChoice("أسعار التعرفة", "Saver • Electric • Comfort • تعرفة 1", 3) { section = "tariffs" }
+            Text("الإعدادات", Modifier.padding(bottom = 6.dp), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk)
+            CapBigChoice("سجل الرحلات", "رحلاتك المنشورة وركابها", 0) { section = "trips" }
+            Text("أدواتك (على جوالك بس، ما إلها علاقة بأسعار المقاعد ولا بالحجوزات)", Modifier.padding(top = 6.dp), fontSize = 13.sp, color = CapMute)
+            CapBigChoice("العداد", "السرعة والمسافة والزمن والأجرة", 1) { section = "meter" }
+            CapBigChoice("المالية", "الدخل والمصاريف وصافي الربح", 2) { section = "finance" }
+            CapBigChoice("سجل العداد", "رحلات العداد وتفاصيلها", 3) { section = "history" }
+            CapBigChoice("أسعار التعرفة", "Saver • Electric • Comfort • تعرفة 1", 4) { section = "tariffs" }
         }
     }
 }

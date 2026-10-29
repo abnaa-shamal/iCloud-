@@ -92,7 +92,7 @@ fun CapNav(items: List<Triple<Int, String, Int>>, selected: Int, onPick: (Int) -
             val on = i == selected
             Box {
                 Column(
-                    Modifier.width(78.dp).clip(RoundedCornerShape(18.dp))
+                    Modifier.width(100.dp).clip(RoundedCornerShape(18.dp))
                         .then(if (on) Modifier.background(Color(0xFF2D2F35)).border(1.5.dp, CapAccent.copy(alpha = .7f), RoundedCornerShape(18.dp)) else Modifier)
                         .clickable(remember { MutableInteractionSource() }, null) { onPick(i) }.padding(vertical = 10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)

@@ -55,11 +55,10 @@ fun CaptainHome(me: UserProfile) {
             when (tab) {
                 0 -> CapPublish(me, online, onPublished = { tab = 1 })
                 1 -> CapDashboard(me.name.trim().substringBefore(" "), trips, bookings)
-                2 -> CapToolsScreen()
-                else -> CapSettingsScreen(trips, bookings)
+                else -> CapToolsScreen(trips, bookings)
             }
             Box(Modifier.align(Alignment.BottomCenter)) {
-                CapNav(listOf(Triple(0, "الرئيسية", 0), Triple(2, "طلبات", pending), Triple(1, "أدوات", 0), Triple(5, "إعدادات", 0)), tab) { tab = it }
+                CapNav(listOf(Triple(0, "الرئيسية", 0), Triple(2, "طلبات", pending), Triple(5, "إعدادات", 0)), tab) { tab = it }
             }
         }
     }
@@ -182,10 +181,10 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
 }
 
 
-// ===== Settings: trip history (more later) =====
+// ===== Trip history (opened from الإعدادات) =====
 
 @Composable
-fun CapSettingsScreen(trips: List<Trip>?, bookings: List<Booking>) {
+fun CapTripHistory(trips: List<Trip>?, bookings: List<Booking>, onBack: () -> Unit) {
     var open by rememberSaveable { mutableStateOf("") }
     val now = System.currentTimeMillis()
     val past = (trips ?: emptyList()).filter { t -> !(t.status != TRIP_CANCELLED && t.departAt > now - 4 * 3_600_000L) }.sortedByDescending { it.departAt }
@@ -193,8 +192,7 @@ fun CapSettingsScreen(trips: List<Trip>?, bookings: List<Booking>) {
         Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 44.dp, bottom = 170.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item { Text("الإعدادات", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk) }
-        item { Text("سجل الرحلات", Modifier.padding(top = 6.dp), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = CapInk) }
+        item { CapBackBar("سجل الرحلات") { onBack() } }
         if (past.isEmpty()) item {
             Box(Modifier.fillMaxWidth().capCard().padding(24.dp), contentAlignment = Alignment.Center) { Text("ما في رحلات سابقة", color = CapMute) }
         }
@@ -254,6 +252,29 @@ internal fun CapBigChoice(title: String, sub: String, index: Int, onClick: () ->
     }
 }
 
+private const val G_NORTH_C = "من الشمال"
+private const val G_SOUTH_C = "من الجنوب"
+private const val G_INNER_C = "داخل الشمال"
+
+/** Destinations for «من الشمال» and «من الجنوب» (kept here, in one place, to edit later). */
+private val northToDests = listOf("عمّان", "الزرقاء", "المفرق")
+private val southToDests = listOf("إربد", "الرمثا", "المغيّر", "الشجرة", "الطرة", "عمراوة", "الذنيبة")
+
+/** «داخل الشمال»: places in three groups (Mafraq is not part of it). */
+private val innerGroups = listOf(
+    "المدن الرئيسية" to listOf("إربد", "الرمثا"),
+    "قرى إربد" to listOf("المغيّر", "البويضة"),
+    "قرى الرمثا" to listOf("الشجرة", "الطرة", "عمراوة", "الذنيبة")
+)
+
+@Composable
+private fun InnerPicker(title: String, except: String?, onPick: (String) -> Unit) {
+    Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = CapInk)
+    innerGroups.forEach { (g, list) ->
+        CapSection(g) { CapGrid(list.filter { it != except }, "", 3) { onPick(it) } }
+    }
+}
+
 private fun roadLabel(r: String) = if (r == "طريق الزرقاء") "الطريق الصحراوي" else r
 
 /** A road card: tap to unfold a small, tidy map of the places it passes, then «اختر هالطريق». Places are information only for the captain. */
@@ -299,12 +320,11 @@ internal fun CapBackBar(title: String, onBack: () -> Unit) {
 @Composable
 private fun CapPublish(me: UserProfile, online: Boolean, onPublished: () -> Unit) {
     val ctx = LocalContext.current
-    var step by rememberSaveable { mutableIntStateOf(0) }      // 0 = direction, 1 = place, 2 = time and publish
-    var group by rememberSaveable { mutableStateOf("") }       // الجنوب / الشمال / داخل الشمال
+    var step by rememberSaveable { mutableIntStateOf(0) }      // 0 = direction, 1 = places, 2 = time and publish
+    var group by rememberSaveable { mutableStateOf("") }       // من الشمال / من الجنوب / داخل الشمال
+    var origin by rememberSaveable { mutableStateOf("") }
+    var dest by rememberSaveable { mutableStateOf("") }
     var road by rememberSaveable { mutableStateOf("") }
-    var stop by rememberSaveable { mutableStateOf("") }
-    var village by rememberSaveable { mutableStateOf("") }
-    var spot by rememberSaveable { mutableStateOf("") }
     var day by rememberSaveable { mutableIntStateOf(0) }
     var fromMin by rememberSaveable { mutableIntStateOf(-1) }
     var toMin by rememberSaveable { mutableIntStateOf(-1) }
@@ -314,17 +334,21 @@ private fun CapPublish(me: UserProfile, online: Boolean, onPublished: () -> Unit
     var sending by remember { mutableStateOf(false) }
     var openRoad by remember { mutableStateOf("") }
 
-    val inner = group == "داخل الشمال"
+    val inner = group == G_INNER_C
+    val fromNorth = group == G_NORTH_C
     val priceChips = if (inner) listOf("1", "1.5") else listOf("3", "3.5", "4", "4.5", "5")
-    val villages = if (inner) northVillages else northPlaces
     val maxSeats = me.maxSeats.coerceIn(1, 8)
 
+    fun clearLast(): Boolean = when {
+        road.isNotBlank() -> { road = ""; true }
+        dest.isNotBlank() -> { dest = ""; true }
+        origin.isNotBlank() -> { origin = ""; true }
+        else -> false
+    }
     fun goBack() {
-        when {
-            step == 2 -> step = 1
-            step == 1 && !inner && village.isNotBlank() -> { village = ""; road = ""; stop = ""; openRoad = "" }
-            step == 1 -> { step = 0; group = ""; road = ""; stop = ""; village = ""; spot = "" }
-            else -> {}
+        when (step) {
+            2 -> { step = 1; clearLast() }
+            1 -> if (!clearLast()) { step = 0; group = ""; openRoad = "" }
         }
     }
     BackHandler(enabled = step > 0) { goBack() }
@@ -337,43 +361,33 @@ private fun CapPublish(me: UserProfile, online: Boolean, onPublished: () -> Unit
                 Text(if (online) "أونلاين: عندك رحلة منشورة" else "أوفلاين: ما عندك رحلة منشورة", fontSize = 13.sp, color = if (online) Color(0xFF34C759) else CapMute)
             }
             Text("وجهة انطلاقك؟", Modifier.padding(top = 6.dp, bottom = 4.dp), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk)
-            CapBigChoice("من الشمال", "إلى عمّان", 0) { group = "الجنوب"; priceStr = ""; step = 1 }
-            CapBigChoice("من الجنوب", "إلى الشمال", 1) { group = "الشمال"; priceStr = ""; step = 1 }
-            CapBigChoice("داخل الشمال", (northVillages + "إربد").joinToString(" • "), 2) { group = "داخل الشمال"; priceStr = ""; step = 1 }
+            CapBigChoice(G_NORTH_C, "إلى عمّان والزرقاء", 0) { group = G_NORTH_C; priceStr = ""; step = 1 }
+            CapBigChoice(G_SOUTH_C, "إلى إربد والرمثا", 1) { group = G_SOUTH_C; priceStr = ""; step = 1 }
+            CapBigChoice(G_INNER_C, "بين مدن الشمال وقراه", 2) { group = G_INNER_C; priceStr = ""; step = 1 }
         }
         1 -> Column(colMod, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            CapBackBar(
-                when {
-                    village.isNotBlank() -> village
-                    inner -> "داخل الشمال"
-                    group == "الجنوب" -> "من الشمال"
-                    else -> "من الجنوب"
-                }
-            ) { goBack() }
-            if (inner) {
-                CapSection("من أي بلد بالشمال؟") { CapGrid(villages, village, 3) { village = it; spot = "" } }
-                if (village.isNotBlank()) CapSection("وين بإربد؟") {
-                    CapGrid(listOf("كل إربد") + irbidSpots, "", 1) { spot = if (it == "كل إربد") "" else it; step = 2 }
-                }
-            } else if (village.isBlank()) {
-                CapSection(if (group == "الجنوب") "من أي مكان بالشمال؟" else "لأي مكان بالشمال؟") {
-                    CapGrid(villages, village, 3) { village = it }
-                }
-            } else {
-                Text("اختر الطريق", fontSize = 15.sp, color = CapMute)
-                southRoads.entries.forEachIndexed { i, (r, places) ->
-                    CapRoadCard(roadLabel(r), places, openRoad == r, i, onToggle = { openRoad = if (openRoad == r) "" else r }) { road = r; stop = ""; step = 2 }
+            CapBackBar(if (origin.isNotBlank() && dest.isBlank()) origin else group) { goBack() }
+            when {
+                // من الشمال: from which place, to Amman / Zarqa / Mafraq, then the road
+                fromNorth && origin.isBlank() -> CapSection("من أي بلد بالشمال؟") { CapGrid(northPlaces, origin, 3) { origin = it } }
+                fromNorth && dest.isBlank() -> CapSection("إلى أين؟") { CapGrid(northToDests, dest, 3) { dest = it } }
+                // من الجنوب: to which place in the north, then the road
+                group == G_SOUTH_C && dest.isBlank() -> CapSection("إلى أي مكان بالشمال؟") { CapGrid(southToDests, dest, 3) { dest = it } }
+                // داخل الشمال: from, then to, both grouped
+                inner && origin.isBlank() -> InnerPicker("من أين؟", null) { origin = it }
+                inner && dest.isBlank() -> InnerPicker("إلى أين؟", origin) { dest = it; step = 2 }
+                else -> {
+                    Text("اختر الطريق", fontSize = 15.sp, color = CapMute)
+                    southRoads.entries.forEachIndexed { i, (r, places) ->
+                        CapRoadCard(roadLabel(r), places, openRoad == r, i, onToggle = { openRoad = if (openRoad == r) "" else r }) { road = r; step = 2 }
+                    }
                 }
             }
         }
         else -> Column(colMod, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            val sPlace = stop.ifBlank { if (road == "طريق الزرقاء") ZARQA else AMMAN }
-            val (tFrom, tTo) = when (group) {
-                "الجنوب" -> village to sPlace
-                "الشمال" -> sPlace to village
-                else -> village to spot.ifBlank { "إربد" }
-            }
-            CapBackBar(tFrom + " ← " + tTo + if (inner) "" else " • " + roadLabel(road)) { goBack() }
+            val sPlace = if (road == "طريق الزرقاء") ZARQA else AMMAN
+            val tFrom = if (group == G_SOUTH_C) sPlace else origin
+            CapBackBar(tFrom + " ← " + dest + if (inner) "" else " • " + roadLabel(road)) { goBack() }
             CapSection("اليوم والوقت (اختياري)") {
                 CapDays(pillDays(5), day) { day = it }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -407,18 +421,18 @@ private fun CapPublish(me: UserProfile, online: Boolean, onPublished: () -> Unit
             CapBtn(if (sending) "جاري النشر..." else "انشر الرحلة", Modifier.fillMaxWidth(), height = 58.dp) {
                 val departAt = dayStart(day) + (if (toMin >= 0) toMin else 1439) * 60_000L
                 when {
-                    group.isBlank() -> toast(ctx, "اختر وين رايح")
+                    group.isBlank() -> toast(ctx, "اختر وجهة انطلاقك")
+                    group != G_SOUTH_C && origin.isBlank() -> toast(ctx, "اختر مكان انطلاقك")
+                    dest.isBlank() -> toast(ctx, "اختر وجهة الوصول")
                     !inner && road.isBlank() -> toast(ctx, "اختر الطريق")
-                    village.isBlank() -> toast(ctx, "اختر البلد")
                     fromMin >= 0 && toMin >= 0 && toMin <= fromMin -> toast(ctx, "وقت النهاية لازم يكون بعد البداية")
                     departAt < System.currentTimeMillis() -> toast(ctx, "هالوقت فات، اختر وقت جاي")
                     sending -> {}
                     else -> {
-                        val southPlace = stop.ifBlank { if (road == "طريق الزرقاء") ZARQA else AMMAN }
                         val (from, to, roadField) = when (group) {
-                            "الجنوب" -> Triple(village, southPlace, road)
-                            "الشمال" -> Triple(southPlace, village, road)
-                            else -> Triple(village, spot.ifBlank { "إربد" }, NORTH_INNER)
+                            G_SOUTH_C -> Triple(sPlace, dest, road)
+                            G_NORTH_C -> Triple(origin, dest, road)
+                            else -> Triple(origin, dest, NORTH_INNER)
                         }
                         sending = true
                         Repo.publishTrip(
