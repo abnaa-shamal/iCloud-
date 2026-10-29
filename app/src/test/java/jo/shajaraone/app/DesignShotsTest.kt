@@ -16,6 +16,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.automirrored.filled.List
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -127,7 +129,7 @@ class DesignShotsTest {
                     RideTile(t) { LedgerPrimaryButton("احجز مقعد", {}) }
                 }
             }
-            GlassNav(listOf(androidx.compose.material.icons.Icons.Filled.Search to "الرحلات", androidx.compose.material.icons.Icons.AutoMirrored.Filled.List to "حجوزاتي (1)"), 0, {})
+            GlassNav(listOf(androidx.compose.material.icons.Icons.Default.Search to "الرحلات", androidx.compose.material.icons.Icons.AutoMirrored.Filled.List to "حجوزاتي (1)"), 0, {})
         }
     }
 
