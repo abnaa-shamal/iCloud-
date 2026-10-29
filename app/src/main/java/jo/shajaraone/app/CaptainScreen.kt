@@ -1,236 +1,148 @@
 package jo.shajaraone.app
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CaptainHome(me: UserProfile) {
-    var tab by rememberSaveable { mutableIntStateOf(0) }
-    Column(Modifier.fillMaxSize()) {
-        PrimaryTabRow(selectedTabIndex = tab) {
-            Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("📝 نشر رحلة") })
-            Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("🚗 رحلاتي والطلبات") })
-        }
-        if (tab == 0) PublishTrip(me, onPublished = { tab = 1 }) else MyTrips(me)
-    }
-}
-
-// ===== Publish =====
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
-    val ctx = LocalContext.current
-    var from by rememberSaveable { mutableStateOf("الشجرة") }
-    var to by rememberSaveable { mutableStateOf("إربد") }
-    var road by rememberSaveable { mutableStateOf(tripRoads[0]) }
-    var day by rememberSaveable { mutableStateOf("0") }
-    var hour by rememberSaveable { mutableIntStateOf(7) }
-    var minute by rememberSaveable { mutableIntStateOf(0) }
-    var timeChosen by rememberSaveable { mutableStateOf(false) }
-    var showTime by remember { mutableStateOf(false) }
-    var seats by rememberSaveable { mutableIntStateOf(4) }
-    var fixedPrice by rememberSaveable { mutableStateOf(true) }
-    var priceStr by rememberSaveable { mutableStateOf("1") }
-    var parcels by rememberSaveable { mutableStateOf(false) }
-    var note by rememberSaveable { mutableStateOf("") }
-    var sending by remember { mutableStateOf(false) }
-
-    fun setRoute(f: String, t: String) {
-        from = f
-        to = t
-        val d = defaultFixedPrice(f, t)
-        fixedPrice = d != null
-        priceStr = if (d != null) "1" else ""
-    }
-
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).imePadding().padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        AppCard {
-            SectionLabel("📍 من وين؟")
-            ChoiceChips(allPlaces, from) { setRoute(it, to) }
-            SectionLabel("🏁 لوين؟")
-            ChoiceChips(allPlaces, to) { setRoute(from, it) }
-            if (!isValidRoute(from, to)) {
-                Text(
-                    "الرحلة لازم تكون بين منطقة (الشجرة، الذنيبة، عمراوة، الطرة، الرمثا) ومدينة (إربد، عمّان، الزرقاء).",
-                    color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall
-                )
-            }
-            if (needsRoadChoice(from, to)) {
-                SectionLabel("🛣️ الطريق")
-                ChoiceChips(tripRoads, road) { road = it }
-            }
-        }
-
-        AppCard {
-            SectionLabel("📅 اليوم")
-            ScrollChips(nextDays(), day) { day = it }
-            OutlinedButton(
-                onClick = { showTime = true },
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.fillMaxWidth().height(52.dp)
-            ) {
-                Text(
-                    if (timeChosen) "🕒 الساعة ${clockText(departMillis(day.toInt(), hour, minute))}"
-                    else "🕒 اختار ساعة الانطلاق"
-                )
-            }
-        }
-
-        AppCard {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("💺 المقاعد الفاضية", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                Stepper(seats, 1, me.maxSeats) { seats = it }
-            }
-            SectionLabel("💰 السعر للراكب")
-            ChoiceChips(listOf("سعر محدد", "حسب الاتفاق"), if (fixedPrice) "سعر محدد" else "حسب الاتفاق") {
-                fixedPrice = it == "سعر محدد"
-                if (fixedPrice && priceStr.isBlank()) priceStr = "1"
-            }
-            if (fixedPrice) {
-                OutlinedTextField(
-                    value = priceStr,
-                    onValueChange = { v -> priceStr = v.filter { it.isDigit() || it == '.' }.take(5) },
-                    label = { Text("السعر") }, suffix = { Text("دينار") }, singleLine = true,
-                    shape = MaterialTheme.shapes.medium,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("📦 بقبل أمانات بهالرحلة", modifier = Modifier.weight(1f))
-                Switch(checked = parcels, onCheckedChange = { parcels = it })
-            }
-            OutlinedTextField(
-                value = note, onValueChange = { note = it.take(120) },
-                label = { Text("ملاحظة (اختياري)") }, placeholder = { Text("مثلاً: بطلع من عند الجامع") },
-                shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth()
-            )
-        }
-
-        BigButton(if (sending) "جاري النشر..." else "🚀 انشر الرحلة", enabled = !sending) {
-            val price = if (fixedPrice) priceStr.toDoubleOrNull() else null
-            val departAt = departMillis(day.toInt(), hour, minute)
-            when {
-                !isValidRoute(from, to) -> toast(ctx, "اختار خط صحيح")
-                !timeChosen -> toast(ctx, "اختار ساعة الانطلاق")
-                departAt < System.currentTimeMillis() -> toast(ctx, "هالوقت فات، اختار وقت جاي")
-                fixedPrice && (price == null || price <= 0.0) -> toast(ctx, "اكتب السعر صح")
-                else -> {
-                    sending = true
-                    Repo.publishTrip(
-                        Trip(
-                            captainName = me.name, captainPhone = me.phone, carText = me.carText,
-                            from = from, to = to, road = if (needsRoadChoice(from, to)) road else "",
-                            departAt = departAt, seatsTotal = seats.toLong(), price = price,
-                            acceptsParcels = parcels, note = note.trim()
-                        )
-                    ) { ok ->
-                        sending = false
-                        if (ok) {
-                            toast(ctx, "تم نشر الرحلة ✅")
-                            timeChosen = false
-                            note = ""
-                            onPublished()
-                        } else {
-                            toast(ctx, "ما قدرت أنشر. تأكد من الإنترنت ومن موافقة المشرف على حسابك")
-                        }
-                    }
-                }
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-    }
-
-    if (showTime) {
-        val st = rememberTimePickerState(initialHour = hour, initialMinute = minute, is24Hour = false)
-        AlertDialog(
-            onDismissRequest = { showTime = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    hour = st.hour
-                    minute = st.minute
-                    timeChosen = true
-                    showTime = false
-                }) { Text("تم") }
-            },
-            dismissButton = { TextButton(onClick = { showTime = false }) { Text("إلغاء") } },
-            text = {
-                // The clock face reads better left-to-right
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                    TimePicker(state = st)
-                }
-            }
-        )
-    }
-}
-
-// ===== My trips and their bookings =====
-
-@Composable
-private fun MyTrips(me: UserProfile) {
-    val ctx = LocalContext.current
     val uid = Repo.auth.currentUser?.uid ?: ""
+    var tab by rememberSaveable { mutableIntStateOf(0) }
     var trips by remember { mutableStateOf<List<Trip>?>(null) }
     var bookings by remember { mutableStateOf<List<Booking>>(emptyList()) }
-    var cancelTrip by remember { mutableStateOf<Trip?>(null) }
-    var cancelBooking by remember { mutableStateOf<Booking?>(null) }
-
     DisposableEffect(uid) {
         val a = Repo.listenTrips({ all -> trips = all.filter { it.captainUid == uid } }, { if (trips == null) trips = emptyList() })
         val b = Repo.listenBookings("captainUid", uid) { bookings = it }
-        onDispose {
-            a.remove()
-            b.remove()
+        onDispose { a.remove(); b.remove() }
+    }
+    val pending = bookings.count { it.status == BK_PENDING && it.departAt > System.currentTimeMillis() }
+    val feedbackCtx = LocalContext.current
+    var lastPending by remember { mutableIntStateOf(-1) }
+    LaunchedEffect(pending) {
+        if (lastPending >= 0 && pending > lastPending) AppFeedback.newRequest(feedbackCtx)
+        lastPending = pending
+    }
+    CompositionLocalProvider(LocalContentColor provides CapInk) {
+        Box(Modifier.fillMaxSize().background(CapBg)) {
+            if (tab == 1) CapPublish(me, onBack = { tab = 0 })
+            else CapDashboard(me.name.trim().substringBefore(" "), trips, bookings)
+            Box(Modifier.align(Alignment.BottomCenter)) {
+                CapNav(listOf(Triple(0, "الرئيسية", pending), Triple(6, "رحلة جديدة", 0)), tab) { tab = it }
+            }
         }
     }
+}
 
-    val list = trips
-    when {
-        list == null -> LoadingBox()
-        list.isEmpty() -> EmptyState("🚗", "ما عندك رحلات جاية.\nانشر رحلة من تبويب «نشر رحلة».")
-        else -> LazyColumn(
-            contentPadding = PaddingValues(16.dp),
+// ===== Dashboard: requests first, then my rides =====
+
+@Composable
+fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
+    val ctx = LocalContext.current
+    var cancelTrip by remember { mutableStateOf<Trip?>(null) }
+    var cancelBooking by remember { mutableStateOf<Booking?>(null) }
+    var open by rememberSaveable { mutableStateOf("") }
+    val now = System.currentTimeMillis()
+    val pend = bookings.filter { it.status == BK_PENDING && it.departAt > now }.sortedBy { it.departAt }
+    val active = (trips ?: emptyList()).filter { it.status != TRIP_CANCELLED && it.departAt > now - 4 * 3_600_000L }.sortedBy { it.departAt }
+
+    Box(Modifier.fillMaxSize()) {
+        androidx.compose.foundation.lazy.LazyColumn(
+            Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 44.dp, bottom = 120.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(list, key = { it.id }) { t ->
-                val reqs = bookings.filter { it.tripId == t.id }
-                    .sortedBy { if (it.status == BK_PENDING) 0 else if (it.status == BK_ACCEPTED) 1 else 2 }
-                AppCard {
-                    TripInfo(t, showCaptain = false)
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    if (reqs.isEmpty()) {
-                        Text("ما في حجوزات لسا", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    } else {
-                        Text(
-                            "الحجوزات (${reqs.count { it.isActive }})",
-                            style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold
-                        )
-                        reqs.forEach { b -> BookingRow(b, onCancel = { cancelBooking = b }) }
-                    }
-                    if (t.status != TRIP_CANCELLED) {
-                        TextButton(onClick = { cancelTrip = t }) {
-                            Text("إلغاء الرحلة كاملة", color = MaterialTheme.colorScheme.error)
+            item {
+                Column {
+                    Text("أهلاً كابتن $name", fontSize = 14.sp, color = CapMute)
+                    Text(if (pend.isEmpty()) "ما في طلبات جديدة" else if (pend.size == 1) "طلب واحد بانتظارك" else "${pend.size} طلبات بانتظارك",
+                        fontSize = 28.sp, fontWeight = FontWeight.Bold, color = CapInk)
+                }
+            }
+            items(pend.size, key = { pend[it].id }) { i ->
+                val b = pend[i]
+                Column(Modifier.entrance(i).fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(CapPeach).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Box(Modifier.size(44.dp).clip(androidx.compose.foundation.shape.CircleShape).background(CapDark), contentAlignment = Alignment.Center) {
+                            Text(b.passengerName.trim().take(1), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
+                        Column(Modifier.weight(1f)) {
+                            Text(b.passengerName, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = CapDark)
+                            Text("${seatsText(b.seats)} • ${b.tripSummary}", fontSize = 12.sp, color = Color(0xFF6B5E4F))
+                        }
+                        Text(clockText(b.departAt), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = CapDark)
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        CapBtn("قبول", Modifier.weight(1.4f), color = CapDark) {
+                            Repo.accept(b) { ok -> toast(ctx, if (ok) "تم القبول ✅" else "ما في مقاعد كافية أو الطلب تغيّر") }
+                        }
+                        CapBtn("رفض", Modifier.weight(1f), filled = false, color = CapDark) {
+                            Repo.reject(b) { ok -> if (!ok) toast(ctx, "ما قدرت أرفض، جرّب كمان مرة") }
+                        }
+                    }
+                }
+            }
+            item {
+                Text("رحلاتي", Modifier.padding(top = 10.dp), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = CapInk)
+            }
+            if (trips == null) item { LoadingBox() }
+            else if (active.isEmpty()) item {
+                Box(Modifier.fillMaxWidth().capCard().padding(24.dp), contentAlignment = Alignment.Center) {
+                    Text("ما عندك رحلات جاية", color = CapMute)
+                }
+            }
+            items(active.size, key = { active[it].id }) { i ->
+                val t = active[i]
+                val reqs = bookings.filter { it.tripId == t.id && it.isActive && it.status == BK_ACCEPTED }
+                val isOpen = open == t.id
+                Column(Modifier.fillMaxWidth().capCard().animateContentSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        Modifier.fillMaxWidth().clickable(remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, null) { open = if (isOpen) "" else t.id },
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text("${t.from}  ←  ${t.to}", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = CapInk)
+                            Text("${dayName(t.departAt)} • ${clockText(t.departAt)} • ${priceText(t.price)}", fontSize = 12.sp, color = CapMute)
+                        }
+                        Box(Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFF3A3B41)).padding(horizontal = 12.dp, vertical = 7.dp)) {
+                            Text(if (t.seatsFree <= 0L) "مكتملة" else "${t.seatsFree} فاضية", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CapAccent)
+                        }
+                    }
+                    if (isOpen) {
+                        if (reqs.isEmpty()) Text("ما في ركاب لسا", fontSize = 13.sp, color = CapMute)
+                        reqs.forEach { b ->
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                CapAvatar(b.passengerName, 36.dp)
+                                Column(Modifier.weight(1f)) {
+                                    Text(b.passengerName, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = CapInk)
+                                    Text(seatsText(b.seats) + if (b.dropoff.isNotBlank()) " • ${b.dropoff}" else "", fontSize = 11.sp, color = CapMute)
+                                }
+                                CapBtn("اتصال", filled = false, color = CapInk, height = 38.dp) { callPhone(ctx, b.passengerPhone) }
+                                CapBtn("إلغاء", filled = false, color = CapRed, height = 38.dp) { cancelBooking = b }
+                            }
+                        }
+                        LiveShareControl(t)
+                        Text("إلغاء الرحلة", Modifier.clickable { cancelTrip = t }.padding(vertical = 6.dp), fontSize = 13.sp, color = CapRed)
                     }
                 }
             }
@@ -239,70 +151,158 @@ private fun MyTrips(me: UserProfile) {
 
     cancelTrip?.let { t ->
         ReasonDialog(
-            title = "إلغاء رحلة ${t.from} ← ${t.to}؟",
-            confirmText = "ألغِ الرحلة",
-            onDismiss = { cancelTrip = null },
+            title = "إلغاء رحلة ${t.from} ← ${t.to}؟", confirmText = "ألغِ الرحلة", onDismiss = { cancelTrip = null },
             onConfirm = { reason ->
-                val active = bookings.filter { it.tripId == t.id && it.isActive }
-                Repo.cancelTrip(t, reason, active) { ok -> toast(ctx, if (ok) "انلغت الرحلة" else "ما قدرت ألغي، جرّب كمان مرة") }
+                val act = bookings.filter { it.tripId == t.id && it.isActive }
+                Repo.cancelTrip(t, reason, act) { ok -> toast(ctx, if (ok) "انلغت الرحلة" else "ما قدرت ألغي، جرّب كمان مرة") }
                 cancelTrip = null
             }
         )
     }
-
     cancelBooking?.let { b ->
         ReasonDialog(
-            title = "إلغاء حجز ${b.passengerName}؟",
-            confirmText = "ألغِ الحجز",
-            onDismiss = { cancelBooking = null },
+            title = "إلغاء حجز ${b.passengerName}؟", confirmText = "ألغِ الحجز", onDismiss = { cancelBooking = null },
             onConfirm = { reason ->
-                Repo.cancelBooking(b, BK_CANCELLED_CAPTAIN, reason) { ok ->
-                    toast(ctx, if (ok) "انلغى الحجز" else "ما قدرت ألغي، جرّب كمان مرة")
-                }
+                Repo.cancelBooking(b, BK_CANCELLED_CAPTAIN, reason) { ok -> toast(ctx, if (ok) "انلغى الحجز" else "ما قدرت ألغي، جرّب كمان مرة") }
                 cancelBooking = null
             }
         )
     }
 }
 
+// ===== Publish: direction, place, village, day, time, seats =====
+
 @Composable
-private fun BookingRow(b: Booking, onCancel: () -> Unit) {
+internal fun CapPublishPreview() = CapPublish(UserProfile(name = "أحمد", phone = "0790000000"), onBack = {})
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
     val ctx = LocalContext.current
-    val active = b.isActive
-    Surface(
-        shape = MaterialTheme.shapes.medium,
-        color = if (active) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer,
-        modifier = Modifier.fillMaxWidth()
+    var group by rememberSaveable { mutableStateOf("") }       // الجنوب / الشمال / داخل الشمال
+    var road by rememberSaveable { mutableStateOf("") }
+    var stop by rememberSaveable { mutableStateOf("") }
+    var village by rememberSaveable { mutableStateOf("") }
+    var spot by rememberSaveable { mutableStateOf("") }
+    var day by rememberSaveable { mutableIntStateOf(0) }
+    var minutes by rememberSaveable { mutableIntStateOf(-1) }
+    var seats by rememberSaveable { mutableIntStateOf(3) }
+    var priceStr by rememberSaveable { mutableStateOf("") }
+    var showTime by remember { mutableStateOf(false) }
+    var sending by remember { mutableStateOf(false) }
+
+    val inner = group == "داخل الشمال"
+    val priceChips = if (inner) listOf("1", "1.5") else listOf("3", "3.5", "4", "4.5", "5")
+    val villages = if (inner) northVillages else northPlaces
+    val maxSeats = me.maxSeats.coerceIn(1, 8)
+
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 40.dp, bottom = 120.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "${b.passengerName} • ${seatsText(b.seats)}",
-                    fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f)
-                )
-                Text(bookingStatusText(b.status), style = MaterialTheme.typography.labelLarge)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(Modifier.size(44.dp).capCard(22.dp).clickable { onBack() }, contentAlignment = Alignment.Center) { Glyph(4, CapInk, 20.dp) }
+            Text("رحلة جديدة", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = CapInk)
+        }
+
+        CapSection("لوين رايح؟") {
+            CapGrid(listOf("الجنوب", "الشمال", "داخل الشمال"), group, 3) { group = it; priceStr = ""; if (it == "داخل الشمال" && village == "إربد") village = "" }
+        }
+        if (group == "الجنوب" || group == "الشمال") {
+            CapSection("من أي طريق؟") {
+                CapGrid(southRoads.keys.toList(), road, 3) { road = it; stop = "" }
             }
-            if (b.dropoff.isNotBlank()) Text("📍 النزول: ${b.dropoff}")
-            if (b.reason.isNotBlank() && !active) Text("السبب: ${b.reason}", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (active) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    if (b.status == BK_PENDING) {
-                        Button(onClick = {
-                            Repo.accept(b) { ok -> toast(ctx, if (ok) "تم القبول ✅" else "ما في مقاعد كافية أو الطلب تغيّر") }
-                        }) { Text("✅ قبول") }
-                        OutlinedButton(onClick = {
-                            Repo.reject(b) { ok -> if (!ok) toast(ctx, "ما قدرت أرفض، جرّب كمان مرة") }
-                        }) { Text("رفض") }
-                    } else {
-                        OutlinedButton(onClick = onCancel) { Text("إلغاء الحجز") }
-                    }
-                    Spacer(Modifier.weight(1f))
-                    FilledTonalIconButton(onClick = { callPhone(ctx, b.passengerPhone) }) { Text("📞") }
-                    FilledTonalIconButton(onClick = {
-                        openWhatsApp(ctx, b.passengerPhone, "مرحبا ${b.passengerName}، بخصوص حجزك برحلة ${b.tripSummary}")
-                    }) { Text("💬") }
+            if (road.isNotBlank()) CapSection("المنطقة (اختياري)") {
+                CapGrid(listOf("أي منطقة") + (southRoads[road] ?: emptyList()), if (stop.isBlank()) "أي منطقة" else stop, 3) { stop = if (it == "أي منطقة") "" else it }
+            }
+        }
+        if (group.isNotBlank()) CapSection(if (group == "الشمال") "لأي بلد بالشمال؟" else "من أي بلد بالشمال؟") {
+            CapGrid(villages, village, 3) { village = it }
+        }
+        if (inner && village.isNotBlank()) CapSection("وين بإربد؟") {
+            CapGrid(irbidSpots, spot, 1) { spot = it }
+        }
+        CapSection("اليوم والساعة") {
+            CapDays(pillDays(5), day) { day = it }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f).height(52.dp).clip(RoundedCornerShape(16.dp)).background(Color(0x14FFFFFF)).clickable { showTime = true }, contentAlignment = Alignment.Center) {
+                    Text(if (minutes >= 0) "الساعة ${clockText(dayStart(day) + minutes * 60_000L)}" else "اختر الساعة", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (minutes >= 0) CapInk else CapAccent)
+                }
+                Row(Modifier.clip(RoundedCornerShape(16.dp)).background(Color(0x14FFFFFF)).height(52.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(44.dp).clickable { if (seats < maxSeats) seats++ }, contentAlignment = Alignment.Center) { Text("+", fontSize = 24.sp, color = CapInk) }
+                    Text("$seats مقاعد", Modifier.padding(horizontal = 4.dp), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = CapInk)
+                    Box(Modifier.size(44.dp).clickable { if (seats > 1) seats-- }, contentAlignment = Alignment.Center) { Text("−", fontSize = 24.sp, color = CapInk) }
                 }
             }
+        }
+        CapSection("السعر (اختياري)") {
+            CapGrid(listOf("حسب الاتفاق") + priceChips.map { "$it د.أ" }, if (priceStr.isBlank()) "حسب الاتفاق" else "$priceStr د.أ", 3) {
+                priceStr = if (it == "حسب الاتفاق") "" else it.removeSuffix(" د.أ")
+            }
+        }
+
+        CapBtn(if (sending) "جاري النشر..." else "انشر الرحلة", Modifier.fillMaxWidth(), height = 58.dp) {
+            val departAt = if (minutes >= 0) dayStart(day) + minutes * 60_000L else 0L
+            when {
+                group.isBlank() -> toast(ctx, "اختر وين رايح")
+                !inner && road.isBlank() -> toast(ctx, "اختر الطريق")
+                village.isBlank() -> toast(ctx, "اختر البلد")
+                minutes < 0 -> toast(ctx, "اختر الساعة")
+                departAt < System.currentTimeMillis() -> toast(ctx, "هالوقت فات، اختر وقت جاي")
+                sending -> {}
+                else -> {
+                    val southPlace = stop.ifBlank { if (road == "طريق الزرقاء") ZARQA else AMMAN }
+                    val (from, to, roadField) = when (group) {
+                        "الجنوب" -> Triple(village, southPlace, road)
+                        "الشمال" -> Triple(southPlace, village, road)
+                        else -> Triple(village, spot.ifBlank { "إربد" }, NORTH_INNER)
+                    }
+                    sending = true
+                    Repo.publishTrip(
+                        Trip(
+                            captainName = me.name, captainPhone = me.phone, carText = me.carText,
+                            from = from, to = to, road = roadField,
+                            departAt = departAt, seatsTotal = seats.toLong(), price = priceStr.toDoubleOrNull(),
+                            acceptsParcels = false, note = ""
+                        )
+                    ) { ok ->
+                        sending = false
+                        if (ok) { toast(ctx, "تم نشر الرحلة ✅"); onBack() }
+                        else toast(ctx, "ما قدرت أنشر. تأكد من الإنترنت ومن موافقة المشرف على حسابك")
+                    }
+                }
+            }
+        }
+    }
+
+    if (showTime) {
+        val st = rememberTimePickerState(initialHour = if (minutes >= 0) minutes / 60 else 7, initialMinute = if (minutes >= 0) minutes % 60 else 0, is24Hour = false)
+        AlertDialog(
+            onDismissRequest = { showTime = false },
+            confirmButton = { TextButton(onClick = { minutes = st.hour * 60 + st.minute; showTime = false }) { Text("تم") } },
+            dismissButton = { TextButton(onClick = { showTime = false }) { Text("إلغاء") } },
+            text = { CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) { TimePicker(state = st) } }
+        )
+    }
+}
+
+/** One button to start sharing the live location, one to stop. */
+@Composable
+internal fun LiveShareControl(t: Trip) {
+    val ctx = LocalContext.current
+    val active by LiveShareService.active.collectAsState()
+    val now = System.currentTimeMillis()
+    val inWindow = t.status != TRIP_CANCELLED && now >= t.departAt - 60 * 60_000L && now <= t.departAt + 4 * 3_600_000L
+    if (!inWindow) return
+    val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { r ->
+        if (r.values.any { it }) LiveShareService.start(ctx, t.id) else toast(ctx, "لازم توافق على الموقع عشان تشاركه")
+    }
+    when {
+        active == t.id -> CapBtn("أوقف مشاركة موقعي", Modifier.fillMaxWidth(), filled = false, color = CapRed) { LiveShareService.stop(ctx) }
+        active != null -> Text("بتشارك موقعك لرحلة ثانية. وقّفها أول.", fontSize = 12.sp, color = CapMute)
+        else -> CapBtn("ابدأ الرحلة وشارك موقعي", Modifier.fillMaxWidth()) {
+            if (hasLocationPermission(ctx)) LiveShareService.start(ctx, t.id)
+            else ask.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
         }
     }
 }

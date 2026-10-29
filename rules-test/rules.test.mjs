@@ -18,11 +18,11 @@ before(async () => {
 after(async () => { await env.cleanup(); });
 
 const user = (role, status, phone, name = 'اسم تجريبي') =>
-  ({ role, status, name, phone, carType: 'شانجان', carColor: 'ابيض', carPlate: '123', createdAt: 1 });
+  ({ role, status, name, phone, carType: 'شانجان', carColor: 'ابيض', carPlate: '123', createdAt: 1, verified: true });
 
 const trip = (over = {}) => ({
   captainUid: 'cap', captainName: 'كابتن', captainPhone: '0791000001', carText: 'سيارة',
-  from: 'الشجرة', to: 'إربد', road: '', departAt: 2000000000000, seatsTotal: 4, seatsFree: 2,
+  from: 'عمراوة', to: 'إربد', road: '', departAt: 2000000000000, seatsTotal: 4, seatsFree: 2,
   price: 1.0, acceptsParcels: false, note: '', status: 'open', cancelReason: '', createdAt: 1, ...over,
 });
 
@@ -43,6 +43,7 @@ beforeEach(async () => {
     await setDoc(doc(db, 'users/capRS'), { ...user('captain', 'approved', '0791000005'), riderSuspended: true }); // approved captain, suspended as rider
     await setDoc(doc(db, 'users/paxRS'), { ...user('passenger', 'active', '0792000004'), riderSuspended: true });
     await setDoc(doc(db, 'users/pax'), user('passenger', 'active', '0792000001', 'راكب'));
+    await setDoc(doc(db, 'users/paxU'), { ...user('passenger', 'active', '0792000009'), verified: false }); // number not verified yet
     await setDoc(doc(db, 'users/paxS'), user('passenger', 'suspended', '0792000002'));
     await setDoc(doc(db, 'trips/t1'), trip());
     await setDoc(doc(db, 'trips/tFull'), trip({ status: 'full', seatsFree: 0 }));
@@ -892,7 +893,7 @@ test('verify code: 6 digits accepted at sign-up, anything else rejected; `verifi
 });
 test('verify code: only the admin marks a number verified; the owner cannot change the code or verify himself', async () => {
   await env.withSecurityRulesDisabled(async (c) => {
-    await setDoc(doc(c.firestore(), 'users/vp'), { ...user('passenger', 'active', '0792111111'), verifyCode: '111222' });
+    await setDoc(doc(c.firestore(), 'users/vp'), { ...user('passenger', 'active', '0792111111'), verified: false, verifyCode: '111222' });
   });
   await assertFails(updateDoc(doc(as('vp', '0792111111'), 'users/vp'), { verified: true }));
   await assertFails(updateDoc(doc(as('vp', '0792111111'), 'users/vp'), { verifyCode: '999999' }));
@@ -902,3 +903,41 @@ test('verify code: only the admin marks a number verified; the owner cannot chan
   await assertFails(updateDoc(doc(asAdmin(), 'users/vp'), { verifyCode: '999999' }));
 });
 
+
+// ===== Live captain location =====
+const live = (over = {}) => ({ captainUid: 'cap', riders: ['pax'], lat: 32.5, lng: 35.9, accuracy: 8, speed: 12, updatedAt: 1700000000000, ...over });
+
+test('live: the trip captain can share his location', async () => {
+  await assertSucceeds(setDoc(doc(asCap(), 'liveLocations/t1'), live()));
+});
+test('live: another captain cannot write on someone else\'s trip', async () => {
+  await assertFails(setDoc(doc(asCapM(), 'liveLocations/t1'), live({ captainUid: 'capM' })));
+});
+test('live: a pending/rejected captain cannot share', async () => {
+  await assertFails(setDoc(doc(asCapR(), 'liveLocations/t1'), live({ captainUid: 'capR' })));
+});
+test('live: cannot write invalid coordinates or extra fields', async () => {
+  await assertFails(setDoc(doc(asCap(), 'liveLocations/t1'), live({ lat: 120 })));
+  await assertFails(setDoc(doc(asCap(), 'liveLocations/t1'), live({ extra: 1 })));
+});
+test('live: only listed riders (and the captain) can read it', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), 'liveLocations/t1'), live()); });
+  await assertSucceeds(getDoc(doc(asPax(), 'liveLocations/t1')));
+  await assertSucceeds(getDoc(doc(asCap(), 'liveLocations/t1')));
+  await assertFails(getDoc(doc(as('other', '0793000009'), 'liveLocations/t1')));
+});
+test('live: a missing document can be read (rider waits for the captain to start)', async () => {
+  await assertSucceeds(getDoc(doc(asPax(), 'liveLocations/t1')));
+});
+test('live: the captain can stop sharing, a rider cannot delete', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), 'liveLocations/t1'), live()); });
+  await assertFails(deleteDoc(doc(asPax(), 'liveLocations/t1')));
+  await assertSucceeds(deleteDoc(doc(asCap(), 'liveLocations/t1')));
+});
+
+test('booking needs a verified number: an unverified rider is refused, the same rider passes once the admin verifies him', async () => {
+  const asPaxU = () => as('paxU', '0792000009');
+  await assertFails(bookAs(asPaxU(), 'paxU', '0792000009'));
+  await assertSucceeds(updateDoc(doc(asAdmin(), 'users/paxU'), { verified: true }));
+  await assertSucceeds(bookAs(asPaxU(), 'paxU', '0792000009'));
+});

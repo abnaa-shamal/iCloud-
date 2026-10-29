@@ -145,6 +145,43 @@ object Repo {
             if (snap != null) onChange(snap.documents.map { it.toBooking() }.sortedByDescending { it.createdAt })
         }
 
+    // ===== Live captain location =====
+
+    fun pushLive(tripId: String, riders: List<String>, lat: Double, lng: Double, accuracy: Double, speed: Double) {
+        val uid = auth.currentUser?.uid ?: return
+        db.collection("liveLocations").document(tripId).set(
+            mapOf(
+                "captainUid" to uid, "riders" to riders.take(7), "lat" to lat, "lng" to lng,
+                "accuracy" to accuracy, "speed" to speed, "updatedAt" to now()
+            )
+        )
+    }
+
+    fun stopLive(tripId: String) {
+        db.collection("liveLocations").document(tripId).delete()
+    }
+
+    fun listenLive(tripId: String, onChange: (LiveLoc?) -> Unit, onError: () -> Unit): ListenerRegistration =
+        db.collection("liveLocations").document(tripId).addSnapshotListener { snap, err ->
+            when {
+                err != null -> onError()
+                snap == null || !snap.exists() -> onChange(null)
+                else -> onChange(
+                    LiveLoc(
+                        lat = snap.getDouble("lat") ?: 0.0, lng = snap.getDouble("lng") ?: 0.0,
+                        accuracy = snap.getDouble("accuracy") ?: 0.0, speed = snap.getDouble("speed") ?: 0.0,
+                        updatedAt = snap.getLong("updatedAt") ?: 0L
+                    )
+                )
+            }
+        }
+
+    /** Calls [onCancelled] when the trip gets cancelled (the live sharing must stop). */
+    fun listenTripCancelled(tripId: String, onCancelled: () -> Unit): ListenerRegistration =
+        trips.document(tripId).addSnapshotListener { snap, _ ->
+            if (snap != null && snap.exists() && snap.getString("status") == TRIP_CANCELLED) onCancelled()
+        }
+
     fun book(t: Trip, me: UserProfile, seats: Long, dropoff: String, onDone: (Boolean) -> Unit) {
         val uid = auth.currentUser?.uid ?: return onDone(false)
         val data = hashMapOf<String, Any>(

@@ -2,11 +2,11 @@ name: Build signed APK
 
 on:
   push:
-    branches: [main]
+    branches: [main, v2]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -29,13 +29,13 @@ jobs:
       # The google-services.json is BUILT here from 4 secrets (+ the public project id).
       - name: Write google-services.json files
         env:
-          SHAJARA_FIREBASE_API_KEY: ${{ secrets.SHAJARA_FIREBASE_API_KEY }}
-          SHAJARA_FIREBASE_SENDER_ID: ${{ secrets.SHAJARA_FIREBASE_SENDER_ID }}
-          SHAJARA_RIDER_APP_ID: ${{ secrets.SHAJARA_RIDER_APP_ID }}
-          SHAJARA_CAPTAIN_APP_ID: ${{ secrets.SHAJARA_CAPTAIN_APP_ID }}
+          ABNAA_FIREBASE_API_KEY: ${{ secrets.ABNAA_FIREBASE_API_KEY }}
+          ABNAA_FIREBASE_SENDER_ID: ${{ secrets.ABNAA_FIREBASE_SENDER_ID }}
+          ABNAA_RIDER_APP_ID: ${{ secrets.ABNAA_RIDER_APP_ID }}
+          ABNAA_CAPTAIN_APP_ID: ${{ secrets.ABNAA_CAPTAIN_APP_ID }}
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID || 'shajara-rides-security-t-2632f' }}
         run: |
-          for v in SHAJARA_FIREBASE_API_KEY SHAJARA_FIREBASE_SENDER_ID SHAJARA_RIDER_APP_ID SHAJARA_CAPTAIN_APP_ID; do
+          for v in ABNAA_FIREBASE_API_KEY ABNAA_FIREBASE_SENDER_ID ABNAA_RIDER_APP_ID ABNAA_CAPTAIN_APP_ID; do
             if [ -z "${!v}" ]; then echo "::error::Secret $v is missing"; exit 1; fi
           done
           python3 - <<'PY'
@@ -43,10 +43,10 @@ jobs:
           e = os.environ
           def client(app_id, pkg):
               return {"client_info": {"mobilesdk_app_id": e[app_id], "android_client_info": {"package_name": pkg}},
-                      "api_key": [{"current_key": e["SHAJARA_FIREBASE_API_KEY"]}], "services": {}}
-          cfg = {"project_info": {"project_number": e["SHAJARA_FIREBASE_SENDER_ID"], "project_id": e["FIREBASE_PROJECT_ID"],
+                      "api_key": [{"current_key": e["ABNAA_FIREBASE_API_KEY"]}], "services": {}}
+          cfg = {"project_info": {"project_number": e["ABNAA_FIREBASE_SENDER_ID"], "project_id": e["FIREBASE_PROJECT_ID"],
                                   "storage_bucket": e["FIREBASE_PROJECT_ID"] + ".firebasestorage.app"},
-                 "client": [client("SHAJARA_RIDER_APP_ID", "jo.shajaraone.rider"), client("SHAJARA_CAPTAIN_APP_ID", "jo.shajaraone.captain")],
+                 "client": [client("ABNAA_RIDER_APP_ID", "jo.abnaashamal.rider"), client("ABNAA_CAPTAIN_APP_ID", "jo.abnaashamal.Cap")],
                  "configuration_version": "1"}
           json.dump(cfg, open("app/google-services.json", "w"))
           PY
@@ -70,8 +70,12 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           VERSION_CODE: ${{ github.run_number }}
+          # The admin app uses the same public Firebase settings as the rider app (no extra secret)
+          ABNAA_FIREBASE_API_KEY: ${{ secrets.ABNAA_FIREBASE_API_KEY }}
+          ABNAA_RIDER_APP_ID: ${{ secrets.ABNAA_RIDER_APP_ID }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID || 'shajara-rides-security-t-2632f' }}
         run: |
-          gradle :app:assembleRiderRelease :app:assembleCaptainRelease --no-daemon --stacktrace 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
+          gradle :app:assembleRiderRelease :app:assembleCaptainRelease :admin-app:assembleRelease --no-daemon --stacktrace 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
 
       # Short error summary: ONE annotation with the real compiler/Gradle errors (not the task list)
       - name: Report build errors
@@ -94,11 +98,30 @@ jobs:
             "$BT/aapt2" dump badging "$APK" | grep -E "^package:|application-label:"
             "$BT/aapt2" dump badging "$APK" | grep -q "name='$2' " || { echo "::error::$1 package name is not $2"; FAIL=1; }
             # The apps must not contain any admin code (the admin is a separate web app)
-            if unzip -p "$APK" 'classes*.dex' | strings | grep -E "AdminScreen|RealFirebase"; then echo "::error::admin code found in $1 apk"; FAIL=1; else echo "OK: no admin code in $1"; fi
+            if unzip -p "$APK" 'classes*.dex' | strings | grep -E "AdminScreen|RealFirebase|AdminActions|RoyalFooter"; then echo "::error::admin code found in $1 apk"; FAIL=1; else echo "OK: no admin code in $1"; fi
           }
-          check rider jo.shajaraone.rider
-          check captain jo.shajaraone.captain
+          check rider jo.abnaashamal.rider
+          check captain jo.abnaashamal.Cap
+          # the admin app
+          AAPK=$(find admin-app/build/outputs/apk/release -name '*.apk' 2>/dev/null | head -1)
+          if [ -z "$AAPK" ]; then echo "::error::admin APK not found"; FAIL=1; else
+            "$BT/apksigner" verify --print-certs "$AAPK" | grep -E "Verifies|SHA-256" || { echo "::error::admin signature check failed"; FAIL=1; }
+            "$BT/aapt2" dump badging "$AAPK" | grep -E "^package:|application-label:"
+            "$BT/aapt2" dump badging "$AAPK" | grep -q "name='jo.abnaashamal.admin' " || { echo "::error::admin package name wrong"; FAIL=1; }
+          fi
           exit $FAIL
+
+      - name: Put the version in the APK file names
+        run: |
+          for f in rider captain; do
+            APK=$(find "app/build/outputs/apk/$f/release" -name '*.apk' | head -1)
+            mv "$APK" "app/build/outputs/apk/$f/release/abnaa-$f-1.5.${{ github.run_number }}.apk"
+          done
+
+      - name: Put the version in the admin APK name
+        run: |
+          APK=$(find admin-app/build/outputs/apk/release -name '*.apk' | head -1)
+          mv "$APK" "admin-app/build/outputs/apk/release/abnaa-admin-1.0.${{ github.run_number }}.apk"
 
       - name: Clean up key
         if: always()
@@ -117,6 +140,27 @@ jobs:
           path: app/build/outputs/apk/captain/release/*.apk
           if-no-files-found: error
           retention-days: 30
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: shajara-admin-apk
+          path: admin-app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      # Publish the 3 APKs as a public release so the apps can tell the user "a new version is available"
+      - name: Publish release for in-app update check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # main = real release (apps offer it as an update). Any other branch = a preview with a tag the updater ignores.
+          if [ "${{ github.ref_name }}" = "main" ]; then TAG="build-${{ github.run_number }}"; else TAG="preview-${{ github.ref_name }}-${{ github.run_number }}"; fi
+          gh release create "$TAG" \
+            app/build/outputs/apk/rider/release/*.apk \
+            app/build/outputs/apk/captain/release/*.apk \
+            admin-app/build/outputs/apk/release/*.apk \
+            --repo "${{ github.repository }}" --target "${{ github.sha }}" --prerelease \
+            --title "أبناء الشمال ${{ github.run_number }}" --notes "نسخة رقم ${{ github.run_number }}"
 
   # Automatic tests of firestore.rules on a LOCAL emulator (never touches real or test Firebase data)
   rules-test:
@@ -170,3 +214,14 @@ jobs:
           VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY || 'ci-placeholder' }}
           VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID || 'ci-placeholder' }}
           VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID || 'ci-placeholder' }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+      # Ready-to-deploy folder for Firebase Hosting (free): public/ = the built dashboard, firebase.json = hosting settings
+      - name: Prepare admin-site (Firebase Hosting)
+        run: |
+          mkdir -p ../admin-site/public
+          cp -r dist/* ../admin-site/public/
+          printf '%s' '{"hosting":{"public":"public","ignore":["firebase.json","**/.*"],"rewrites":[{"source":"**","destination":"/index.html"}]}}' > ../admin-site/firebase.json
+      - uses: actions/upload-artifact@v5
+        with:
+          name: admin-site
+          path: admin-site

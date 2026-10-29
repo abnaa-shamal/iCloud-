@@ -30,9 +30,11 @@ service cloud.firestore {
     // The admin account has no passenger profile of its own (it is a separate account), so it is
     // allowed through here only for the admin's own seat-return writes; creating a booking still
     // needs a profile and therefore fails for the admin.
+    // Booking also needs a verified number: `verified` is set by the admin only, after the WhatsApp code arrived.
     function canBook() {
       return signedIn() && (isAdmin()
         || (hasProfile() && !riderBlocked(myProfile())
+            && myProfile().get('verified', false) == true
             && (myProfile().role == 'captain' || myProfile().status in ['active', 'approved'])));
     }
 
@@ -259,6 +261,30 @@ service cloud.firestore {
         && request.resource.data.subAreas is map
         && request.resource.data.subAreas.keys().size() <= 40
         && request.resource.data.updatedAt is int;
+    }
+
+    // ===== Live captain location (optional, shared only while the captain taps "share") =====
+    // One document per trip. The trip's approved captain writes it every ~15 seconds while sharing and lists in
+    // `riders` the uids of passengers whose booking is ACCEPTED; only those riders (and the captain/admin) can read it.
+    // It is deleted when sharing stops. A missing document is readable (nothing to leak) so riders can wait for it.
+    match /liveLocations/{tripId} {
+      allow read: if signedIn()
+        && (resource == null || isAdmin() || resource.data.captainUid == me() || me() in resource.data.riders);
+
+      allow create, update: if isApprovedCaptain()
+        && exists(/databases/$(database)/documents/trips/$(tripId))
+        && tripOf(tripId).captainUid == me()
+        && request.resource.data.keys().hasOnly(['captainUid', 'riders', 'lat', 'lng', 'accuracy', 'speed', 'updatedAt'])
+        && request.resource.data.captainUid == me()
+        && request.resource.data.riders is list
+        && request.resource.data.riders.size() <= 7
+        && request.resource.data.lat is number && request.resource.data.lat >= -90 && request.resource.data.lat <= 90
+        && request.resource.data.lng is number && request.resource.data.lng >= -180 && request.resource.data.lng <= 180
+        && request.resource.data.accuracy is number
+        && request.resource.data.speed is number
+        && request.resource.data.updatedAt is int;
+
+      allow delete: if signedIn() && (isAdmin() || resource.data.captainUid == me());
     }
   }
 }

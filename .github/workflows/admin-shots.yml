@@ -1,0 +1,50 @@
+name: Admin screenshots
+
+# Photographs the REAL admin dashboard code with sample data (no Firebase). Pushes the PNGs to branch design-shots-<branch>-admin.
+on:
+  workflow_dispatch:
+  push:
+    branches: [admin-aurora, verify-gate, v2]
+
+permissions:
+  contents: write
+
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: admin-web
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      - name: Fonts and browser
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-core fonts-noto-ui-core
+          npm install --no-save --no-audit --no-fund playwright@1.49.1
+          npx playwright install --with-deps chromium
+      - run: npx vite build --mode shots
+      - name: Photograph
+        run: |
+          npx vite preview --mode shots --outDir dist-shots --port 4173 &
+          sleep 4
+          node shots/shoot.mjs shots-out
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: admin-screenshots
+          path: admin-web/shots-out/*.png
+          if-no-files-found: warn
+      - name: Publish PNGs to branch
+        if: always()
+        run: |
+          cd shots-out || exit 0
+          git init -q && git checkout -q -b shots
+          git config user.name "ci" && git config user.email "ci@example.com"
+          git add . && git commit -qm "admin screenshots from run ${{ github.run_id }}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" shots:refs/heads/design-shots-${{ github.ref_name }}-admin

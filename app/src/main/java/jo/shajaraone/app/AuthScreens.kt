@@ -2,6 +2,7 @@ package jo.shajaraone.app
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -9,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -19,25 +21,35 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 private fun Brand() {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-        Text("📍", fontSize = 52.sp)
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        AppLogo(72.dp)
+        Text(APP_DISPLAY_NAME, fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
         Text(
-            "شجرة 1", fontSize = 36.sp, fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            "مشاويرك من منطقتك لإربد وعمّان والزرقاء",
-            color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center
+            if (IS_CAPTAIN_APP) "تطبيق الكابتن" else "سافر مع أهل بلدك، أريح وأوفر",
+            color = Brand.Muted, style = MaterialTheme.typography.bodyLarge
         )
     }
 }
+
+@Composable
+private fun glassFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = Brand.Violet,
+    unfocusedBorderColor = Brand.Rule,
+    focusedContainerColor = Brand.Stock,
+    unfocusedContainerColor = Brand.Stock,
+    cursorColor = Brand.Violet,
+    focusedLabelColor = Brand.Violet,
+    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    focusedTextColor = Brand.Ink,
+    unfocusedTextColor = Brand.Ink
+)
 
 @Composable
 private fun PhoneField(value: String, onChange: (String) -> Unit) = OutlinedTextField(
     value = value,
     onValueChange = { onChange(it.filter { c -> c.isDigit() }.take(14)) },
     label = { Text("رقم الهاتف") }, placeholder = { Text("079xxxxxxx") },
-    singleLine = true, shape = MaterialTheme.shapes.medium,
+    singleLine = true, shape = RoundedCornerShape(18.dp), colors = glassFieldColors(),
     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
     modifier = Modifier.fillMaxWidth()
 )
@@ -45,7 +57,7 @@ private fun PhoneField(value: String, onChange: (String) -> Unit) = OutlinedText
 @Composable
 private fun PasswordField(value: String, label: String, onChange: (String) -> Unit) = OutlinedTextField(
     value = value, onValueChange = onChange,
-    label = { Text(label) }, singleLine = true, shape = MaterialTheme.shapes.medium,
+    label = { Text(label) }, singleLine = true, shape = RoundedCornerShape(18.dp), colors = glassFieldColors(),
     visualTransformation = PasswordVisualTransformation(),
     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
     modifier = Modifier.fillMaxWidth()
@@ -54,7 +66,7 @@ private fun PasswordField(value: String, label: String, onChange: (String) -> Un
 @Composable
 private fun TextInput(value: String, label: String, onChange: (String) -> Unit) = OutlinedTextField(
     value = value, onValueChange = { onChange(it.take(40)) },
-    label = { Text(label) }, singleLine = true, shape = MaterialTheme.shapes.medium,
+    label = { Text(label) }, singleLine = true, shape = RoundedCornerShape(18.dp), colors = glassFieldColors(),
     modifier = Modifier.fillMaxWidth()
 )
 
@@ -67,18 +79,18 @@ fun AuthScreen() {
             .verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(40.dp))
         Brand()
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(24.dp))
         if (registering) {
             ProfileForm(needAccount = true)
             TextButton(onClick = { registering = false }, modifier = Modifier.fillMaxWidth()) {
-                Text("عندي حساب، بدي أسجّل دخول")
+                Text("عندي حساب، بدي أسجّل دخول", color = Brand.Violet)
             }
         } else {
             LoginForm()
             TextButton(onClick = { registering = true }, modifier = Modifier.fillMaxWidth()) {
-                Text("ما عندي حساب، بدي أسجّل جديد")
+                Text("ما عندي حساب، بدي أسجّل جديد", color = Brand.Violet)
             }
         }
     }
@@ -208,37 +220,36 @@ fun CaptainStatusScreen(me: UserProfile) {
     val ctx = LocalContext.current
     val rejected = me.status == USER_REJECTED
     Column(
-        Modifier.fillMaxSize().systemBarsPadding().padding(28.dp),
+        Modifier.fillMaxSize().systemBarsPadding().padding(22.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(if (rejected) "🚫" else "⏳", fontSize = 64.sp)
-        Spacer(Modifier.height(12.dp))
-        Text(
-            if (rejected) "ما تمت الموافقة على حسابك" else "حسابك بانتظار موافقة المشرف",
-            style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            if (rejected) "للاستفسار تواصل مع المشرف."
-            else "أهلاً كابتن ${me.name} 👋\nأول ما يوافق المشرف بيفتحلك التطبيق لحاله.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(24.dp))
-        if (me.needsVerification) {
-            // Reverse verification: the code must come to the support WhatsApp from the captain's own number.
-            Text("رمز التحقق: ${me.verifyCode}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(8.dp))
-            Button(onClick = {
-                openWhatsApp(ctx, SUPPORT_PHONE,
-                    "رمز التحقق: ${me.verifyCode}\nالاسم: ${me.name}\nالرقم: ${me.phone}\nتطبيق الكابتن")
-            }) { Text("✅ وثّق رقمك على واتساب") }
-            Spacer(Modifier.height(8.dp))
+        Column(
+            Modifier.fillMaxWidth().darkGlass(28.dp).padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(if (rejected) "🚫" else "⏳", fontSize = 56.sp)
+            Text(
+                if (rejected) "ما تمت الموافقة على حسابك" else "حسابك بانتظار موافقة المشرف",
+                fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center
+            )
+            Text(
+                if (rejected) "للاستفسار تواصل مع المشرف."
+                else "أهلاً كابتن ${me.name}\nأول ما يوافق المشرف بيفتحلك التطبيق لحاله.",
+                color = Brand.Muted, textAlign = TextAlign.Center
+            )
+            if (me.needsVerification) {
+                // Reverse verification: the code must come to the support WhatsApp from the captain's own number.
+                Text("رمز التحقق: ${me.verifyCode}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Brand.Violet)
+                BigButton("وثّق رقمك على واتساب") {
+                    openWhatsApp(ctx, SUPPORT_PHONE,
+                        "رمز التحقق: ${me.verifyCode}\nالاسم: ${me.name}\nالرقم: ${me.phone}\nتطبيق الكابتن")
+                }
+            }
+            GhostBtn("تواصل مع المشرف", Modifier.fillMaxWidth()) {
+                openWhatsApp(ctx, SUPPORT_PHONE, "مرحبا، أنا الكابتن ${me.name} (${me.phone})، سجّلت بتطبيق $APP_DISPLAY_NAME وبانتظار الموافقة.")
+            }
         }
-        OutlinedButton(onClick = {
-            openWhatsApp(ctx, SUPPORT_PHONE, "مرحبا، أنا الكابتن ${me.name} (${me.phone})، سجّلت بتطبيق شجرة 1 وبانتظار الموافقة.")
-        }) { Text("💬 تواصل مع المشرف") }
-        TextButton(onClick = { Repo.signOut() }) { Text("تسجيل الخروج") }
+        TextButton(onClick = { Repo.signOut() }) { Text("تسجيل الخروج", color = Brand.Muted) }
     }
 }

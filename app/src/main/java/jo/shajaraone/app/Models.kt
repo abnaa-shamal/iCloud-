@@ -160,3 +160,12 @@ fun bookingStatusText(s: String) = when (s) {
     BK_CANCELLED_CAPTAIN -> "ألغاه الكابتن"
     else -> "بانتظار رد الكابتن ⏳"
 }
+
+/** Captain's shared live position for one trip. */
+data class LiveLoc(
+    val lat: Double,
+    val lng: Double,
+    val accuracy: Double,
+    val speed: Double,
+    val updatedAt: Long
+)

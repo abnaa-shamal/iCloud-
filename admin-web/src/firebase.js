@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 
 const env = import.meta.env;
 export const configured = Boolean(env.VITE_FIREBASE_API_KEY && env.VITE_FIREBASE_PROJECT_ID && env.VITE_FIREBASE_APP_ID);
@@ -13,4 +13,5 @@ const app = initializeApp({
 });
 
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+// Some phone networks block Firestore's default streaming connection; auto-detect falls back to long polling so data still loads.
+export const db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true });

@@ -4,6 +4,50 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
+// ===== Route model (v2): north / south roads / inside the north =====
+// Every trip has a kind: NORTH→SOUTH, SOUTH→NORTH (Amman & Zarqa) or INSIDE the north (villages <-> Irbid).
+// Trip.from / Trip.to hold the real place names; Trip.road holds the south road, or NORTH_INNER for inside-north trips.
+
+const val KIND_NS = "ns"
+const val KIND_SN = "sn"
+const val KIND_NN = "nn"
+const val NORTH_INNER = "داخل الشمال"
+
+/** Northern places (edit here to add / remove / reorder). */
+val northPlaces = listOf("إربد", "الرمثا", "المفرق", "البويضة", "الشجرة", "الطرة", "عمراوة", "الذنيبة", "المغيّر")
+
+/** Villages and towns that travel to Irbid inside the north (everything in the north except Irbid itself). */
+val northVillages = northPlaces.filter { it != "إربد" }
+
+/** Where the passenger gets off in Irbid on inside-north trips. The last one is settled with the captain. */
+const val IRBID_OTHER = "إربد (أخرى)"
+val irbidSpots = listOf("مجمع عمّان الجديد", "جامعة اليرموك", IRBID_OTHER)
+
+/** The three southern roads (Amman & Zarqa) and the stops available on each. */
+val southRoads: Map<String, List<String>> = linkedMapOf(
+    "طريق صويلح" to listOf(
+        "صويلح", "دابوق", "خلدا", "محمر", "كمالية", "جندويل", "المدينة الطبية", "جسر ناعور", "عميش",
+        "البيادر", "دوار السابع", "دوار الثامن", "صوفية", "أم السماق", "شارع مكة المكرمة"
+    ),
+    "شارع الأردن" to listOf(
+        "أبو نصير", "شفا بدران", "مجمع الشمال", "دوار الداخلية", "دوار الخارجية", "الجامعة الأردنية",
+        "الشميساني", "الجاردنز", "الدوار الأول", "الدوار الثاني", "الدوار الثالث", "مطار الملكة علياء"
+    ),
+    "طريق الزرقاء" to listOf(
+        "رصيفة", "ماركا الجنوبية", "ماركا الشمالية", "الموقر", "خو", "سحاب", "طبربور", "دوار دبابة"
+    )
+)
+
+fun kindOf(t: Trip): String = when {
+    t.road == NORTH_INNER -> KIND_NN
+    t.from in northPlaces -> KIND_NS
+    t.to in northPlaces -> KIND_SN
+    else -> ""
+}
+
+/** Inside-north trips default to 1 JD (as the old local-area→Irbid trips did); the rest are «حسب الاتفاق». */
+fun defaultFixedPrice(kind: String): Double? = if (kind == KIND_NN) 1.0 else null
+
 /** Local departure areas (phase 4: editable from the admin panel). */
 val localAreas = listOf("الشجرة", "الذنيبة", "عمراوة", "الطرة", "الرمثا")
 
@@ -55,18 +99,6 @@ fun subAreasFor(place: String, road: String = ""): List<String>? {
 const val ANY_PLACE = "حسب اتفاق الكابتن"
 
 const val OTHER_PLACE = "مكان آخر"
-
-fun isValidRoute(from: String, to: String) =
-    from != to && ((from in localAreas && to in cities) || (from in cities && to in localAreas))
-
-fun involvesAmman(from: String, to: String) = from == AMMAN || to == AMMAN
-
-/** The captain picks a road only on trips to/from Amman or Zarqa (Irbid has a single road). */
-fun needsRoadChoice(from: String, to: String) = from == AMMAN || to == AMMAN || from == ZARQA || to == ZARQA
-
-/** Default price: from a local area to Irbid = 1 JD; all other routes «حسب الاتفاق». */
-fun defaultFixedPrice(from: String, to: String): Double? =
-    if (from in localAreas && to == "إربد") 1.0 else null
 
 /** Public support contact shown to users (WhatsApp). It is NOT an identity and grants no permission. */
 const val SUPPORT_PHONE = "0790905298"

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>أبناء الشمال</title>
+<meta name="description" content="احجز مقعدك أو انشر رحلتك. بدون قروبات واتساب.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--amber:#f2b300;--blue:#3d8bff;--ink:#f4f4f6;--dim:#9a9aa0}
+*{box-sizing:border-box;margin:0}
+body{font-family:Cairo,system-ui,sans-serif;background:#000;color:var(--ink);line-height:1.7;min-height:100vh;overflow-x:hidden}
+.bg{position:fixed;inset:0;background:linear-gradient(#212123,#050505 45%,#000);z-index:-2}
+.orb{position:fixed;width:420px;height:420px;border-radius:50%;filter:blur(70px);z-index:-1;opacity:.35;animation:float 9s ease-in-out infinite alternate}
+.o1{background:var(--amber);top:-120px;right:-140px}
+.o2{background:var(--blue);bottom:-160px;left:-160px;animation-delay:-4s;opacity:.25}
+@keyframes float{to{transform:translate(-40px,50px) scale(1.12)}}
+.wrap{max-width:520px;margin:0 auto;padding:0 18px}
+header{padding:64px 0 26px;text-align:center}
+.mark{display:inline-grid;place-items:center;width:84px;height:84px;border-radius:26px;margin-bottom:18px}
+h1{font-size:42px;font-weight:900;letter-spacing:.3px}
+.tag{margin-top:6px;color:var(--dim);font-size:17px}
+.glass{position:relative;border-radius:26px;padding:20px;margin-bottom:14px;
+ background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02) 40%),linear-gradient(#232326,#0f0f10);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 20px 40px rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.12);
+ animation:rise .7s both}
+.glass:nth-of-type(2){animation-delay:.1s}.glass:nth-of-type(3){animation-delay:.2s}
+@keyframes rise{from{opacity:0;transform:translateY(22px)}}
+.glass:before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+ background:linear-gradient(115deg,rgba(255,255,255,.14),transparent 35%)}
+h2{font-size:20px;font-weight:900}
+.sub{color:var(--dim);font-size:14.5px}
+.btn{display:flex;align-items:center;justify-content:space-between;width:100%;padding:16px 20px;border-radius:999px;text-decoration:none;font-weight:900;font-size:18px;margin-top:12px;transition:transform .15s}
+.btn:active{transform:scale(.97)}
+.btn small{display:block;font-weight:500;font-size:12.5px;opacity:.75}
+.rider{background:var(--amber);color:#000}
+.cap{background:var(--blue);color:#fff}
+.arrow{font-size:22px}
+.cap-card{background:linear-gradient(160deg,rgba(61,139,255,.16),rgba(255,255,255,.02) 40%),linear-gradient(#303136,#1c1d20)}
+.car{display:block;width:150px;margin:0 0 6px;animation:drive 5s ease-in-out infinite alternate}
+@keyframes drive{from{transform:translateX(-60px)}to{transform:translateX(60px)}}
+.steps{list-style:none;padding:0;counter-reset:s;display:grid;gap:10px;margin-top:12px}
+.steps li{counter-increment:s;display:flex;gap:12px;align-items:flex-start;font-size:15.5px}
+.steps li:before{content:counter(s);flex:none;width:30px;height:30px;border-radius:50%;background:var(--amber);color:#000;font-weight:900;display:grid;place-items:center}
+.soon{display:flex;align-items:center;gap:12px}
+.badge{background:var(--amber);color:#000;font-weight:900;font-size:12.5px;border-radius:12px;padding:3px 12px}
+.note{font-size:13.5px;color:var(--dim);margin-top:10px}
+footer{text-align:center;color:var(--dim);font-size:13px;padding:26px 0 40px}
+</style>
+</head>
+<body>
+<div class="bg"></div><div class="orb o1"></div><div class="orb o2"></div>
+<header>
+  <div class="wrap">
+    <div class="mark glass" style="padding:0;margin-bottom:18px"><svg width="46" height="46" viewBox="0 0 46 46"><path d="M5 38 20 8l15 30z" fill="#efe6da"/><path d="M19 38 31 15l12 23z" fill="#f2b300"/></svg></div>
+    <h1>أبناء الشمال</h1>
+    <p class="tag">احجز مقعدك أو انشر رحلتك. كل شي بمكان واحد، بدون قروبات واتساب.</p>
+  </div>
+</header>
+<main class="wrap">
+  <section class="glass app rider-card">
+    <svg class="car" viewBox="0 0 150 60"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6e6e9"/><stop offset="1" stop-color="#55555b"/></linearGradient></defs><path d="M6 46V36q1-6 8-8l14-3 14-15q3-3 9-3h30q7 0 11 6l11 12 17 3q6 2 6 9v9z" fill="url(#g)"/><path d="M38 26 49 14h18v12zM73 26V14h12q4 0 7 5l7 7z" fill="#16161a"/><circle cx="38" cy="47" r="10" fill="#050506"/><circle cx="38" cy="47" r="6" fill="#3a3a3f"/><circle cx="116" cy="47" r="10" fill="#050506"/><circle cx="116" cy="47" r="6" fill="#3a3a3f"/></svg>
+    <h2>تطبيق العميل</h2>
+    <p class="sub">احجز مقعدك بخطوتين.</p>
+    <a class="btn rider" id="dl-rider" href="#"><span>تحميل</span><span class="arrow">⬇</span></a>
+  </section>
+  <section class="glass app cap-card">
+    <h2>تطبيق الكابتن</h2>
+    <p class="sub">انشر رحلتك ووافق على الطلبات.</p>
+    <a class="btn cap" id="dl-cap" href="#"><span>تحميل</span><span class="arrow">⬇</span></a>
+  </section>
+  <p class="note" id="ver" style="text-align:center"></p>
+  <p class="note" style="text-align:center">بعد التنزيل افتح الملف ووافق على «السماح بالتثبيت من هذا المصدر».</p>
+</main>
+<footer dir="ltr">Developed &amp; Designed by <b style="color:#f4f4f6">Abo-Tala</b></footer>
+<script>
+// Change only this line if the repository moves.
+var REPO = "abnaa-shamal/iCloud-";
+fetch("https://api.github.com/repos/" + REPO + "/releases?per_page=5").then(function(r){return r.json()}).then(function(list){
+  var best = {};
+  list.forEach(function(rel){
+    var m = String(rel.tag_name).match(/(\d+)$/); var n = m ? parseInt(m[1],10) : 0; if(!n) return;
+    (rel.assets||[]).forEach(function(a){
+      var k = /-rider-/.test(a.name) ? "rider" : /-captain-/.test(a.name) ? "captain" : null;
+      if(k && (!best[k] || n > best[k].n)) best[k] = {n:n, url:a.browser_download_url};
+    });
+  });
+  if(best.rider) document.getElementById("dl-rider").href = best.rider.url;
+  if(best.captain) document.getElementById("dl-cap").href = best.captain.url;
+  if(best.rider) document.getElementById("ver").textContent = "آخر نسخة: " + best.rider.n;
+}).catch(function(){
+  var u = "https://github.com/" + REPO + "/releases";
+  document.getElementById("dl-rider").href = u; document.getElementById("dl-cap").href = u;
+});
+</script>
+</body>
+</html>
