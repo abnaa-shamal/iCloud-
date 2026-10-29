@@ -3,6 +3,7 @@ package jo.shajaraone.app
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -26,7 +27,7 @@ fun RideSwipe(trips: List<Trip>, modifier: Modifier = Modifier, actions: @Compos
     Column(modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         HorizontalPager(pager, Modifier.weight(1f), pageSpacing = 16.dp) { i ->
             val t = trips[i]
-            Column(Modifier.fillMaxSize().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Column(Modifier.fillMaxSize().verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 Text(dayName(t.departAt), fontSize = 13.sp, color = Color(0x99FFFFFF))
                 Text(clockText(t.departAt), fontSize = 54.sp, fontWeight = FontWeight.ExtraLight, color = Color.White)
                 Spacer(Modifier.height(8.dp))
@@ -90,6 +91,43 @@ fun RoadTimeline(trips: List<Trip>, top: String, bottom: String, modifier: Modif
             Box(Modifier.size(14.dp).clip(CircleShape).background(Brand.Teal))
             Spacer(Modifier.width(14.dp))
             Text(bottom, fontSize = 20.sp, fontWeight = FontWeight.Light, color = Color.White)
+        }
+    }
+}
+
+val destLabels = listOf("الكل", "عمّان", "الزرقاء", "إربد")
+
+/** 0 = all. Amman = Sweileh road + Al-Urdun street, Zarqa = Zarqa road, Irbid = inside the north. [back] = coming back to the north. */
+fun destMatches(t: Trip, dest: Int, back: Boolean): Boolean {
+    val kind = kindOf(t)
+    if (dest == 0) return !back || kind == KIND_SN
+    if (dest == 3) return kind == KIND_NN || t.to == "إربد" || t.from == "إربد"
+    val zarqa = t.road == "طريق الزرقاء"
+    val roadOk = if (dest == 2) zarqa else (!zarqa && t.road.isNotBlank() && t.road != NORTH_INNER)
+    return roadOk && (if (back) kind == KIND_SN else kind == KIND_NS)
+}
+
+/** "وين رايح؟" tabs with real place names, plus an optional drawer (going back / your village / day). */
+@Composable
+fun DestinationTabs(
+    dest: Int, onDest: (Int) -> Unit, back: Boolean, onBack: (Boolean) -> Unit,
+    north: String, onNorth: (String) -> Unit, day: Int, onDay: (Int) -> Unit
+) {
+    var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    Text("وين رايح؟", fontSize = 13.sp, color = Color(0x99FFFFFF))
+    SlidingTabs(destLabels, dest, onDest)
+    Row(Modifier.fillMaxWidth().glass(16.dp).springPress { open = !open }.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text("خيارات إضافية (اختياري)", Modifier.weight(1f), fontSize = 13.sp, color = Color(0xCCFFFFFF))
+        Text(if (open) "▴" else "▾", color = Brand.Violet)
+    }
+    if (open) {
+        Column(Modifier.fillMaxWidth().glass(16.dp).padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("الاتجاه", fontSize = 12.sp, color = Color(0x99FFFFFF))
+            ScrollChips(listOf("go" to "رايح من عندنا", "back" to "راجع لعندنا"), if (back) "back" else "go") { onBack(it == "back") }
+            Text("بلدك", fontSize = 12.sp, color = Color(0x99FFFFFF))
+            ScrollChips(listOf("" to "أي بلد") + northPlaces.map { it to it }, north, onNorth)
+            Text("اليوم", fontSize = 12.sp, color = Color(0x99FFFFFF))
+            ScrollChips(listOf("all" to "أي يوم") + nextDays(), if (day < 0) "all" else day.toString()) { onDay(if (it == "all") -1 else it.toInt()) }
         }
     }
 }

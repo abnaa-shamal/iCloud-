@@ -70,6 +70,8 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
     var trips by remember { mutableStateOf<List<Trip>?>(null) }
     var failed by remember { mutableStateOf(false) }
     val route = rememberRouteState()
+    var dest by rememberSaveable { mutableIntStateOf(0) }
+    var back by rememberSaveable { mutableStateOf(false) }
     var day by rememberSaveable { mutableIntStateOf(-1) }
     var mins by rememberSaveable { mutableIntStateOf(-1) }
     var booking by remember { mutableStateOf<Trip?>(null) }
@@ -87,24 +89,22 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
     val now = System.currentTimeMillis()
     val shown = trips.orEmpty().filter { t ->
         t.captainUid.isNotBlank() && t.captainUid != me.uid && t.status != TRIP_CANCELLED && t.departAt > now &&
-            route.matches(t) &&
+            destMatches(t, dest, back) && (route.north.isBlank() || t.from == route.north || t.to == route.north) &&
             (day < 0 || dayOffsetOf(t.departAt) == day) &&
             (mins < 0 || (t.departAt - dayStart(dayOffsetOf(t.departAt))) / 60_000L >= mins)
     }
 
-    LazyColumn(
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-        modifier = Modifier.fillMaxSize()
-    ) {
-        neonHeader(shown, route, day, mins, { day = it }, { mins = it }, if (trips == null) "" else "${shown.size} رحلة متاحة")
-        when {
-            trips == null -> item { LoadingBox() }
-            failed && shown.isEmpty() -> item { EmptyState("📶", "ما قدرت أجيب الرحلات، تأكد من الإنترنت") }
-            shown.isEmpty() -> item { EmptyState("🚌", "ما في رحلات بهالاختيار هلأ.\nجرّب يوم أو خط ثاني.") }
-            else -> items(shown, key = { it.id }) { t ->
-                val mine = myBookings.firstOrNull { it.tripId == t.id && it.isActive }
-                RideTile(t) {
+    Column(Modifier.fillMaxSize()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            DestinationTabs(dest, { dest = it }, back, { back = it }, route.north, { route.north = it }, day, { day = it })
+        }
+        Box(Modifier.weight(1f).fillMaxWidth()) {
+            when {
+                trips == null -> LoadingBox()
+                failed && shown.isEmpty() -> EmptyState("📶", "ما قدرت أجيب الرحلات، تأكد من الإنترنت")
+                shown.isEmpty() -> EmptyState("🚌", "ما في رحلات بهالاختيار هلأ.\nجرّب اختيار ثاني أو اختر «الكل».")
+                else -> RideSwipe(shown) { t ->
+                    val mine = myBookings.firstOrNull { it.tripId == t.id && it.isActive }
                     if (mine?.status == BK_ACCEPTED) {
                         Button(
                             onClick = { tracking = t },

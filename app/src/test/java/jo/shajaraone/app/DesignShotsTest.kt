@@ -118,6 +118,15 @@ class DesignShotsTest {
         }
     }
 
+    @Test fun destSwipe() = ledgerShot("D1-dest-swipe") {
+        Column(Modifier.fillMaxSize()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                DestinationTabs(1, {}, false, {}, "", {}, -1, {})
+            }
+            RideSwipe(listOf(t1, t2), Modifier.weight(1f)) { LedgerPrimaryButton("احجز مقعد", {}) }
+        }
+    }
+
     @Test fun ledgerHome() = ledgerShot("L1-ledger-home") {
         Column(Modifier.fillMaxSize()) {
             LedgerTopBar("أهلاً محمد", "أبناء الشمال")
