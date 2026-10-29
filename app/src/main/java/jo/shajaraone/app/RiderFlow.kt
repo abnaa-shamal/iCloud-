@@ -121,7 +121,7 @@ private fun BigChoice(title: String, sub: String, index: Int, onClick: () -> Uni
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(title, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Text(sub, fontSize = 13.sp, color = Dim)
+            Text(sub, fontSize = 13.sp, color = Dim, maxLines = 2, lineHeight = 20.sp)
         }
         Box(Modifier.size(44.dp).clip(RoundedCornerShape(22.dp)).background(Amber), contentAlignment = Alignment.Center) {
             Box(Modifier.rotate(180f)) { Glyph(4, Color.Black, 20.dp) }
@@ -156,8 +156,8 @@ fun RiderFlow(
                 Text("لوين رايح؟", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
             BigChoice("الجنوب", "عمّان والزرقاء", 0) { fs.group = G_SOUTH; fs.step = 1 }
-            BigChoice("الشمال", "راجع لعندنا", 1) { fs.group = G_NORTH; fs.step = 1 }
-            BigChoice("داخل الشمال", "من البلد لإربد", 2) { fs.group = G_INNER; fs.step = 1 }
+            BigChoice("الشمال", northPlaces.joinToString(" • "), 1) { fs.group = G_NORTH; fs.step = 1 }
+            BigChoice("داخل الشمال", (northVillages + "إربد").joinToString(" • "), 2) { fs.group = G_INNER; fs.step = 1 }
         }
         1 -> Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(bottom = 120.dp),
