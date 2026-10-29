@@ -495,7 +495,7 @@ function Bookings({ bookings, trips, act }) {
 }
 
 /* ---------- editable place lists (config/places) ---------- */
-const MAIN_PLACES = ['عمّان', 'إربد', 'الزرقاء', 'الرمثا', 'الشجرة', 'الطرة', 'عمراوة', 'الذنيبة'];
+const MAIN_PLACES = ['عمّان', 'إربد', 'الزرقاء', 'الرمثا', 'الطرة', 'عمراوة', 'الذنيبة'];
 const ROAD_PLACES = ['عمّان', 'الزرقاء'];                       // these two can have a list per road
 const ROADS = ['الطريق الصحراوي', 'طريق الزرقاء'];
 // Same starter lists as the apps; used until the admin saves his own.

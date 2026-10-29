@@ -22,7 +22,7 @@ const user = (role, status, phone, name = 'اسم تجريبي') =>
 
 const trip = (over = {}) => ({
   captainUid: 'cap', captainName: 'كابتن', captainPhone: '0791000001', carText: 'سيارة',
-  from: 'الشجرة', to: 'إربد', road: '', departAt: 2000000000000, seatsTotal: 4, seatsFree: 2,
+  from: 'عمراوة', to: 'إربد', road: '', departAt: 2000000000000, seatsTotal: 4, seatsFree: 2,
   price: 1.0, acceptsParcels: false, note: '', status: 'open', cancelReason: '', createdAt: 1, ...over,
 });
 

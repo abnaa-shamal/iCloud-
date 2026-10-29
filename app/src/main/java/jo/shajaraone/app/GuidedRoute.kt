@@ -55,7 +55,7 @@ fun GuidedRoutePicker(route: RouteState) {
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         LedgerStepCard("1", "أنت وين هسه؟", fromAnswer, "اضغط واختار مكانك", onToggle = { open = if (open == 1) 0 else 1 }, content = if (open == 1) ({
-            LedgerChoice("أنا بالشمال", "إربد، الرمثا، المفرق، الشجرة، الطرة، عمراوة، الذنيبة، المغيّر...", selected = side1 == "n") {
+            LedgerChoice("أنا بالشمال", "إربد، الرمثا، المفرق، الطرة، عمراوة، الذنيبة، المغيّر...", selected = side1 == "n") {
                 if (side1 != "n") { side1 = "n"; northFrom = ""; roadFrom = ""; stopFrom = ""; clearTo() }
             }
             LedgerChoice("أنا بعمّان أو الزرقاء", "صويلح، خلدا، الجامعة الأردنية، الشميساني، رصيفة، سحاب...", selected = side1 == "s") {
@@ -82,7 +82,7 @@ fun GuidedRoutePicker(route: RouteState) {
                             if (side2 != "irbid") { clearTo(); side2 = "irbid" }
                         }
                     } else {
-                        LedgerChoice("قرية بالشمال", "الشجرة، الطرة، عمراوة، الذنيبة، الرمثا...", selected = side2 == "village") {
+                        LedgerChoice("قرية بالشمال", "الطرة، عمراوة، الذنيبة، الرمثا...", selected = side2 == "village") {
                             if (side2 != "village") { clearTo(); side2 = "village" }
                         }
                     }

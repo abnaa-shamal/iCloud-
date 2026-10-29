@@ -33,7 +33,7 @@ class DesignShotsTest {
     private val soon = System.currentTimeMillis() + 3 * 3_600_000L
     private val t1 = Trip(
         id = "1", captainUid = "c", captainName = "أحمد", captainPhone = "0790000000", carText = "كيا سيراتو بيضاء",
-        from = "الشجرة", to = "إربد", road = "الطريق الرئيسي", departAt = soon, seatsTotal = 4, seatsFree = 3,
+        from = "عمراوة", to = "إربد", road = "الطريق الرئيسي", departAt = soon, seatsTotal = 4, seatsFree = 3,
         price = 1.0, acceptsParcels = true
     )
     private val t2 = t1.copy(id = "2", captainName = "خالد", carText = "هيونداي إلنترا رمادية", seatsFree = 1, price = null, road = "")
@@ -63,7 +63,7 @@ class DesignShotsTest {
         Column(Modifier.fillMaxSize()) {
             HeroHeader("أهلاً محمد", "أبناء الشمال • وين رايح اليوم؟")
             Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                FilterSummaryBar("الشجرة  ←  إربد  •  اليوم", false) {}
+                FilterSummaryBar("عمراوة  ←  إربد  •  اليوم", false) {}
                 Text("2 رحلة متاحة", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 4.dp))
                 listOf(t1, t2).forEach { t ->
                     TicketCard(t) {
@@ -79,10 +79,10 @@ class DesignShotsTest {
         Column(Modifier.fillMaxSize()) {
             HeroHeader("أهلاً محمد", "أبناء الشمال • وين رايح اليوم؟")
             Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                FilterSummaryBar("الشجرة  ←  إربد  •  اليوم", true) {}
+                FilterSummaryBar("عمراوة  ←  إربد  •  اليوم", true) {}
                 AppCard {
                     SectionLabel("من")
-                    ScrollChips(listOf("all" to "الكل", "a" to "الشجرة", "b" to "الذنيبة"), "a") {}
+                    ScrollChips(listOf("all" to "الكل", "a" to "الطرة", "b" to "الذنيبة"), "a") {}
                     SectionLabel("إلى")
                     ScrollChips(listOf("all" to "الكل", "a" to "إربد", "b" to "عمّان"), "a") {}
                     SectionLabel("متى؟")
@@ -105,7 +105,7 @@ class DesignShotsTest {
         Column(Modifier.fillMaxSize()) {
             LedgerTopBar("أهلاً محمد", "أبناء الشمال")
             Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                LedgerSearchBar("الشجرة  ←  إربد  •  اليوم") {}
+                LedgerSearchBar("عمراوة  ←  إربد  •  اليوم") {}
                 Text("2 رحلة متاحة", style = MaterialTheme.typography.titleMedium)
                 listOf(t1, t2).forEach { t ->
                     TicketCard(t) {
@@ -119,7 +119,7 @@ class DesignShotsTest {
 
     @Test fun ledgerSeats() = ledgerShot("L2-ledger-seats") {
         Column(Modifier.fillMaxSize()) {
-            LedgerTopBar("اختر مقعدك", "الشجرة ← إربد")
+            LedgerTopBar("اختر مقعدك", "عمراوة ← إربد")
             Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 LedgerSeatChart(total = 7, taken = setOf(1, 4), picked = setOf(2, 3))
                 LedgerLegend()
@@ -144,7 +144,7 @@ class DesignShotsTest {
             LedgerWelcomeHeader("أهلاً محمد", "وين رايح اليوم؟")
             Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 LedgerStepCard("1", "أنت وين هسه؟", null, "") {
-                    LedgerChoice("أنا بالشمال", "إربد، الرمثا، المفرق، الشجرة، الطرة، عمراوة، الذنيبة، المغيّر...")
+                    LedgerChoice("أنا بالشمال", "إربد، الرمثا، المفرق، الطرة، عمراوة، الذنيبة، المغيّر...")
                     LedgerChoice("أنا بعمّان أو الزرقاء", "صويلح، خلدا، الجامعة الأردنية، الشميساني، رصيفة، سحاب...")
                 }
                 LedgerStepCard("2", "لوين رايح؟", null, "اختار مكانك أول", enabled = false)
@@ -188,14 +188,14 @@ class DesignShotsTest {
         }
         guidedShot("G1-start")
         rule.onNodeWithText("أنا بالشمال").performClick(); guidedShot("G2-north")
-        rule.onNodeWithText("الشجرة").performClick(); guidedShot("G3-card2")
+        rule.onNodeWithText("عمراوة").performClick(); guidedShot("G3-card2")
         rule.onNodeWithText("عمّان أو الزرقاء").performClick(); guidedShot("G4-south-roads")
         rule.onNodeWithText("طريق صويلح").performClick(); guidedShot("G5-stops")
         rule.onNodeWithText("خلدا").performClick(); guidedShot("G6-done")
     }
 
     @Test fun riderUnverified() = shot("9-rider-unverified") {
-        val places = listOf("all" to "الكل", "1" to "الشجرة", "2" to "الذنيبة", "3" to "عمراوة", "4" to "الطرة", "5" to "الرمثا", "6" to "إربد", "7" to "عمّان", "8" to "الزرقاء")
+        val places = listOf("all" to "الكل", "1" to "الرمثا", "2" to "الذنيبة", "3" to "عمراوة", "4" to "الطرة", "5" to "الرمثا", "6" to "إربد", "7" to "عمّان", "8" to "الزرقاء")
         Column(Modifier.fillMaxSize()) {
             HeroHeader("أهلاً محمد", "أبناء الشمال • وين رايح اليوم؟")
             VerifyBar(UserProfile(name = "محمد", phone = "0790000000", verifyCode = "432244"))
@@ -221,7 +221,7 @@ class DesignShotsTest {
     @Test fun routeSouthRoad() = shot("10-route-north-to-south") {
         Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             AppCard {
-                RoutePicker(RouteState(kind = KIND_NS, north = "الشجرة", road = "طريق صويلح", south = "دابوق"), allowAll = false)
+                RoutePicker(RouteState(kind = KIND_NS, north = "عمراوة", road = "طريق صويلح", south = "دابوق"), allowAll = false)
             }
         }
     }
@@ -251,7 +251,7 @@ class DesignShotsTest {
 
     @Test fun bookingSheet() = shot("3-booking-seat-map") {
         Column(Modifier.padding(20.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text("الشجرة  ←  إربد", style = MaterialTheme.typography.titleLarge)
+            Text("عمراوة  ←  إربد", style = MaterialTheme.typography.titleLarge)
             Text("اليوم 7:30 ص  •  1 دينار", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("اضغط على المقاعد اللي بدك ياها", style = MaterialTheme.typography.titleSmall)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
@@ -291,7 +291,7 @@ class DesignShotsTest {
             AppCard {
                 Text("١. الخط", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                 SectionLabel("من وين؟")
-                ChoiceChips(listOf("الشجرة", "الذنيبة", "عمراوة"), "الشجرة") {}
+                ChoiceChips(listOf("الطرة", "الذنيبة", "عمراوة"), "عمراوة") {}
                 SectionLabel("لوين؟")
                 ChoiceChips(listOf("إربد", "عمّان", "الزرقاء"), "إربد") {}
             }

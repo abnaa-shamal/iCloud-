@@ -11,9 +11,9 @@ const users = [
   { id: 'p4', role: 'passenger', name: 'عمر نادر', phone: '0796007788', createdAt: now - 12 * D },
 ];
 const trips = [
-  { id: 't1', captainUid: 'c1', captainName: 'أحمد المحمد', captainPhone: '0791234567', from: 'الشجرة', to: 'عمّان', road: 'الطريق الصحراوي', departAt: now + 3 * H, seatsTotal: 4, seatsFree: 2, price: 3, status: 'open' },
-  { id: 't2', captainUid: 'c1', captainName: 'أحمد المحمد', captainPhone: '0791234567', from: 'عمّان', to: 'الشجرة', road: 'طريق الزرقاء', departAt: now + 27 * H, seatsTotal: 4, seatsFree: 4, price: 3, status: 'open' },
-  { id: 't3', captainUid: 'c1', captainName: 'أحمد المحمد', captainPhone: '0791234567', from: 'الشجرة', to: 'إربد', road: '', departAt: now + 5 * H, seatsTotal: 4, seatsFree: 0, price: 1, status: 'full' },
+  { id: 't1', captainUid: 'c1', captainName: 'أحمد المحمد', captainPhone: '0791234567', from: 'عمراوة', to: 'عمّان', road: 'الطريق الصحراوي', departAt: now + 3 * H, seatsTotal: 4, seatsFree: 2, price: 3, status: 'open' },
+  { id: 't2', captainUid: 'c1', captainName: 'أحمد المحمد', captainPhone: '0791234567', from: 'عمّان', to: 'عمراوة', road: 'طريق الزرقاء', departAt: now + 27 * H, seatsTotal: 4, seatsFree: 4, price: 3, status: 'open' },
+  { id: 't3', captainUid: 'c1', captainName: 'أحمد المحمد', captainPhone: '0791234567', from: 'عمراوة', to: 'إربد', road: '', departAt: now + 5 * H, seatsTotal: 4, seatsFree: 0, price: 1, status: 'full' },
   { id: 't4', captainUid: 'c4', captainName: 'يوسف الخطيب', captainPhone: '0795556677', from: 'الذنيبة', to: 'الزرقاء', road: '', departAt: now - 2 * D, seatsTotal: 4, seatsFree: 1, price: null, status: 'cancelled' },
 ];
 const mk = (i, d, status, seats, trip, pass) => ({

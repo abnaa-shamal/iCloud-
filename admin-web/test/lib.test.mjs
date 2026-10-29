@@ -25,12 +25,12 @@ test('dailyCounts: 7 buckets, today last, counts by calendar day', () => {
 
 test('topRoutes: sorted, limited, skips incomplete trips', () => {
   const trips = [
-    { from: 'الشجرة', to: 'عمّان' }, { from: 'الشجرة', to: 'عمّان' }, { from: 'الشجرة', to: 'إربد' },
+    { from: 'عمراوة', to: 'عمّان' }, { from: 'عمراوة', to: 'عمّان' }, { from: 'عمراوة', to: 'إربد' },
     { from: '', to: 'عمّان' }, { to: 'x' },
   ];
   const r = topRoutes(trips, 2);
   assert.equal(r.length, 2);
-  assert.deepEqual(r[0], ['الشجرة ← عمّان', 2]);
+  assert.deepEqual(r[0], ['عمراوة ← عمّان', 2]);
 });
 
 test('computeOverview: counts, cancel rate and attention list', () => {
@@ -96,7 +96,7 @@ test('matches: every word must appear, case-insensitive', () => {
   assert.ok(matches('  ', 'x'));
   assert.ok(matches('ali 079', 'Ali Ahmad', '0791234567'));
   assert.ok(!matches('ali 078', 'Ali Ahmad', '0791234567'));
-  assert.ok(matches('عمّان', undefined, 'الشجرة ← عمّان'));
+  assert.ok(matches('عمّان', undefined, 'عمراوة ← عمّان'));
 });
 
 test('waLink: only valid Jordanian mobiles', () => {

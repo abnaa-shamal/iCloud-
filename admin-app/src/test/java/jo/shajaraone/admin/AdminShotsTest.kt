@@ -35,13 +35,13 @@ class AdminShotsTest {
         AUser("6", "passenger", "suspended", "رامي سعد", "0796667788", createdAt = now - 9, riderSuspended = true)
     )
     private val trips = listOf(
-        ATrip("t1", "خالد المومني", "0782223344", "هيونداي رمادي", "الشجرة", "إربد", now + 3 * 3_600_000, 4, 2, 1.0, "open"),
+        ATrip("t1", "خالد المومني", "0782223344", "هيونداي رمادي", "عمراوة", "إربد", now + 3 * 3_600_000, 4, 2, 1.0, "open"),
         ATrip("t2", "سامر العلي", "0791112233", "كيا أبيض", "عمّان", "الرمثا", now + 9 * 3_600_000, 4, 0, null, "full"),
-        ATrip("t3", "ياسر الحوراني", "0773334455", "تويوتا فضي", "إربد", "الشجرة", now - 3_600_000, 4, 4, 1.5, "cancelled")
+        ATrip("t3", "ياسر الحوراني", "0773334455", "تويوتا فضي", "إربد", "عمراوة", now - 3_600_000, 4, 4, 1.5, "cancelled")
     )
     private val bookings = listOf(
-        ABooking("b1", "خالد المومني", "ليث أحمد", "0794445566", 2, "دوار الشجرة", "الشجرة ← إربد • 8/11 18:30", "pending", now),
-        ABooking("b2", "خالد المومني", "نور الخطيب", "0795556677", 1, "", "الشجرة ← إربد • 8/11 18:30", "accepted", now - 10)
+        ABooking("b1", "خالد المومني", "ليث أحمد", "0794445566", 2, "دوار عمراوة", "عمراوة ← إربد • 8/11 18:30", "pending", now),
+        ABooking("b2", "خالد المومني", "نور الخطيب", "0795556677", 1, "", "عمراوة ← إربد • 8/11 18:30", "accepted", now - 10)
     )
 
     private fun shot(name: String, content: @Composable () -> Unit) {
@@ -71,7 +71,7 @@ class AdminShotsTest {
     @Test fun bookings() = shot("6-bookings") { BookingsScreen(bookings, {}, noAsk) }
 
     @Test fun places() = shot("7-places") {
-        PlacesScreen(mapOf("الشجرة" to listOf("دوار الشجرة", "المدينة الرياضية"), "إربد|الطريق الرئيسي" to listOf("الحصن", "كفرسوم")), {}, {})
+        PlacesScreen(mapOf("عمراوة" to listOf("دوار عمراوة", "المدينة الرياضية"), "إربد|الطريق الرئيسي" to listOf("الحصن", "كفرسوم")), {}, {})
     }
 
     @Test fun footer() = shot("8-footer") { Box(Modifier.padding(top = 300.dp)) { RoyalFooter() } }

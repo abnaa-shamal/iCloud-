@@ -14,7 +14,7 @@ const val KIND_NN = "nn"
 const val NORTH_INNER = "داخل الشمال"
 
 /** Northern places (edit here to add / remove / reorder). */
-val northPlaces = listOf("إربد", "الرمثا", "المفرق", "البويضة", "الشجرة", "الطرة", "عمراوة", "الذنيبة", "المغيّر")
+val northPlaces = listOf("إربد", "الرمثا", "المفرق", "البويضة", "الطرة", "عمراوة", "الذنيبة", "المغيّر")
 
 /** Villages and towns that travel to Irbid inside the north (everything in the north except Irbid itself). */
 val northVillages = northPlaces.filter { it != "إربد" }
@@ -49,7 +49,7 @@ fun kindOf(t: Trip): String = when {
 fun defaultFixedPrice(kind: String): Double? = if (kind == KIND_NN) 1.0 else null
 
 /** Local departure areas (phase 4: editable from the admin panel). */
-val localAreas = listOf("الشجرة", "الذنيبة", "عمراوة", "الطرة", "الرمثا")
+val localAreas = listOf("الذنيبة", "عمراوة", "الطرة", "الرمثا")
 
 /** City destinations. Every trip goes between a local area and a city (either direction). */
 val cities = listOf("إربد", "عمّان", "الزرقاء")
