@@ -199,53 +199,46 @@ private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 40.dp, bottom = 120.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(Modifier.size(44.dp).capCard(22.dp).clickable { onBack() }, contentAlignment = Alignment.Center) { Glyph(4, CapInk, 20.dp) }
             Text("رحلة جديدة", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = CapInk)
         }
 
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            CapChip("رايح", !back, Modifier.weight(1f)) { back = false }
-            CapChip("راجع", back, Modifier.weight(1f)) { back = true }
+        CapSection("الاتجاه") {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                CapChip("رايح", !back, Modifier.weight(1f)) { back = false }
+                CapChip("راجع", back, Modifier.weight(1f)) { back = true }
+            }
         }
-        CapLabel(if (back) "راجع من وين؟" else "رايح لوين؟")
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            capDests.forEach { d ->
-                CapChip(d, dest == d, Modifier.weight(1f)) {
-                    dest = d; priceStr = ""
-                    if (d == "إربد" && village == "إربد") village = ""
+        CapSection(if (back) "راجع من وين؟" else "رايح لوين؟") {
+            CapGrid(capDests, dest, 3) {
+                dest = it; priceStr = ""
+                if (it == "إربد" && village == "إربد") village = ""
+            }
+            if (dest == "عمّان") CapGrid(listOf("شارع الأردن", "طريق صويلح"), road, 2) { road = it }
+        }
+        CapSection(if (back) "لأي بلد بالشمال؟" else "من أي بلد بالشمال؟") {
+            CapGrid(villages, village, 3) { village = it }
+        }
+        CapSection("اليوم والساعة") {
+            CapDays(pillDays(5), day) { day = it }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f).height(52.dp).clip(RoundedCornerShape(16.dp)).background(Color(0x14FFFFFF)).clickable { showTime = true }, contentAlignment = Alignment.Center) {
+                    Text(if (minutes >= 0) "الساعة ${clockText(dayStart(day) + minutes * 60_000L)}" else "اختر الساعة", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (minutes >= 0) CapInk else CapAccent)
+                }
+                Row(Modifier.clip(RoundedCornerShape(16.dp)).background(Color(0x14FFFFFF)).height(52.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(44.dp).clickable { if (seats < maxSeats) seats++ }, contentAlignment = Alignment.Center) { Text("+", fontSize = 24.sp, color = CapInk) }
+                    Text("$seats مقاعد", Modifier.padding(horizontal = 4.dp), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = CapInk)
+                    Box(Modifier.size(44.dp).clickable { if (seats > 1) seats-- }, contentAlignment = Alignment.Center) { Text("−", fontSize = 24.sp, color = CapInk) }
                 }
             }
         }
-        if (dest == "عمّان") {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                listOf("شارع الأردن", "طريق صويلح").forEach { r -> CapChip(r, road == r) { road = r } }
+        CapSection("السعر (اختياري)") {
+            CapGrid(listOf("حسب الاتفاق") + priceChips.map { "$it د.أ" }, if (priceStr.isBlank()) "حسب الاتفاق" else "$priceStr د.أ", 3) {
+                priceStr = if (it == "حسب الاتفاق") "" else it.removeSuffix(" د.أ")
             }
-        }
-        CapLabel(if (back) "لأي بلد؟" else "من أي بلد؟")
-        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            villages.forEach { v -> CapChip(v, village == v) { village = v } }
-        }
-
-        CapLabel("اليوم")
-        CapDays(pillDays(5), day) { day = it }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.weight(1f).height(56.dp).capCard(16.dp).clickable { showTime = true }, contentAlignment = Alignment.Center) {
-                Text(if (minutes >= 0) "الساعة ${clockText(dayStart(day) + minutes * 60_000L)}" else "اختر الساعة", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (minutes >= 0) CapInk else CapAccent)
-            }
-            Row(Modifier.capCard(16.dp).height(56.dp).padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(44.dp).clickable { if (seats > 1) seats-- }, contentAlignment = Alignment.Center) { Text("−", fontSize = 24.sp, color = CapInk) }
-                Text("$seats مقاعد", Modifier.padding(horizontal = 6.dp), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = CapInk)
-                Box(Modifier.size(44.dp).clickable { if (seats < maxSeats) seats++ }, contentAlignment = Alignment.Center) { Text("+", fontSize = 24.sp, color = CapInk) }
-            }
-        }
-
-        CapLabel("السعر (اختياري)")
-        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            CapChip("حسب الاتفاق", priceStr.isBlank()) { priceStr = "" }
-            priceChips.forEach { p -> CapChip("$p د.أ", priceStr == p) { priceStr = p } }
         }
 
         CapBtn(if (sending) "جاري النشر..." else "انشر الرحلة", Modifier.fillMaxWidth(), height = 58.dp) {
@@ -289,8 +282,7 @@ private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
     }
 }
 
-@Composable
-private fun CapLabel(text: String) = Text(text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = CapMute)
+
 
 /** One button to start sharing the live location, one to stop. */
 @Composable

@@ -48,9 +48,9 @@ fun CapChip(text: String, on: Boolean, modifier: Modifier = Modifier, onClick: (
     val s = RoundedCornerShape(14.dp)
     Box(
         modifier.clip(s).background(if (on) CapAccent else CapSurface).border(1.dp, if (on) CapAccent else CapLine, s)
-            .clickable(remember { MutableInteractionSource() }, null) { onClick() }.padding(horizontal = 16.dp, vertical = 11.dp),
+            .clickable(remember { MutableInteractionSource() }, null) { onClick() }.padding(horizontal = 8.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center
-    ) { Text(text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color.White) }
+    ) { Text(text, fontSize = 14.sp, maxLines = 1, fontWeight = FontWeight.SemiBold, color = Color.White) }
 }
 
 /** Day strip in the captain look: light tiles, green when picked. */
@@ -103,6 +103,28 @@ fun CapNav(items: List<Triple<Int, String, Int>>, selected: Int, onPick: (Int) -
                 if (badge > 0) Box(Modifier.align(Alignment.TopEnd).padding(top = 2.dp, end = 10.dp).size(20.dp).clip(CircleShape).background(CapAccent), contentAlignment = Alignment.Center) {
                     Text("$badge", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
+            }
+        }
+    }
+}
+
+/** One glass card per topic: a small title, then its content, neatly from the right. */
+@Composable
+fun CapSection(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Column(Modifier.fillMaxWidth().capCard(24.dp).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = CapMute)
+        content()
+    }
+}
+
+/** Equal-width grid (default 3 per row) so choices line up in tidy columns instead of wrapping loosely. */
+@Composable
+fun CapGrid(items: List<String>, selected: String, cols: Int = 3, onPick: (String) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items.chunked(cols).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { n -> CapChip(n, n == selected, Modifier.weight(1f)) { onPick(n) } }
+                repeat(cols - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }
