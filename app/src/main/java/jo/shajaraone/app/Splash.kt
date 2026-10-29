@@ -52,50 +52,38 @@ fun SplashScreen(onDone: () -> Unit) {
         line.animateTo(1f, tween(650))
     }
 
-    val shimmer = Brush.linearGradient(
-        colors = listOf(Brand.Ochre, Color.White, Color(0xFFEBC476), Color.White, Brand.Ochre),
-        start = Offset(sweep * 700f - 350f, 0f),
-        end = Offset(sweep * 700f + 350f, 120f),
-        tileMode = TileMode.Mirror
-    )
+    val accent = Brand.Violet
+    val car = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { car.animateTo(1f, tween(1800, easing = FastOutSlowInEasing)) }
 
     Box(
-        Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF1C3226), Brand.Violet, Color(0xFF3C5B49)))),
+        Modifier.fillMaxSize().background(if (IS_CAPTAIN_APP) CapBg else VantaPageBg),
         contentAlignment = Alignment.Center
     ) {
-        // Soft pulsing light behind the name
         Box(
-            Modifier.size(320.dp).alpha(0.55f * glow * appear.value)
-                .background(
-                    Brush.radialGradient(listOf(Brand.Ochre, Brand.Ochre.copy(alpha = 0f))),
-                    androidx.compose.foundation.shape.CircleShape
-                )
+            Modifier.size(300.dp).alpha(0.30f * glow * appear.value)
+                .background(Brush.radialGradient(listOf(accent, accent.copy(alpha = 0f))), androidx.compose.foundation.shape.CircleShape)
         )
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
-            AppLogo(96.dp, Modifier.alpha(appear.value).scale(0.85f + 0.15f * appear.value))
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Box(
+                Modifier.alpha(appear.value).scale(0.85f + 0.15f * appear.value).darkGlass(40.dp).padding(22.dp),
+                contentAlignment = Alignment.Center
+            ) { AppLogo(72.dp) }
             Text(
                 APP_DISPLAY_NAME,
-                style = MaterialTheme.typography.displayMedium.copy(
-                    brush = shimmer,
-                    fontSize = 52.sp,
-                    fontWeight = FontWeight.Black,
-                    shadow = Shadow(Color(0xFF1C3226), blurRadius = 24f * glow)
-                ),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.alpha(appear.value).scale(0.9f + 0.1f * appear.value)
+                fontSize = 40.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                modifier = Modifier.alpha(appear.value)
             )
             Box(
                 Modifier.width(120.dp).height(3.dp).alpha(line.value)
-                    .background(Brush.horizontalGradient(listOf(Brand.Ochre.copy(alpha = 0f), Brand.Ochre, Brand.Ochre.copy(alpha = 0f))))
+                    .background(Brush.horizontalGradient(listOf(accent.copy(alpha = 0f), accent, accent.copy(alpha = 0f))))
             )
-            Text(
-                WELCOME_LINE,
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    color = Color(0xFFF5EFEB), fontWeight = FontWeight.SemiBold
-                ),
-                modifier = Modifier.alpha(line.value)
-            )
+            Text(WELCOME_LINE, fontSize = 18.sp, color = Dim, modifier = Modifier.alpha(line.value))
         }
+        CarArt(
+            Modifier.align(Alignment.BottomStart).padding(bottom = 90.dp).width(150.dp).height(60.dp)
+                .offset(x = (-150 + 560 * car.value).dp).alpha(0.9f)
+        )
     }
 }
 
