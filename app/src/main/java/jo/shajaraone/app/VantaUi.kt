@@ -37,12 +37,15 @@ import androidx.compose.ui.unit.sp
 val Amber = Color(0xFFF2B300)
 val Dim = Color(0xFF9A9A9F)
 
-/** Dark glass panel: soft vertical gradient and a hairline rim that fades downward. */
-fun Modifier.darkGlass(r: Dp = 22.dp): Modifier {
+/** Glass panel: dark gradient body, a diagonal light sheen, and a rim that catches light at the corners. */
+fun Modifier.darkGlass(r: Dp = 22.dp): Modifier = glassPanel(r, Color(0xFF2C2C30), Color(0xFF0F0F10), Color(0x2EFFFFFF))
+
+fun Modifier.glassPanel(r: Dp, top: Color, bottom: Color, sheen: Color): Modifier {
     val s = RoundedCornerShape(r)
     return this.clip(s)
-        .background(Brush.verticalGradient(listOf(Color(0xFF252527), Color(0xFF111112))))
-        .border(1.dp, Brush.verticalGradient(listOf(Color(0x40FFFFFF), Color(0x0DFFFFFF))), s)
+        .background(Brush.verticalGradient(listOf(top, bottom)))
+        .background(Brush.linearGradient(listOf(sheen, Color.Transparent, Color.Transparent), Offset(0f, 0f), Offset(700f, 900f)))
+        .border(1.dp, Brush.linearGradient(listOf(Color(0x77FFFFFF), Color(0x0AFFFFFF), Color(0x40FFFFFF)), Offset(0f, 0f), Offset(600f, 800f)), s)
 }
 
 /** Press = a small spring squeeze. */

@@ -3,6 +3,8 @@ package jo.shajaraone.admin
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -83,14 +85,15 @@ fun RoyalFooter(modifier: Modifier = Modifier) {
 
 @Composable
 fun RoyalCard(modifier: Modifier = Modifier, accent: Color = Royal.GoldDeep, content: @Composable ColumnScope.() -> Unit) {
-    Surface(
-        modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        color = Royal.Surface,
-        border = BorderStroke(1.dp, accent.copy(alpha = 0.55f))
-    ) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
-    }
+    val s = RoundedCornerShape(24.dp)
+    Column(
+        modifier.fillMaxWidth().clip(s)
+            .background(Brush.verticalGradient(listOf(Color(0xFF1F2A47), Color(0xFF0E1526))))
+            .background(Brush.linearGradient(listOf(accent.copy(alpha = 0.22f), Color.Transparent, Color.Transparent), Offset(0f, 0f), Offset(700f, 900f)))
+            .border(1.dp, Brush.linearGradient(listOf(Color(0x77FFFFFF), accent.copy(alpha = 0.10f), Color(0x40FFFFFF)), Offset(0f, 0f), Offset(600f, 800f)), s)
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp), content = content
+    )
 }
 
 @Composable
@@ -103,8 +106,8 @@ fun Badge(text: String, color: Color) {
 @Composable
 fun GoldButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     Button(
-        onClick, modifier, enabled = enabled, shape = RoundedCornerShape(12.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = Royal.Gold, contentColor = Color(0xFF2A0C1B)),
+        onClick, modifier, enabled = enabled, shape = RoundedCornerShape(26.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Royal.Gold, contentColor = Color.White),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
     ) { Text(text, fontWeight = FontWeight.Bold) }
 }
@@ -112,7 +115,7 @@ fun GoldButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier,
 @Composable
 fun GhostButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, color: Color = Royal.Gold) {
     OutlinedButton(
-        onClick, modifier, shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, color.copy(alpha = 0.8f)),
+        onClick, modifier, shape = RoundedCornerShape(26.dp), border = BorderStroke(1.dp, color.copy(alpha = 0.8f)),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = color),
         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
     ) { Text(text, fontWeight = FontWeight.Bold) }

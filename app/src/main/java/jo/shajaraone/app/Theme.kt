@@ -27,11 +27,12 @@ import androidx.compose.ui.unit.dp
  * so a new look is mostly a matter of editing this block (plus NightColors below for the Material roles).
  */
 object Brand {
-    val Violet = Color(0xFFF2B300)       // main actions, selected items, logo
-    val VioletSoft = Color(0xFFD9A200)   // outlines and the car drawing
-    val VioletLight = Color(0xFFFFD866)  // subtitles, selected navigation, soft highlights
-    val Teal = Color(0xFFFFE08A)         // highlights: prices, free seats, links, live status
-    val Navy = Color(0xFF000000)         // base background
+    // Rider app: amber on black. Captain app: electric blue on graphite.
+    val Violet = if (IS_CAPTAIN_APP) Color(0xFF3D8BFF) else Color(0xFFF2B300)       // main actions, selected items, logo
+    val VioletSoft = if (IS_CAPTAIN_APP) Color(0xFF2F73D9) else Color(0xFFD9A200)   // outlines
+    val VioletLight = if (IS_CAPTAIN_APP) Color(0xFF8DB8FF) else Color(0xFFFFD866)  // subtitles, soft highlights
+    val Teal = if (IS_CAPTAIN_APP) Color(0xFF9CC4FF) else Color(0xFFFFE08A)         // highlights
+    val Navy = if (IS_CAPTAIN_APP) Color(0xFF16171A) else Color(0xFF000000)         // base background
     val Ink = Color(0xFFF4F7FF)          // main text
     val Muted = Color(0xFFA9B4CC)        // secondary text
     val OnTeal = Color(0xFFFFFFFF)       // text on top of teal
@@ -45,13 +46,13 @@ object Brand {
 // "Night" palette: deep navy, violet actions, teal highlights. The app is always dark.
 private val NightColors = darkColorScheme(
     primary = Brand.Violet,
-    onPrimary = Color(0xFF1A0E00),
-    primaryContainer = Color(0xFF4A3000),
-    onPrimaryContainer = Color(0xFFFFEBC8),
+    onPrimary = if (IS_CAPTAIN_APP) Color.White else Color(0xFF1A0E00),
+    primaryContainer = if (IS_CAPTAIN_APP) Color(0xFF173A6B) else Color(0xFF4A3000),
+    onPrimaryContainer = if (IS_CAPTAIN_APP) Color(0xFFDCE9FF) else Color(0xFFFFEBC8),
     secondary = Brand.Teal,
     onSecondary = Brand.OnTeal,
-    secondaryContainer = Color(0xFF5A1230),
-    onSecondaryContainer = Color(0xFFFFD6E2),
+    secondaryContainer = Color(0xFF3A3B41),
+    onSecondaryContainer = Color(0xFFE6E6EA),
     tertiary = Color(0xFFFF8A7A),
     tertiaryContainer = Color(0xFF5A2018),
     onTertiaryContainer = Color(0xFFFFDAD3),
@@ -59,15 +60,15 @@ private val NightColors = darkColorScheme(
     onBackground = Brand.Ink,
     surface = Brand.Navy,
     onSurface = Brand.Ink,
-    surfaceVariant = Color(0xFF2A2F5C),
+    surfaceVariant = Color(0xFF2B2C31),
     onSurfaceVariant = Brand.Muted,
-    surfaceContainerLowest = Color(0xFF11163A),
-    surfaceContainerLow = Color(0xFF151A42),
-    surfaceContainer = Color(0xFF1B2050),
-    surfaceContainerHigh = Color(0xFF232958),
-    surfaceContainerHighest = Color(0xFF2C3262),
-    outline = Color(0xFF7F84B8),
-    outlineVariant = Color(0xFF3A4078),
+    surfaceContainerLowest = Color(0xFF111214),
+    surfaceContainerLow = Color(0xFF18191C),
+    surfaceContainer = Color(0xFF1F2024),
+    surfaceContainerHigh = Color(0xFF26272B),
+    surfaceContainerHighest = Color(0xFF2E2F34),
+    outline = Color(0xFF7C7E86),
+    outlineVariant = Color(0xFF3A3B41),
     error = Color(0xFFFF8A80),
     errorContainer = Color(0xFF5C1A1A),
     onErrorContainer = Color(0xFFFFDAD6)
@@ -109,7 +110,7 @@ fun ShajaraTheme(content: @Composable () -> Unit) {
 @Composable
 fun AppBackground(content: @Composable () -> Unit) {
     androidx.compose.foundation.layout.Box(
-        androidx.compose.ui.Modifier.fillMaxSize().background(VantaPageBg)
+        androidx.compose.ui.Modifier.fillMaxSize().background(if (IS_CAPTAIN_APP) CapBg else VantaPageBg)
     ) {
         androidx.compose.runtime.CompositionLocalProvider(
             androidx.compose.material3.LocalContentColor provides Brand.Ink

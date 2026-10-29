@@ -30,8 +30,7 @@ val CapPeach = Color(0xFFF8E8D2)
 val CapDark = Color(0xFF16171A)
 
 fun Modifier.capCard(r: Dp = 22.dp): Modifier {
-    val s = RoundedCornerShape(r)
-    return this.clip(s).background(CapSurface).border(1.dp, CapLine, s)
+    return this.glassPanel(r, Color(0xFF303136), Color(0xFF1C1D20), Color(0x2E5C9DFF))
 }
 
 @Composable

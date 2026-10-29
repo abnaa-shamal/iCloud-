@@ -478,9 +478,9 @@ fun BigButton(text: String, enabled: Boolean = true, onClick: () -> Unit) {
     val ctx = LocalContext.current
     Surface(
         onClick = { AppFeedback.tap(ctx); onClick() }, enabled = enabled,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(28.dp),
         color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
-        contentColor = Brand.Navy,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
         modifier = Modifier.fillMaxWidth().height(56.dp)
     ) {
         Box(contentAlignment = Alignment.Center) { Text(text, style = MaterialTheme.typography.titleMedium) }

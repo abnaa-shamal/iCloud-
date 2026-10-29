@@ -57,7 +57,7 @@ private fun Chips(options: List<Pair<String, String>>, selected: String, onSelec
             FilterChip(
                 selected == key, { onSelect(key) }, label = { Text(label, fontSize = 12.sp) },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = Royal.Gold, selectedLabelColor = Color(0xFF2A0C1B)
+                    selectedContainerColor = Royal.Gold, selectedLabelColor = Color.White
                 )
             )
         }

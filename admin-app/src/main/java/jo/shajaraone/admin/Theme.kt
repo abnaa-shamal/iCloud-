@@ -19,17 +19,17 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/** «Royal» look of the admin app: deep burgundy, antique gold, ivory. Different from the Aurora look of the rider/captain apps. */
+/** Admin look: deep navy glass with an indigo-violet accent. Different from the rider (black + amber) and captain (graphite + blue) apps. */
 object Royal {
-    val Bg = Color(0xFF1A0610)
-    val BgTop = Color(0xFF3A0F26)
-    val Surface = Color(0xFF2A0C1B)
-    val Container = Color(0xFF3A1428)
-    val Gold = Color(0xFFD4AF37)
-    val GoldLight = Color(0xFFF2D675)
-    val GoldDeep = Color(0xFF9C7A1C)
-    val Ivory = Color(0xFFF8F0DC)
-    val Muted = Color(0xFFC9B79A)
+    val Bg = Color(0xFF060A14)
+    val BgTop = Color(0xFF16213D)
+    val Surface = Color(0xFF101829)
+    val Container = Color(0xFF1B2640)
+    val Gold = Color(0xFF8B7CFF)
+    val GoldLight = Color(0xFFB9AFFF)
+    val GoldDeep = Color(0xFF5B4FD6)
+    val Ivory = Color(0xFFF1F3FA)
+    val Muted = Color(0xFF9AA3BC)
     val Emerald = Color(0xFF3DBB84)
     val Ruby = Color(0xFFE5677B)
     val Amber = Color(0xFFF0A93B)
@@ -37,14 +37,14 @@ object Royal {
 }
 
 private val RoyalScheme = darkColorScheme(
-    primary = Royal.Gold, onPrimary = Color(0xFF2A0C1B),
+    primary = Royal.Gold, onPrimary = Color(0xFF101829),
     primaryContainer = Royal.Container, onPrimaryContainer = Royal.GoldLight,
-    secondary = Royal.GoldLight, onSecondary = Color(0xFF2A0C1B),
+    secondary = Royal.GoldLight, onSecondary = Color(0xFF101829),
     background = Royal.Bg, onBackground = Royal.Ivory,
     surface = Royal.Surface, onSurface = Royal.Ivory,
     surfaceVariant = Royal.Container, onSurfaceVariant = Royal.Muted,
     surfaceContainer = Royal.Surface, surfaceContainerHigh = Royal.Container,
-    outline = Royal.GoldDeep, outlineVariant = Color(0xFF5A2A40),
+    outline = Royal.GoldDeep, outlineVariant = Color(0xFF2E3A5C),
     error = Royal.Ruby
 )
 

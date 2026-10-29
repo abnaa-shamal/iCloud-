@@ -2,6 +2,7 @@ package jo.shajaraone.app
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -21,13 +22,11 @@ import androidx.compose.ui.unit.sp
 @Composable
 private fun Brand() {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        AppLogo(88.dp)
-        Text(APP_DISPLAY_NAME, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Brand.Ink)
-        Spacer(Modifier.height(18.dp))
-        GlowTitle(WELCOME_LINE, fontSize = 34.sp)
+        AppLogo(72.dp)
+        Text(APP_DISPLAY_NAME, fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
         Text(
-            if (IS_CAPTAIN_APP) "تطبيق الكابتن" else "سجّل دخولك وكمّل مشوارك",
-            color = Brand.VioletLight, style = MaterialTheme.typography.bodyLarge
+            if (IS_CAPTAIN_APP) "تطبيق الكابتن" else "سافر مع أهل بلدك، أريح وأوفر",
+            color = Brand.Muted, style = MaterialTheme.typography.bodyLarge
         )
     }
 }
@@ -50,7 +49,7 @@ private fun PhoneField(value: String, onChange: (String) -> Unit) = OutlinedText
     value = value,
     onValueChange = { onChange(it.filter { c -> c.isDigit() }.take(14)) },
     label = { Text("رقم الهاتف") }, placeholder = { Text("079xxxxxxx") },
-    singleLine = true, shape = MaterialTheme.shapes.medium, colors = glassFieldColors(),
+    singleLine = true, shape = RoundedCornerShape(18.dp), colors = glassFieldColors(),
     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
     modifier = Modifier.fillMaxWidth()
 )
@@ -58,7 +57,7 @@ private fun PhoneField(value: String, onChange: (String) -> Unit) = OutlinedText
 @Composable
 private fun PasswordField(value: String, label: String, onChange: (String) -> Unit) = OutlinedTextField(
     value = value, onValueChange = onChange,
-    label = { Text(label) }, singleLine = true, shape = MaterialTheme.shapes.medium, colors = glassFieldColors(),
+    label = { Text(label) }, singleLine = true, shape = RoundedCornerShape(18.dp), colors = glassFieldColors(),
     visualTransformation = PasswordVisualTransformation(),
     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
     modifier = Modifier.fillMaxWidth()
@@ -67,7 +66,7 @@ private fun PasswordField(value: String, label: String, onChange: (String) -> Un
 @Composable
 private fun TextInput(value: String, label: String, onChange: (String) -> Unit) = OutlinedTextField(
     value = value, onValueChange = { onChange(it.take(40)) },
-    label = { Text(label) }, singleLine = true, shape = MaterialTheme.shapes.medium, colors = glassFieldColors(),
+    label = { Text(label) }, singleLine = true, shape = RoundedCornerShape(18.dp), colors = glassFieldColors(),
     modifier = Modifier.fillMaxWidth()
 )
 
@@ -80,7 +79,7 @@ fun AuthScreen() {
             .verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Spacer(Modifier.height(56.dp))
+        Spacer(Modifier.height(40.dp))
         Brand()
         Spacer(Modifier.height(24.dp))
         if (registering) {
