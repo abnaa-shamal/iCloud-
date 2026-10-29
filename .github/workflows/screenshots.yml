@@ -47,6 +47,8 @@ jobs:
       - name: Publish PNGs to branch design-shots
         if: always()
         run: |
+          mkdir -p app/build/design-shots
+          grep -E "^e: |error:|FAILED|Exception|Caused by" test.log | head -40 > app/build/design-shots/errors.txt || true
           cd app/build/design-shots || exit 0
           git init -q && git checkout -q -b shots
           git config user.name "ci" && git config user.email "ci@example.com"
