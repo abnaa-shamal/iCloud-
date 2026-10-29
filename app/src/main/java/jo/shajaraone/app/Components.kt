@@ -40,15 +40,15 @@ import androidx.compose.ui.unit.sp
 
 /** Bottom bar styling shared by the rider and captain apps: deep navy, violet-tinted selection, teal badge. */
 @Composable
-fun navBarColor(): Color = Brand.Navy.copy(alpha = 0.94f)
+fun navBarColor(): Color = Brand.Stock
 
 @Composable
 fun navItemColors() = NavigationBarItemDefaults.colors(
-    selectedIconColor = Brand.VioletLight,
-    selectedTextColor = Brand.VioletLight,
-    unselectedIconColor = Color.White.copy(alpha = 0.55f),
-    unselectedTextColor = Color.White.copy(alpha = 0.55f),
-    indicatorColor = Brand.Violet.copy(alpha = 0.28f)
+    selectedIconColor = Brand.Violet,
+    selectedTextColor = Brand.Violet,
+    unselectedIconColor = Brand.Muted,
+    unselectedTextColor = Brand.Muted,
+    indicatorColor = Brand.Violet.copy(alpha = 0.12f)
 )
 
 // ===== Selection chips =====
@@ -64,13 +64,13 @@ fun inkColor(): Color = MaterialTheme.colorScheme.onBackground
 /** One rectangular choice chip: black with a yellow label when selected, white with a black outline when not. */
 @Composable
 fun PillChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    val bg by animateColorAsState(if (selected) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.07f), label = "chipBg")
-    val fg by animateColorAsState(if (selected) Color.White else MaterialTheme.colorScheme.onSurface, label = "chipFg")
+    val bg by animateColorAsState(if (selected) MaterialTheme.colorScheme.primary else Brand.Stock, label = "chipBg")
+    val fg by animateColorAsState(if (selected) Brand.Navy else MaterialTheme.colorScheme.onSurface, label = "chipFg")
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(8.dp),
         color = bg,
-        border = BorderStroke(1.dp, if (selected) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.22f)),
+        border = BorderStroke(1.dp, if (selected) MaterialTheme.colorScheme.primary else Brand.Rule),
         modifier = Modifier.height(42.dp)
     ) {
         Row(
@@ -169,7 +169,7 @@ fun PricePill(price: Double?) {
         color = Brand.OnTeal,
         style = MaterialTheme.typography.titleSmall,
         modifier = Modifier
-            .background(SignYellow, RoundedCornerShape(10.dp))
+            .background(Brand.Teal, RoundedCornerShape(6.dp))
             .padding(horizontal = 12.dp, vertical = 5.dp)
     )
 }
@@ -181,16 +181,16 @@ fun PricePill(price: Double?) {
 fun SeatShape(state: SeatState, size: Dp = 30.dp, label: String? = null, onClick: (() -> Unit)? = null) {
     val violet = Brand.Violet
     val fill = when (state) {
-        SeatState.FREE -> Color.White.copy(alpha = 0.06f)
-        SeatState.TAKEN -> Color.White.copy(alpha = 0.10f)
+        SeatState.FREE -> Brand.Stock
+        SeatState.TAKEN -> Brand.Pressed
         SeatState.PICKED -> violet
-        SeatState.DRIVER -> Color.White.copy(alpha = 0.05f)
+        SeatState.DRIVER -> Color.Transparent
     }
     val line = when (state) {
-        SeatState.FREE -> Brand.VioletSoft.copy(alpha = 0.75f)
-        SeatState.PICKED -> Brand.VioletLight
-        SeatState.TAKEN -> Color.White.copy(alpha = 0.18f)
-        SeatState.DRIVER -> Color.White.copy(alpha = 0.28f)
+        SeatState.FREE -> Brand.Rule
+        SeatState.PICKED -> Brand.Ochre
+        SeatState.TAKEN -> Brand.Rule
+        SeatState.DRIVER -> Brand.Rule
     }
     val shape = RoundedCornerShape(topStart = size / 3f, topEnd = size / 3f, bottomStart = size / 5, bottomEnd = size / 5)
     val m = Modifier.size(size, size * 1.15f)
@@ -198,14 +198,14 @@ fun SeatShape(state: SeatState, size: Dp = 30.dp, label: String? = null, onClick
         if (label != null || state == SeatState.PICKED || state == SeatState.TAKEN) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 when (state) {
-                    SeatState.PICKED -> Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(size * 0.38f))
-                    SeatState.TAKEN -> Icon(Icons.Filled.Lock, null, tint = Color.White.copy(alpha = 0.55f), modifier = Modifier.size(size * 0.3f))
+                    SeatState.PICKED -> Icon(Icons.Filled.Check, null, tint = Brand.Navy, modifier = Modifier.size(size * 0.38f))
+                    SeatState.TAKEN -> Icon(Icons.Filled.Lock, null, tint = Brand.Muted, modifier = Modifier.size(size * 0.3f))
                     else -> {}
                 }
                 if (label != null) {
                     Text(
                         label, fontWeight = FontWeight.Bold, fontSize = (size.value * 0.36f).sp,
-                        color = if (state == SeatState.TAKEN) Color.White.copy(alpha = 0.55f) else Color.White
+                        color = if (state == SeatState.TAKEN) Brand.Muted else if (state == SeatState.PICKED) Brand.Navy else Brand.Ink
                     )
                 }
             }
@@ -272,12 +272,12 @@ fun RouteTimeline(from: String, to: String, road: String = "") {
 @Composable
 fun Avatar(name: String, size: Dp = 44.dp) {
     Box(
-        Modifier.size(size).clip(CircleShape).background(BoardBlack),
+        Modifier.size(size).clip(CircleShape).background(Brand.Violet),
         contentAlignment = Alignment.Center
     ) {
         Text(
             name.trim().firstOrNull()?.toString() ?: "؟",
-            color = SignYellow, fontWeight = FontWeight.ExtraBold, fontSize = (size.value / 2.3f).sp
+            color = Brand.Navy, fontWeight = FontWeight.ExtraBold, fontSize = (size.value / 2.3f).sp
         )
     }
 }
@@ -287,10 +287,10 @@ fun Avatar(name: String, size: Dp = 44.dp) {
 private fun YellowButton(onClick: () -> Unit, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(14.dp),
-        color = Color.White.copy(alpha = 0.10f),
-        contentColor = SignYellow,
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.22f)),
+        shape = RoundedCornerShape(8.dp),
+        color = Brand.Stock,
+        contentColor = Brand.Violet,
+        border = BorderStroke(1.5.dp, Brand.Violet),
         modifier = modifier.height(46.dp)
     ) { Box(Modifier.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) { content() } }
 }
@@ -321,18 +321,18 @@ fun WhatsAppButton(phone: String, message: String) {
 @Composable
 fun TimeBlock(millis: Long) {
     Column(
-        Modifier.background(Color.White.copy(alpha = 0.08f), RoundedCornerShape(14.dp)).border(1.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(14.dp)).padding(horizontal = 14.dp, vertical = 8.dp),
+        Modifier.background(Brand.Pressed, RoundedCornerShape(8.dp)).border(1.dp, Brand.Rule, RoundedCornerShape(8.dp)).padding(horizontal = 14.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(clockText(millis), style = MaterialTheme.typography.titleLarge, color = SignYellow)
-        Text(dayName(millis), style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.8f))
+        Text(clockText(millis), style = MaterialTheme.typography.titleLarge, color = Brand.Violet)
+        Text(dayName(millis), style = MaterialTheme.typography.labelMedium, color = Brand.Muted)
     }
 }
 
 /** A highway-style sign: green panel, white inner frame, destination big, origin small. */
 @Composable
 fun RoadSign(from: String, to: String, road: String = "", modifier: Modifier = Modifier) {
-    Box(modifier.background(Brush.linearGradient(listOf(Brand.Violet, Color(0xFF3D2BD6))), RoundedCornerShape(18.dp)).padding(5.dp)) {
+    Box(modifier.background(Brush.linearGradient(listOf(Color(0xFF1C3226), Brand.Violet)), RoundedCornerShape(10.dp)).padding(5.dp)) {
         Column(
             Modifier.fillMaxWidth()
                 .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
@@ -341,7 +341,7 @@ fun RoadSign(from: String, to: String, road: String = "", modifier: Modifier = M
         ) {
             Text("من $from", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.labelLarge)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("←", color = SignYellow, fontSize = 26.sp, fontWeight = FontWeight.Black)
+                Text("←", color = Brand.Ochre, fontSize = 26.sp, fontWeight = FontWeight.Black)
                 Text(to, color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Black)
             }
             if (road.isNotBlank()) {
@@ -376,7 +376,7 @@ fun TripInfo(t: Trip, showCaptain: Boolean = true) {
                 if (t.price != null) Text("للمقعد", style = MaterialTheme.typography.labelMedium, color = cs.onSurfaceVariant)
             }
         }
-        HorizontalDivider(color = Color.White.copy(alpha = 0.10f))
+        HorizontalDivider(color = Brand.Rule)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             if (showCaptain) {
                 Avatar(t.captainName, 38.dp)
@@ -402,7 +402,7 @@ fun TripInfo(t: Trip, showCaptain: Boolean = true) {
             }
         }
         if (t.acceptsParcels) {
-            Pill("يقبل أمانات", Color.White.copy(alpha = 0.10f), cs.onSurface)
+            Pill("يقبل أمانات", Brand.Teal.copy(alpha = 0.12f), Brand.Teal)
         }
         if (t.note.isNotBlank()) {
             Text(t.note, color = cs.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
@@ -416,12 +416,12 @@ fun TripInfo(t: Trip, showCaptain: Boolean = true) {
 /** Glass card: translucent fill, hairline border. */
 @Composable
 fun AppCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    val shape = RoundedCornerShape(24.dp)
+    val shape = RoundedCornerShape(10.dp)
     Box(
         modifier
             .fillMaxWidth()
-            .background(Color.White.copy(alpha = 0.08f), shape)
-            .border(1.dp, Color.White.copy(alpha = 0.16f), shape)
+            .background(Brand.Stock, shape)
+            .border(1.dp, Brand.Rule, shape)
     ) {
         CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
@@ -432,7 +432,7 @@ fun AppCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -
 /** Header: app title and a greeting over a soft violet glow, with a thin teal-violet line underneath. */
 @Composable
 fun HeroHeader(title: String, subtitle: String, trailing: @Composable (() -> Unit)? = null) {
-    Column(Modifier.fillMaxWidth()) {
+    Column(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF1C3226), Brand.Violet, Color(0xFF3C5B49))))) {
         Box(
             Modifier.fillMaxWidth().statusBarsPadding()
                 .padding(start = 20.dp, end = 12.dp, top = 12.dp, bottom = 14.dp)
@@ -440,13 +440,13 @@ fun HeroHeader(title: String, subtitle: String, trailing: @Composable (() -> Uni
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 AppLogo(46.dp)
                 Column(Modifier.weight(1f)) {
-                    Text(subtitle, color = SignYellow, style = MaterialTheme.typography.labelLarge)
+                    Text(subtitle, color = Brand.Ochre, style = MaterialTheme.typography.labelLarge)
                     Text(title, color = Color.White, style = MaterialTheme.typography.headlineSmall)
                 }
                 trailing?.invoke()
             }
         }
-        Box(Modifier.fillMaxWidth().height(2.dp).background(Brush.horizontalGradient(listOf(Brand.Violet, Brand.Teal))))
+        Box(Modifier.fillMaxWidth().height(3.dp).background(Brand.Ochre))
     }
 }
 
@@ -478,9 +478,9 @@ fun BigButton(text: String, enabled: Boolean = true, onClick: () -> Unit) {
     val ctx = LocalContext.current
     Surface(
         onClick = { AppFeedback.tap(ctx); onClick() }, enabled = enabled,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(8.dp),
         color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
-        contentColor = Color.White,
+        contentColor = Brand.Navy,
         modifier = Modifier.fillMaxWidth().height(56.dp)
     ) {
         Box(contentAlignment = Alignment.Center) { Text(text, style = MaterialTheme.typography.titleMedium) }
@@ -524,11 +524,11 @@ fun sendVerifyWhatsApp(ctx: android.content.Context, me: UserProfile) {
 @Composable
 fun VerifyBar(me: UserProfile) {
     val ctx = LocalContext.current
-    val shape = RoundedCornerShape(20.dp)
+    val shape = RoundedCornerShape(10.dp)
     Column(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
-            .background(Brush.linearGradient(listOf(Brand.Violet.copy(alpha = 0.40f), Brand.Teal.copy(alpha = 0.14f))), shape)
-            .border(1.dp, Color.White.copy(alpha = 0.20f), shape)
+            .background(Brand.Ochre.copy(alpha = 0.18f), shape)
+            .border(1.dp, Brand.Ochre, shape)
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {

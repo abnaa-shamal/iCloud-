@@ -1,21 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Simple map-pin with a road line: original design for «شجرة 1» -->
+<!-- App icon: two northern peaks (parchment and ochre) with a winding road, on olive. Original design. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- back peak (ochre) -->
+    <path
+        android:fillColor="#D9A84E"
+        android:pathData="M50,76 L68,40 L86,76 Z" />
+    <!-- front peak (parchment) -->
+    <path
+        android:fillColor="#F5EFEB"
+        android:pathData="M22,76 L42,34 L62,76 Z" />
     <!-- road -->
     <path
-        android:fillColor="#FFFFFF"
-        android:fillAlpha="0.35"
-        android:pathData="M30,78 L78,78 L74,84 L34,84 Z" />
-    <!-- pin -->
+        android:strokeColor="#2D4436"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:pathData="M40,76 C58,70 32,58 44,48" />
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,26 C43.5,26 35,34.5 35,45 C35,58 54,76 54,76 C54,76 73,58 73,45 C73,34.5 64.5,26 54,26 Z" />
-    <!-- pin hole -->
+        android:strokeColor="#D9A84E"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round"
+        android:pathData="M40,76 C58,70 32,58 44,48" />
+    <!-- star -->
     <path
-        android:fillColor="#0B6E4F"
-        android:pathData="M54,37 C49.6,37 46,40.6 46,45 C46,49.4 49.6,53 54,53 C58.4,53 62,49.4 62,45 C62,40.6 58.4,37 54,37 Z" />
+        android:fillColor="#D9A84E"
+        android:pathData="M28,24 L30,28 L34,30 L30,32 L28,36 L26,32 L22,30 L26,28 Z" />
 </vector>

@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.sp
 private fun Brand() {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         AppLogo(88.dp)
-        Text(APP_DISPLAY_NAME, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color.White)
+        Text(APP_DISPLAY_NAME, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Brand.Ink)
         Spacer(Modifier.height(18.dp))
         GlowTitle(WELCOME_LINE, fontSize = 34.sp)
         Text(
@@ -34,15 +34,15 @@ private fun Brand() {
 
 @Composable
 private fun glassFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = Brand.Teal,
-    unfocusedBorderColor = Color.White.copy(alpha = 0.22f),
-    focusedContainerColor = Color.White.copy(alpha = 0.10f),
-    unfocusedContainerColor = Color.White.copy(alpha = 0.06f),
-    cursorColor = Brand.Teal,
-    focusedLabelColor = Brand.Teal,
+    focusedBorderColor = Brand.Violet,
+    unfocusedBorderColor = Brand.Rule,
+    focusedContainerColor = Brand.Stock,
+    unfocusedContainerColor = Brand.Stock,
+    cursorColor = Brand.Violet,
+    focusedLabelColor = Brand.Violet,
     unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-    focusedTextColor = Color.White,
-    unfocusedTextColor = Color.White
+    focusedTextColor = Brand.Ink,
+    unfocusedTextColor = Brand.Ink
 )
 
 @Composable
@@ -86,12 +86,12 @@ fun AuthScreen() {
         if (registering) {
             ProfileForm(needAccount = true)
             TextButton(onClick = { registering = false }, modifier = Modifier.fillMaxWidth()) {
-                Text("عندي حساب، بدي أسجّل دخول", color = Brand.Teal)
+                Text("عندي حساب، بدي أسجّل دخول", color = Brand.Violet)
             }
         } else {
             LoginForm()
             TextButton(onClick = { registering = true }, modifier = Modifier.fillMaxWidth()) {
-                Text("ما عندي حساب، بدي أسجّل جديد", color = Brand.Teal)
+                Text("ما عندي حساب، بدي أسجّل جديد", color = Brand.Violet)
             }
         }
     }

@@ -88,8 +88,8 @@ internal fun LiveInfo(live: LiveLoc?, me: Location?, nowMs: Long, captainName: S
     val cs = MaterialTheme.colorScheme
     Column(
         Modifier.fillMaxWidth().padding(14.dp)
-            .background(Color.White.copy(alpha = 0.07f), RoundedCornerShape(24.dp))
-            .border(1.dp, Color.White.copy(alpha = 0.14f), RoundedCornerShape(24.dp))
+            .background(Brand.Stock, RoundedCornerShape(10.dp))
+            .border(1.dp, Brand.Rule, RoundedCornerShape(10.dp))
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -115,7 +115,7 @@ internal fun LiveInfo(live: LiveLoc?, me: Location?, nowMs: Long, captainName: S
             }
         }
         if (live != null) {
-            HorizontalDivider(color = Color.White.copy(alpha = 0.10f))
+            HorizontalDivider(color = Brand.Rule)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 if (me != null) {
                     val d = Location("x").apply { latitude = live.lat; longitude = live.lng }.distanceTo(me)

@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -170,10 +171,15 @@ fun TicketCard(t: Trip, modifier: Modifier = Modifier, actions: @Composable Colu
                     if (t.carText.isNotBlank()) Text(t.carText, fontSize = 13.sp, color = Ledger.Muted)
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("${t.seatsFree} / ${t.seatsTotal}", fontFamily = numberFont, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Ledger.Olive)
-                    Text("مقاعد شاغرة", fontSize = 11.sp, color = Ledger.Muted)
+                    if (t.status == "full") {
+                        Text("مكتملة", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = Ledger.Terracotta)
+                    } else {
+                        Text("${t.seatsFree} من ${t.seatsTotal}", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Ledger.Olive)
+                        Text("مقاعد شاغرة", fontSize = 11.sp, color = Ledger.Muted)
+                    }
                 }
             }
+            if (t.note.isNotBlank()) Text(t.note, fontSize = 13.sp, color = Ledger.Muted)
             actions()
         }
     }
@@ -281,7 +287,7 @@ fun LedgerWelcomeHeader(greeting: String, line: String) {
 
 /** One question as a card: number, question, the answer (or a hint), a chevron. */
 @Composable
-fun LedgerStepCard(step: String, question: String, answer: String?, hint: String, enabled: Boolean = true, content: (@Composable ColumnScope.() -> Unit)? = null) {
+fun LedgerStepCard(step: String, question: String, answer: String?, hint: String, enabled: Boolean = true, onToggle: (() -> Unit)? = null, content: (@Composable ColumnScope.() -> Unit)? = null) {
     val shape = RoundedCornerShape(10.dp)
     Column(
         Modifier.fillMaxWidth().background(if (enabled) Ledger.Stock else Ledger.Pressed.copy(alpha = 0.5f), shape)
@@ -289,7 +295,10 @@ fun LedgerStepCard(step: String, question: String, answer: String?, hint: String
             .padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Row(
+            Modifier.fillMaxWidth().then(if (onToggle != null && enabled) Modifier.clickable { onToggle() } else Modifier),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
             Box(
                 Modifier.size(38.dp).background(if (enabled) Ledger.Olive else Ledger.Rule, androidx.compose.foundation.shape.CircleShape),
                 contentAlignment = Alignment.Center
@@ -307,11 +316,13 @@ fun LedgerStepCard(step: String, question: String, answer: String?, hint: String
 
 /** Big answer button with a plain-words explanation, for people who do not know «شمال/جنوب» or road names. */
 @Composable
-fun LedgerChoice(title: String, explain: String, selected: Boolean = false) {
+fun LedgerChoice(title: String, explain: String, selected: Boolean = false, onClick: (() -> Unit)? = null) {
     val shape = RoundedCornerShape(8.dp)
     Column(
         Modifier.fillMaxWidth().background(if (selected) Ledger.Olive else Ledger.Parchment, shape)
-            .border(1.5.dp, if (selected) Ledger.Olive else Ledger.Rule, shape).padding(horizontal = 16.dp, vertical = 14.dp),
+            .border(1.5.dp, if (selected) Ledger.Olive else Ledger.Rule, shape)
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
         Text(title, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = if (selected) Ledger.Parchment else Ledger.Basalt)

@@ -53,18 +53,21 @@ fun SplashScreen(onDone: () -> Unit) {
     }
 
     val shimmer = Brush.linearGradient(
-        colors = listOf(Brand.VioletLight, Color.White, Brand.Teal, Color.White, Brand.VioletLight),
+        colors = listOf(Brand.Ochre, Color.White, Color(0xFFEBC476), Color.White, Brand.Ochre),
         start = Offset(sweep * 700f - 350f, 0f),
         end = Offset(sweep * 700f + 350f, 120f),
         tileMode = TileMode.Mirror
     )
 
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Box(
+        Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF1C3226), Brand.Violet, Color(0xFF3C5B49)))),
+        contentAlignment = Alignment.Center
+    ) {
         // Soft pulsing light behind the name
         Box(
             Modifier.size(320.dp).alpha(0.55f * glow * appear.value)
                 .background(
-                    Brush.radialGradient(listOf(Brand.Violet, Brand.Violet.copy(alpha = 0f))),
+                    Brush.radialGradient(listOf(Brand.Ochre, Brand.Ochre.copy(alpha = 0f))),
                     androidx.compose.foundation.shape.CircleShape
                 )
         )
@@ -76,20 +79,19 @@ fun SplashScreen(onDone: () -> Unit) {
                     brush = shimmer,
                     fontSize = 52.sp,
                     fontWeight = FontWeight.Black,
-                    shadow = Shadow(Brand.Violet, blurRadius = 48f * glow)
+                    shadow = Shadow(Color(0xFF1C3226), blurRadius = 24f * glow)
                 ),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.alpha(appear.value).scale(0.9f + 0.1f * appear.value)
             )
             Box(
                 Modifier.width(120.dp).height(3.dp).alpha(line.value)
-                    .background(Brush.horizontalGradient(listOf(Brand.Violet.copy(alpha = 0f), Brand.Teal, Brand.Violet.copy(alpha = 0f))))
+                    .background(Brush.horizontalGradient(listOf(Brand.Ochre.copy(alpha = 0f), Brand.Ochre, Brand.Ochre.copy(alpha = 0f))))
             )
             Text(
                 WELCOME_LINE,
                 style = MaterialTheme.typography.headlineSmall.copy(
-                    color = Brand.Muted, fontWeight = FontWeight.SemiBold,
-                    shadow = Shadow(Brand.Teal, blurRadius = 24f * glow)
+                    color = Color(0xFFF5EFEB), fontWeight = FontWeight.SemiBold
                 ),
                 modifier = Modifier.alpha(line.value)
             )
@@ -104,14 +106,14 @@ fun GlowTitle(text: String, fontSize: androidx.compose.ui.unit.TextUnit = 44.sp,
     val sweep by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(2600, easing = LinearEasing)), label = "sweep")
     val glow by inf.animateFloat(0.5f, 1f, infiniteRepeatable(tween(1800, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "glow")
     val brush = Brush.linearGradient(
-        colors = listOf(Brand.VioletLight, Color.White, Brand.Teal, Color.White, Brand.VioletLight),
+        colors = listOf(Brand.Violet, Brand.Teal, Brand.Violet, Color(0xFF5E7C69), Brand.Violet),
         start = Offset(sweep * 700f - 350f, 0f), end = Offset(sweep * 700f + 350f, 120f), tileMode = TileMode.Mirror
     )
     Text(
         text,
         style = MaterialTheme.typography.displayMedium.copy(
             brush = brush, fontSize = fontSize, fontWeight = FontWeight.Black,
-            shadow = Shadow(Brand.Violet, blurRadius = 40f * glow)
+            shadow = Shadow(Brand.Ochre.copy(alpha = 0.35f), blurRadius = 12f * glow)
         ),
         textAlign = TextAlign.Center, modifier = modifier
     )

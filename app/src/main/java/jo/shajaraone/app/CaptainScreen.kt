@@ -284,11 +284,11 @@ internal fun StatTile(label: String, value: String, modifier: Modifier = Modifie
     Surface(
         modifier = modifier,
         shape = MaterialTheme.shapes.medium,
-        color = if (highlight) Brand.Violet.copy(alpha = 0.28f) else Color.White.copy(alpha = 0.07f),
-        border = BorderStroke(1.dp, if (highlight) Brand.VioletSoft.copy(alpha = 0.7f) else Color.White.copy(alpha = 0.14f))
+        color = if (highlight) Brand.Violet.copy(alpha = 0.10f) else Brand.Stock,
+        border = BorderStroke(1.dp, if (highlight) Brand.Violet else Brand.Rule)
     ) {
         Column(Modifier.padding(14.dp)) {
-            Text(value, style = MaterialTheme.typography.headlineSmall, color = if (highlight) Brand.Teal else Color.White)
+            Text(value, style = MaterialTheme.typography.headlineSmall, color = if (highlight) Brand.Teal else Brand.Ink)
             Text(label, style = MaterialTheme.typography.labelMedium, color = cs.onSurfaceVariant)
         }
     }
@@ -365,14 +365,14 @@ internal fun LiveShareControl(t: Trip) {
     val sharing = active == t.id
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(
-            Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(16.dp)).padding(14.dp),
+            Modifier.fillMaxWidth().background(Brand.Pressed, RoundedCornerShape(10.dp)).padding(14.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Box(
-                Modifier.size(40.dp).background((if (sharing) Brand.Teal else Color.White).copy(alpha = 0.14f), CircleShape),
+                Modifier.size(40.dp).background((if (sharing) Brand.Teal else Brand.Muted).copy(alpha = 0.16f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Filled.LocationOn, null, tint = if (sharing) Brand.Teal else Color.White.copy(alpha = 0.7f))
+                Icon(Icons.Filled.LocationOn, null, tint = if (sharing) Brand.Teal else Brand.Muted)
             }
             Column(Modifier.weight(1f)) {
                 Text(if (sharing) "المشاركة شغّالة" else "المشاركة متوقفة", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)

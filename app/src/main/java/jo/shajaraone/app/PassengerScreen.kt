@@ -81,7 +81,6 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
     var booking by remember { mutableStateOf<Trip?>(null) }
     var tracking by remember { mutableStateOf<Trip?>(null) }
     var needVerify by remember { mutableStateOf(false) }
-    var filterOpen by rememberSaveable { mutableStateOf(false) }
 
     DisposableEffect(Unit) {
         val r = Repo.listenTrips(
@@ -104,15 +103,9 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
         verticalArrangement = Arrangement.spacedBy(14.dp),
         modifier = Modifier.fillMaxSize()
     ) {
+        item { GuidedRoutePicker(route) }
         item {
-            val routeText = if (route.kind.isBlank()) "كل الخطوط"
-                else listOf(route.from().ifBlank { "أي مكان" }, route.to().ifBlank { "أي مكان" }).joinToString("  ←  ")
-            val dayText = if (day < 0) "كل الأيام" else dateLongText(dayStart(day))
-            FilterSummaryBar("$routeText  •  $dayText", filterOpen) { filterOpen = !filterOpen }
-        }
-        if (filterOpen) item {
             AppCard {
-                RoutePicker(route, allowAll = true)
                 SectionLabel("متى؟")
                 WhenPicker(
                     dayOffset = day.takeIf { it >= 0 }, minutes = mins.takeIf { it >= 0 },
@@ -133,15 +126,13 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
             shown.isEmpty() -> item { EmptyState("🚌", "ما في رحلات بهالاختيار هلأ.\nجرّب يوم أو خط ثاني.") }
             else -> items(shown, key = { it.id }) { t ->
                 val mine = myBookings.firstOrNull { it.tripId == t.id && it.isActive }
-                AppCard {
-                    TripInfo(t)
+                TicketCard(t) {
                     if (mine?.status == BK_ACCEPTED) {
                         Button(
                             onClick = { tracking = t },
                             shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth().height(48.dp)
                         ) { Text("تتبّع الكابتن على الخريطة") }
                     }
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
                     when {
                         mine != null -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             Box(Modifier.weight(1f)) {
@@ -226,7 +217,7 @@ internal fun CarSeatMap(total: Int, free: Int, picked: Set<Int>, onToggle: (Int)
                 // Body.
                 val bodyTl = Offset(side, 0f)
                 val bodySize = Size(w - side * 2, h)
-                drawRoundRect(Color.White.copy(alpha = 0.05f), bodyTl, bodySize, CornerRadius(80.dp.toPx(), 80.dp.toPx()))
+                drawRoundRect(Brand.Pressed.copy(alpha = 0.6f), bodyTl, bodySize, CornerRadius(80.dp.toPx(), 80.dp.toPx()))
                 drawRoundRect(body.copy(alpha = 0.6f), bodyTl, bodySize, CornerRadius(80.dp.toPx(), 80.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(1.5.dp.toPx()))
                 // Windshield.
                 drawRoundRect(
@@ -248,8 +239,8 @@ internal fun CarSeatMap(total: Int, free: Int, picked: Set<Int>, onToggle: (Int)
                 Box(contentAlignment = Alignment.Center) {
                     SeatShape(SeatState.DRIVER, seat)
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Filled.Person, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(18.dp))
-                        Text("الكابتن", fontSize = 10.sp, color = Color.White.copy(alpha = 0.8f), fontWeight = FontWeight.Bold)
+                        Icon(Icons.Filled.Person, null, tint = Brand.Muted, modifier = Modifier.size(18.dp))
+                        Text("الكابتن", fontSize = 10.sp, color = Brand.Muted, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -267,12 +258,12 @@ internal fun CarSeatMap(total: Int, free: Int, picked: Set<Int>, onToggle: (Int)
 @Composable
 internal fun SeatLegend() {
     Row(
-        Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.06f), RoundedCornerShape(16.dp))
-            .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(16.dp)).padding(vertical = 10.dp),
+        Modifier.fillMaxWidth().background(Brand.Pressed.copy(alpha = 0.6f), RoundedCornerShape(10.dp))
+            .border(1.dp, Brand.Rule, RoundedCornerShape(10.dp)).padding(vertical = 10.dp),
         horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically
     ) {
-        LegendItem("شاغر") { Box(Modifier.size(18.dp).border(1.5.dp, Brand.VioletSoft, CircleShape)) }
-        LegendItem("محجوز") { Icon(Icons.Filled.Lock, null, tint = Color.White.copy(alpha = 0.6f), modifier = Modifier.size(18.dp)) }
+        LegendItem("شاغر") { Box(Modifier.size(18.dp).border(1.5.dp, Brand.Rule, CircleShape)) }
+        LegendItem("محجوز") { Icon(Icons.Filled.Lock, null, tint = Brand.Muted, modifier = Modifier.size(18.dp)) }
         LegendItem("اختيارك") { Box(Modifier.size(18.dp).background(Brand.Violet, CircleShape)) }
     }
 }

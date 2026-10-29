@@ -11,6 +11,8 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.junit.Rule
@@ -64,9 +66,7 @@ class DesignShotsTest {
                 FilterSummaryBar("الشجرة  ←  إربد  •  اليوم", false) {}
                 Text("2 رحلة متاحة", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 4.dp))
                 listOf(t1, t2).forEach { t ->
-                    AppCard {
-                        TripInfo(t)
-                        HorizontalDivider()
+                    TicketCard(t) {
                         Button(onClick = {}, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text("احجز مقعد", style = MaterialTheme.typography.titleMedium) }
                         ContactRow(t.to, "0790000000", "")
                     }
@@ -165,6 +165,33 @@ class DesignShotsTest {
                 }
             }
         }
+    }
+
+    /** The REAL guided picker, driven by clicks like a user would. */
+    private fun guidedShot(name: String) {
+        rule.waitForIdle()
+        val bmp = rule.onRoot().captureToImage().asAndroidBitmap()
+        val dir = File("build/design-shots").apply { mkdirs() }
+        File(dir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
+    @Test fun guidedFlow() {
+        rule.setContent {
+            ShajaraTheme {
+                AppBackground {
+                    Column(Modifier.fillMaxSize()) {
+                        HeroHeader("أهلاً محمد", "أبناء الشمال • وين رايح اليوم؟")
+                        Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp)) { GuidedRoutePicker(rememberRouteState()) }
+                    }
+                }
+            }
+        }
+        guidedShot("G1-start")
+        rule.onNodeWithText("أنا بالشمال").performClick(); guidedShot("G2-north")
+        rule.onNodeWithText("الشجرة").performClick(); guidedShot("G3-card2")
+        rule.onNodeWithText("عمّان أو الزرقاء").performClick(); guidedShot("G4-south-roads")
+        rule.onNodeWithText("طريق صويلح").performClick(); guidedShot("G5-stops")
+        rule.onNodeWithText("خلدا").performClick(); guidedShot("G6-done")
     }
 
     @Test fun riderUnverified() = shot("9-rider-unverified") {

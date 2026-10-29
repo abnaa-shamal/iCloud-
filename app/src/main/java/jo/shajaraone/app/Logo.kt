@@ -13,8 +13,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-private val LogoViolet = Brand.Violet
-private val LogoTeal = Brand.Teal
+private val LogoFront = Color(0xFFF5EFEB)   // parchment peak
+private val LogoBack = Brand.Ochre          // ochre peak
 
 /** The app mark: two northern peaks (violet and teal) with a road winding between them and a small star. Drawn in code so it stays sharp at any size. */
 @Composable
@@ -30,7 +30,7 @@ fun AppLogo(size: Dp = 56.dp, modifier: Modifier = Modifier) {
             lineTo(w * 0.98f, h * 0.90f)
             close()
         }
-        drawPath(teal, Brush.linearGradient(listOf(LogoTeal, Color(0xFF1FA89A)), Offset(w * 0.7f, h * 0.3f), Offset(w * 0.7f, h * 0.9f)))
+        drawPath(teal, Brush.linearGradient(listOf(Color(0xFFEBC476), LogoBack), Offset(w * 0.7f, h * 0.3f), Offset(w * 0.7f, h * 0.9f)))
 
         // Front peak (violet), left side.
         val violet = Path().apply {
@@ -39,16 +39,16 @@ fun AppLogo(size: Dp = 56.dp, modifier: Modifier = Modifier) {
             lineTo(w * 0.66f, h * 0.90f)
             close()
         }
-        drawPath(violet, Brush.linearGradient(listOf(Color(0xFF8C73FF), LogoViolet), Offset(w * 0.34f, h * 0.2f), Offset(w * 0.34f, h * 0.9f)))
+        drawPath(violet, Brush.linearGradient(listOf(Color.White, Color(0xFFE6DACB)), Offset(w * 0.34f, h * 0.2f), Offset(w * 0.34f, h * 0.9f)))
 
         // The road: an S-curve climbing the front peak, with a dashed centre line.
         val road = Path().apply {
             moveTo(w * 0.30f, h * 0.90f)
             cubicTo(w * 0.62f, h * 0.80f, w * 0.18f, h * 0.60f, w * 0.40f, h * 0.44f)
         }
-        drawPath(road, Brand.Navy, style = Stroke(width = w * 0.085f, cap = StrokeCap.Round))
+        drawPath(road, Brand.Violet, style = Stroke(width = w * 0.085f, cap = StrokeCap.Round))
         drawPath(
-            road, Color.White.copy(alpha = 0.9f),
+            road, Brand.Ochre,
             style = Stroke(
                 width = w * 0.016f, cap = StrokeCap.Round,
                 pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(w * 0.05f, w * 0.05f))
@@ -67,6 +67,6 @@ fun AppLogo(size: Dp = 56.dp, modifier: Modifier = Modifier) {
             quadraticTo(cx, cy, cx, cy - r)
             close()
         }
-        drawPath(star, Color.White)
+        drawPath(star, Brand.Ochre)
     }
 }

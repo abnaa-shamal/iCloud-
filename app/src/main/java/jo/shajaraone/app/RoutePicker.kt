@@ -89,19 +89,19 @@ fun rememberRouteState(kind: String = ""): RouteState =
 @Composable
 private fun ChoiceCard(title: String, subtitle: String, selected: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(18.dp)
-    val bg = if (selected) Brush.linearGradient(listOf(Brand.Violet.copy(alpha = 0.55f), Brand.Teal.copy(alpha = 0.20f)))
-    else Brush.linearGradient(listOf(Color.White.copy(alpha = 0.07f), Color.White.copy(alpha = 0.05f)))
+    val bg = if (selected) Brush.linearGradient(listOf(Brand.Violet, Brand.Violet))
+    else Brush.linearGradient(listOf(Brand.Stock, Brand.Stock))
     Row(
         Modifier.fillMaxWidth().background(bg, shape)
-            .border(1.dp, if (selected) Brand.VioletLight else Color.White.copy(alpha = 0.16f), shape)
+            .border(1.dp, if (selected) Brand.Violet else Brand.Rule, shape)
             .clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Brand.Ink)
-            if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Brand.Muted)
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = if (selected) Brand.Navy else Brand.Ink)
+            if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = if (selected) Brand.Navy.copy(alpha = 0.85f) else Brand.Muted)
         }
-        if (selected) Text("✓", color = Brand.Teal, style = MaterialTheme.typography.titleLarge)
+        if (selected) Text("✓", color = Brand.Ochre, style = MaterialTheme.typography.titleLarge)
     }
 }
 
