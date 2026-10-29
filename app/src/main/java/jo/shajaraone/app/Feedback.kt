@@ -22,14 +22,18 @@ object AppFeedback {
     /** Short vibrations on button presses and results. */
     val HAPTICS_ENABLED = true
 
-    /** Sounds are off until you add files to res/raw (see above). */
-    val SOUNDS_ENABLED = false
+    /** Sounds on/off. The files live in res/raw (fb_*.wav). */
+    val SOUNDS_ENABLED = true
 
     // Sound file names (without extension) expected in res/raw.
     private const val SND_TAP = "fb_tap"
     private const val SND_SUCCESS = "fb_success"
     private const val SND_ERROR = "fb_error"
     private const val SND_REQUEST = "fb_request"
+    private const val SND_OPEN = "fb_open"
+
+    /** The app just opened: one soft chime, no vibration. */
+    fun open(ctx: Context) = fire(ctx, SND_OPEN, millis = 0, amplitude = 0)
 
     /** A main button was pressed. */
     fun tap(ctx: Context) = fire(ctx, SND_TAP, millis = 12, amplitude = 80)
@@ -45,7 +49,7 @@ object AppFeedback {
 
     private fun fire(ctx: Context, sound: String, millis: Long, amplitude: Int) {
         try {
-            if (HAPTICS_ENABLED) vibrate(ctx, millis, amplitude)
+            if (HAPTICS_ENABLED && millis > 0) vibrate(ctx, millis, amplitude)
             if (SOUNDS_ENABLED) play(ctx, sound)
         } catch (_: Exception) {
             // Feedback must never break the app.

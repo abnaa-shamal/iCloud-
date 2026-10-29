@@ -56,7 +56,8 @@ fun Modifier.squeeze(onClick: () -> Unit = {}): Modifier = composed {
     val src = remember { MutableInteractionSource() }
     val down by src.collectIsPressedAsState()
     val sc by animateFloatAsState(if (down) 0.96f else 1f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium), label = "sq")
-    this.scale(sc).clickable(src, null) { onClick() }
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    this.scale(sc).clickable(src, null) { AppFeedback.tap(ctx); onClick() }
 }
 
 /** Cards rise and fade in one after the other. */

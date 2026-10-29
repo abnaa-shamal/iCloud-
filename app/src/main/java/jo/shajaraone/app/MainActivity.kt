@@ -35,6 +35,7 @@ class MainActivity : ComponentActivity() {
                 AppBackground {
                     var splash by rememberSaveable { mutableStateOf(true) }
                     if (splash) {
+                        LaunchedEffect(Unit) { AppFeedback.open(this@MainActivity) }
                         SplashScreen(onDone = { splash = false })
                     } else {
                         Surface(Modifier.fillMaxSize(), color = Color.Transparent) {

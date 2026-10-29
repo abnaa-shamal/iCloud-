@@ -1,6 +1,7 @@
 package jo.shajaraone.app
 
 import android.Manifest
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
@@ -18,6 +19,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -175,10 +177,35 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
 @Composable
 internal fun CapPublishPreview() = CapPublish(UserProfile(name = "أحمد", phone = "0790000000"), onBack = {})
 
+@Composable
+private fun CapBigChoice(title: String, sub: String, index: Int, onClick: () -> Unit) {
+    Row(
+        Modifier.entrance(index).fillMaxWidth().squeeze(onClick).capCard(28.dp).padding(horizontal = 22.dp, vertical = 26.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(title, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = CapInk)
+            Text(sub, fontSize = 13.sp, color = CapMute, maxLines = 2, lineHeight = 20.sp)
+        }
+        Box(Modifier.size(44.dp).clip(RoundedCornerShape(22.dp)).background(CapAccent), contentAlignment = Alignment.Center) {
+            Box(Modifier.rotate(180f)) { Glyph(4, Color.White, 20.dp) }
+        }
+    }
+}
+
+@Composable
+private fun CapBackBar(title: String, onBack: () -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Box(Modifier.size(46.dp).squeeze(onBack).capCard(23.dp), contentAlignment = Alignment.Center) { Glyph(4, CapInk, 20.dp) }
+        Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = CapInk, maxLines = 1)
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
     val ctx = LocalContext.current
+    var step by rememberSaveable { mutableIntStateOf(0) }      // 0 = direction, 1 = place, 2 = time and publish
     var group by rememberSaveable { mutableStateOf("") }       // الجنوب / الشمال / داخل الشمال
     var road by rememberSaveable { mutableStateOf("") }
     var stop by rememberSaveable { mutableStateOf("") }
@@ -196,79 +223,95 @@ private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
     val villages = if (inner) northVillages else northPlaces
     val maxSeats = me.maxSeats.coerceIn(1, 8)
 
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 40.dp, bottom = 120.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Box(Modifier.size(44.dp).capCard(22.dp).clickable { onBack() }, contentAlignment = Alignment.Center) { Glyph(4, CapInk, 20.dp) }
-            Text("رحلة جديدة", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = CapInk)
+    fun goBack() {
+        when {
+            step == 2 -> step = 1
+            step == 1 && !inner && road.isNotBlank() -> { road = ""; stop = ""; village = "" }
+            step == 1 -> { step = 0; group = ""; road = ""; stop = ""; village = ""; spot = "" }
+            else -> onBack()
         }
+    }
+    BackHandler { goBack() }
 
-        CapSection("لوين رايح؟") {
-            CapGrid(listOf("الجنوب", "الشمال", "داخل الشمال"), group, 3) { group = it; priceStr = ""; if (it == "داخل الشمال" && village == "إربد") village = "" }
+    val colMod = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 44.dp, bottom = 120.dp)
+    when (step) {
+        0 -> Column(colMod, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            CapBackBar("رحلة جديدة") { onBack() }
+            Text("لوين رايح؟", Modifier.padding(top = 6.dp, bottom = 4.dp), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk)
+            CapBigChoice("الجنوب", "عمّان والزرقاء", 0) { group = "الجنوب"; priceStr = ""; step = 1 }
+            CapBigChoice("الشمال", northPlaces.joinToString(" • "), 1) { group = "الشمال"; priceStr = ""; step = 1 }
+            CapBigChoice("داخل الشمال", (northVillages + "إربد").joinToString(" • "), 2) { group = "داخل الشمال"; priceStr = ""; step = 1 }
         }
-        if (group == "الجنوب" || group == "الشمال") {
-            CapSection("من أي طريق؟") {
-                CapGrid(southRoads.keys.toList(), road, 3) { road = it; stop = "" }
-            }
-            if (road.isNotBlank()) CapSection("المنطقة (اختياري)") {
-                CapGrid(listOf("أي منطقة") + (southRoads[road] ?: emptyList()), if (stop.isBlank()) "أي منطقة" else stop, 3) { stop = if (it == "أي منطقة") "" else it }
-            }
-        }
-        if (group.isNotBlank()) CapSection(if (group == "الشمال") "لأي بلد بالشمال؟" else "من أي بلد بالشمال؟") {
-            CapGrid(villages, village, 3) { village = it }
-        }
-        if (inner && village.isNotBlank()) CapSection("وين بإربد؟") {
-            CapGrid(irbidSpots, spot, 1) { spot = it }
-        }
-        CapSection("اليوم والساعة") {
-            CapDays(pillDays(5), day) { day = it }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.weight(1f).height(52.dp).clip(RoundedCornerShape(16.dp)).background(Color(0x14FFFFFF)).clickable { showTime = true }, contentAlignment = Alignment.Center) {
-                    Text(if (minutes >= 0) "الساعة ${clockText(dayStart(day) + minutes * 60_000L)}" else "اختر الساعة", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (minutes >= 0) CapInk else CapAccent)
+        1 -> Column(colMod, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            CapBackBar(if (!inner && road.isNotBlank()) road else group) { goBack() }
+            if (inner) {
+                CapSection("من أي بلد بالشمال؟") { CapGrid(villages, village, 3) { village = it; spot = "" } }
+                if (village.isNotBlank()) CapSection("وين بإربد؟") {
+                    CapGrid(listOf("كل إربد") + irbidSpots, "", 1) { spot = if (it == "كل إربد") "" else it; step = 2 }
                 }
-                Row(Modifier.clip(RoundedCornerShape(16.dp)).background(Color(0x14FFFFFF)).height(52.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(44.dp).clickable { if (seats < maxSeats) seats++ }, contentAlignment = Alignment.Center) { Text("+", fontSize = 24.sp, color = CapInk) }
-                    Text("$seats مقاعد", Modifier.padding(horizontal = 4.dp), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = CapInk)
-                    Box(Modifier.size(44.dp).clickable { if (seats > 1) seats-- }, contentAlignment = Alignment.Center) { Text("−", fontSize = 24.sp, color = CapInk) }
+            } else if (road.isBlank()) {
+                southRoads.entries.forEachIndexed { i, (r, stops) ->
+                    CapBigChoice(r, (if (r == "طريق الزرقاء") listOf("الصحراوي") + stops.take(3) else stops.take(4)).joinToString(" • "), i) { road = r; stop = "" }
+                }
+            } else {
+                CapSection("المنطقة (اختياري)") {
+                    CapGrid(listOf("أي منطقة") + (southRoads[road] ?: emptyList()), if (stop.isBlank()) "أي منطقة" else stop, 3) { stop = if (it == "أي منطقة") "" else it }
+                }
+                CapSection(if (group == "الشمال") "لأي بلد بالشمال؟" else "من أي بلد بالشمال؟") {
+                    CapGrid(villages, village, 3) { village = it; step = 2 }
                 }
             }
         }
-        CapSection("السعر (اختياري)") {
-            CapGrid(listOf("حسب الاتفاق") + priceChips.map { "$it د.أ" }, if (priceStr.isBlank()) "حسب الاتفاق" else "$priceStr د.أ", 3) {
-                priceStr = if (it == "حسب الاتفاق") "" else it.removeSuffix(" د.أ")
-            }
-        }
-
-        CapBtn(if (sending) "جاري النشر..." else "انشر الرحلة", Modifier.fillMaxWidth(), height = 58.dp) {
-            val departAt = if (minutes >= 0) dayStart(day) + minutes * 60_000L else 0L
-            when {
-                group.isBlank() -> toast(ctx, "اختر وين رايح")
-                !inner && road.isBlank() -> toast(ctx, "اختر الطريق")
-                village.isBlank() -> toast(ctx, "اختر البلد")
-                minutes < 0 -> toast(ctx, "اختر الساعة")
-                departAt < System.currentTimeMillis() -> toast(ctx, "هالوقت فات، اختر وقت جاي")
-                sending -> {}
-                else -> {
-                    val southPlace = stop.ifBlank { if (road == "طريق الزرقاء") ZARQA else AMMAN }
-                    val (from, to, roadField) = when (group) {
-                        "الجنوب" -> Triple(village, southPlace, road)
-                        "الشمال" -> Triple(southPlace, village, road)
-                        else -> Triple(village, spot.ifBlank { "إربد" }, NORTH_INNER)
+        else -> Column(colMod, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            CapBackBar(listOf(group, road.takeIf { !inner }, village, spot).filter { !it.isNullOrBlank() }.joinToString(" • ")) { goBack() }
+            CapSection("اليوم والساعة") {
+                CapDays(pillDays(5), day) { day = it }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.weight(1f).height(52.dp).clip(RoundedCornerShape(16.dp)).background(Color(0x14FFFFFF)).clickable { showTime = true }, contentAlignment = Alignment.Center) {
+                        Text(if (minutes >= 0) "الساعة ${clockText(dayStart(day) + minutes * 60_000L)}" else "اختر الساعة", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (minutes >= 0) CapInk else CapAccent)
                     }
-                    sending = true
-                    Repo.publishTrip(
-                        Trip(
-                            captainName = me.name, captainPhone = me.phone, carText = me.carText,
-                            from = from, to = to, road = roadField,
-                            departAt = departAt, seatsTotal = seats.toLong(), price = priceStr.toDoubleOrNull(),
-                            acceptsParcels = false, note = ""
-                        )
-                    ) { ok ->
-                        sending = false
-                        if (ok) { toast(ctx, "تم نشر الرحلة ✅"); onBack() }
-                        else toast(ctx, "ما قدرت أنشر. تأكد من الإنترنت ومن موافقة المشرف على حسابك")
+                    Row(Modifier.clip(RoundedCornerShape(16.dp)).background(Color(0x14FFFFFF)).height(52.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(44.dp).clickable { if (seats < maxSeats) seats++ }, contentAlignment = Alignment.Center) { Text("+", fontSize = 24.sp, color = CapInk) }
+                        Text("$seats مقاعد", Modifier.padding(horizontal = 4.dp), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = CapInk)
+                        Box(Modifier.size(44.dp).clickable { if (seats > 1) seats-- }, contentAlignment = Alignment.Center) { Text("−", fontSize = 24.sp, color = CapInk) }
+                    }
+                }
+            }
+            CapSection("السعر (اختياري)") {
+                CapGrid(listOf("حسب الاتفاق") + priceChips.map { "$it د.أ" }, if (priceStr.isBlank()) "حسب الاتفاق" else "$priceStr د.أ", 3) {
+                    priceStr = if (it == "حسب الاتفاق") "" else it.removeSuffix(" د.أ")
+                }
+            }
+
+            CapBtn(if (sending) "جاري النشر..." else "انشر الرحلة", Modifier.fillMaxWidth(), height = 58.dp) {
+                val departAt = if (minutes >= 0) dayStart(day) + minutes * 60_000L else 0L
+                when {
+                    group.isBlank() -> toast(ctx, "اختر وين رايح")
+                    !inner && road.isBlank() -> toast(ctx, "اختر الطريق")
+                    village.isBlank() -> toast(ctx, "اختر البلد")
+                    minutes < 0 -> toast(ctx, "اختر الساعة")
+                    departAt < System.currentTimeMillis() -> toast(ctx, "هالوقت فات، اختر وقت جاي")
+                    sending -> {}
+                    else -> {
+                        val southPlace = stop.ifBlank { if (road == "طريق الزرقاء") ZARQA else AMMAN }
+                        val (from, to, roadField) = when (group) {
+                            "الجنوب" -> Triple(village, southPlace, road)
+                            "الشمال" -> Triple(southPlace, village, road)
+                            else -> Triple(village, spot.ifBlank { "إربد" }, NORTH_INNER)
+                        }
+                        sending = true
+                        Repo.publishTrip(
+                            Trip(
+                                captainName = me.name, captainPhone = me.phone, carText = me.carText,
+                                from = from, to = to, road = roadField,
+                                departAt = departAt, seatsTotal = seats.toLong(), price = priceStr.toDoubleOrNull(),
+                                acceptsParcels = false, note = ""
+                            )
+                        ) { ok ->
+                            sending = false
+                            if (ok) { toast(ctx, "تم نشر الرحلة ✅"); onBack() }
+                            else toast(ctx, "ما قدرت أنشر. تأكد من الإنترنت ومن موافقة المشرف على حسابك")
+                        }
                     }
                 }
             }
