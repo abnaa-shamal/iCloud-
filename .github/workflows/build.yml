@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -115,13 +115,13 @@ jobs:
         run: |
           for f in rider captain; do
             APK=$(find "app/build/outputs/apk/$f/release" -name '*.apk' | head -1)
-            mv "$APK" "app/build/outputs/apk/$f/release/shajara-$f-1.5.${{ github.run_number }}.apk"
+            mv "$APK" "app/build/outputs/apk/$f/release/abnaa-$f-1.5.${{ github.run_number }}.apk"
           done
 
       - name: Put the version in the admin APK name
         run: |
           APK=$(find admin-app/build/outputs/apk/release -name '*.apk' | head -1)
-          mv "$APK" "admin-app/build/outputs/apk/release/shajara-admin-1.0.${{ github.run_number }}.apk"
+          mv "$APK" "admin-app/build/outputs/apk/release/abnaa-admin-1.0.${{ github.run_number }}.apk"
 
       - name: Clean up key
         if: always()
@@ -147,6 +147,18 @@ jobs:
           path: admin-app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 30
+
+      # Publish the 3 APKs as a public release so the apps can tell the user "a new version is available"
+      - name: Publish release for in-app update check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "build-${{ github.run_number }}" \
+            app/build/outputs/apk/rider/release/*.apk \
+            app/build/outputs/apk/captain/release/*.apk \
+            admin-app/build/outputs/apk/release/*.apk \
+            --repo "${{ github.repository }}" --target "${{ github.sha }}" --prerelease \
+            --title "أبناء الشمال ${{ github.run_number }}" --notes "نسخة رقم ${{ github.run_number }}"
 
   # Automatic tests of firestore.rules on a LOCAL emulator (never touches real or test Firebase data)
   rules-test:

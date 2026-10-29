@@ -39,6 +39,7 @@ class MainActivity : ComponentActivity() {
                     } else {
                         Surface(Modifier.fillMaxSize(), color = Color.Transparent) {
                             Root()
+                            UpdateCheck()
                         }
                     }
                 }

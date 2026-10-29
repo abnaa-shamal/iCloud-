@@ -17,7 +17,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         initFirebase(applicationContext)
         setContent {
-            RoyalTheme { AdminApp { Toast.makeText(this, it, Toast.LENGTH_SHORT).show() } }
+            RoyalTheme { AdminApp { Toast.makeText(this, it, Toast.LENGTH_SHORT).show() }; UpdateCheck() }
         }
     }
 }
