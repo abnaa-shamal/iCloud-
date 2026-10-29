@@ -144,7 +144,7 @@ class DesignShotsTest {
             LedgerWelcomeHeader("أهلاً محمد", "وين رايح اليوم؟")
             Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 LedgerStepCard("1", "أنت وين هسه؟", null, "") {
-                    LedgerChoice("أنا بالشمال", "إربد، الرمثا، المفرق، الطرة، عمراوة، الذنيبة، المغيّر...")
+                    LedgerChoice("أنا بالشمال", "إربد، الرمثا، المفرق، الشجرة، الطرة، عمراوة، الذنيبة، المغيّر...")
                     LedgerChoice("أنا بعمّان أو الزرقاء", "صويلح، خلدا، الجامعة الأردنية، الشميساني، رصيفة، سحاب...")
                 }
                 LedgerStepCard("2", "لوين رايح؟", null, "اختار مكانك أول", enabled = false)
