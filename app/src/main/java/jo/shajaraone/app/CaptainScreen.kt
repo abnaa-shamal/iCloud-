@@ -254,6 +254,8 @@ internal fun CapBigChoice(title: String, sub: String, index: Int, onClick: () ->
     }
 }
 
+private fun roadLabel(r: String) = if (r == "طريق الزرقاء") "الطريق الصحراوي" else r
+
 /** A road card: tap to unfold a small, tidy map of the places it passes, then «اختر هالطريق». Places are information only for the captain. */
 @Composable
 private fun CapRoadCard(title: String, places: List<String>, open: Boolean, index: Int, onToggle: () -> Unit, onPick: () -> Unit) {
@@ -261,7 +263,7 @@ private fun CapRoadCard(title: String, places: List<String>, open: Boolean, inde
         Row(Modifier.fillMaxWidth().squeeze(onToggle), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(title, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = CapInk)
-                Text(if (title == "طريق الزرقاء") "الزرقاء • الصحراوي" else "عمّان", fontSize = 13.sp, color = CapMute)
+                Text("عمّان", fontSize = 13.sp, color = CapMute)
             }
             Box(Modifier.size(40.dp).clip(RoundedCornerShape(20.dp)).background(Color(0x1FFFFFFF)), contentAlignment = Alignment.Center) {
                 Text(if (open) "−" else "+", fontSize = 22.sp, color = CapAccent, fontWeight = FontWeight.Bold)
@@ -320,7 +322,7 @@ private fun CapPublish(me: UserProfile, online: Boolean, onPublished: () -> Unit
     fun goBack() {
         when {
             step == 2 -> step = 1
-            step == 1 && !inner && road.isNotBlank() -> { road = ""; stop = ""; village = "" }
+            step == 1 && !inner && village.isNotBlank() -> { village = ""; road = ""; stop = ""; openRoad = "" }
             step == 1 -> { step = 0; group = ""; road = ""; stop = ""; village = ""; spot = "" }
             else -> {}
         }
@@ -335,29 +337,43 @@ private fun CapPublish(me: UserProfile, online: Boolean, onPublished: () -> Unit
                 Text(if (online) "أونلاين: عندك رحلة منشورة" else "أوفلاين: ما عندك رحلة منشورة", fontSize = 13.sp, color = if (online) Color(0xFF34C759) else CapMute)
             }
             Text("وجهة انطلاقك؟", Modifier.padding(top = 6.dp, bottom = 4.dp), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk)
-            CapBigChoice("الشمال", northPlaces.joinToString(" • "), 0) { group = "الشمال"; priceStr = ""; step = 1 }
-            CapBigChoice("الجنوب", "عمّان والزرقاء", 1) { group = "الجنوب"; priceStr = ""; step = 1 }
+            CapBigChoice("من الشمال", "إلى عمّان", 0) { group = "الجنوب"; priceStr = ""; step = 1 }
+            CapBigChoice("من الجنوب", "إلى الشمال", 1) { group = "الشمال"; priceStr = ""; step = 1 }
             CapBigChoice("داخل الشمال", (northVillages + "إربد").joinToString(" • "), 2) { group = "داخل الشمال"; priceStr = ""; step = 1 }
         }
         1 -> Column(colMod, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            CapBackBar(if (!inner && road.isNotBlank()) road else group) { goBack() }
+            CapBackBar(
+                when {
+                    village.isNotBlank() -> village
+                    inner -> "داخل الشمال"
+                    group == "الجنوب" -> "من الشمال"
+                    else -> "من الجنوب"
+                }
+            ) { goBack() }
             if (inner) {
                 CapSection("من أي بلد بالشمال؟") { CapGrid(villages, village, 3) { village = it; spot = "" } }
                 if (village.isNotBlank()) CapSection("وين بإربد؟") {
                     CapGrid(listOf("كل إربد") + irbidSpots, "", 1) { spot = if (it == "كل إربد") "" else it; step = 2 }
                 }
-            } else if (road.isBlank()) {
-                southRoads.entries.forEachIndexed { i, (r, places) ->
-                    CapRoadCard(r, places, openRoad == r, i, onToggle = { openRoad = if (openRoad == r) "" else r }) { road = r; stop = "" }
+            } else if (village.isBlank()) {
+                CapSection(if (group == "الجنوب") "من أي مكان بالشمال؟" else "لأي مكان بالشمال؟") {
+                    CapGrid(villages, village, 3) { village = it }
                 }
             } else {
-                CapSection(if (group == "الشمال") "لأي بلد بالشمال؟" else "من أي بلد بالشمال؟") {
-                    CapGrid(villages, village, 3) { village = it; step = 2 }
+                Text("اختر الطريق", fontSize = 15.sp, color = CapMute)
+                southRoads.entries.forEachIndexed { i, (r, places) ->
+                    CapRoadCard(roadLabel(r), places, openRoad == r, i, onToggle = { openRoad = if (openRoad == r) "" else r }) { road = r; stop = ""; step = 2 }
                 }
             }
         }
         else -> Column(colMod, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            CapBackBar(listOf(group, road.takeIf { !inner }, village, spot).filter { !it.isNullOrBlank() }.joinToString(" • ")) { goBack() }
+            val sPlace = stop.ifBlank { if (road == "طريق الزرقاء") ZARQA else AMMAN }
+            val (tFrom, tTo) = when (group) {
+                "الجنوب" -> village to sPlace
+                "الشمال" -> sPlace to village
+                else -> village to spot.ifBlank { "إربد" }
+            }
+            CapBackBar(tFrom + " ← " + tTo + if (inner) "" else " • " + roadLabel(road)) { goBack() }
             CapSection("اليوم والوقت (اختياري)") {
                 CapDays(pillDays(5), day) { day = it }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
