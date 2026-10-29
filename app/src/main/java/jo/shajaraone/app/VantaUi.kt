@@ -145,12 +145,12 @@ fun DayPills(days: List<Pair<String, String>>, selected: Int, onPick: (Int) -> U
         val w = (maxWidth - gap * (days.size - 1)) / days.size
         val x by animateDpAsState((w + gap) * selected.coerceAtLeast(0), spring(0.75f, Spring.StiffnessMediumLow), label = "daysel")
         val vis by animateFloatAsState(if (selected >= 0) 1f else 0f, tween(200), label = "dayvis")
-        Box(Modifier.offset(x = x).width(w).height(86.dp).alpha(vis).clip(RoundedCornerShape(30.dp)).background(Color.White))
+        Box(Modifier.offset(x = x).width(w).height(80.dp).alpha(vis).clip(RoundedCornerShape(30.dp)).background(Color.White))
         Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
             days.forEachIndexed { i, (name, num) ->
                 val on = i == selected
                 Column(
-                    Modifier.width(w).height(86.dp).clip(RoundedCornerShape(30.dp))
+                    Modifier.width(w).height(80.dp).clip(RoundedCornerShape(30.dp))
                         .then(if (on) Modifier else Modifier.background(Color(0xFF2B2B2E)))
                         .clickable(remember { MutableInteractionSource() }, null) { onPick(i) },
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
@@ -165,9 +165,13 @@ fun DayPills(days: List<Pair<String, String>>, selected: Int, onPick: (Int) -> U
 }
 
 /** Day pills for the next [count] days: (label, day number). */
-fun pillDays(count: Int = 5): List<Pair<String, String>> = (0 until count).map { i ->
-    val cal = java.util.Calendar.getInstance().apply { timeInMillis = dayStart(i) }
-    dayName(dayStart(i)) to "${cal.get(java.util.Calendar.DAY_OF_MONTH)}"
+fun pillDays(count: Int = 5): List<Pair<String, String>> {
+    val names = listOf("الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت")
+    return (0 until count).map { i ->
+        val cal = java.util.Calendar.getInstance().apply { timeInMillis = dayStart(i) }
+        val label = when (i) { 0 -> "اليوم"; 1 -> "غداً"; else -> names[cal.get(java.util.Calendar.DAY_OF_WEEK) - 1] }
+        label to "${cal.get(java.util.Calendar.DAY_OF_MONTH)}"
+    }
 }
 
 /** One ride as a dark glass card; [actions] go under the price row. */
@@ -200,14 +204,8 @@ fun TripCard(t: Trip, modifier: Modifier = Modifier, index: Int = 0, nearest: Bo
                 Text(if (t.road.isNotBlank() && t.road != NORTH_INNER) t.road else "الوجهة", fontSize = 12.sp, color = Dim)
             }
         }
-        Canvas(Modifier.fillMaxWidth().height(1.dp)) {
-            drawLine(Color(0x33FFFFFF), Offset(0f, 0f), Offset(size.width, 0f), 2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f)))
-        }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(priceText(t.price), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text(if (t.acceptsParcels) "للراكب • يقبل أمانات" else "للراكب", fontSize = 11.sp, color = Dim)
-            }
+            Text(priceText(t.price), Modifier.weight(1f), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Box(Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFF3A3A3E)).padding(horizontal = 12.dp, vertical = 8.dp)) {
                 Text(if (t.seatsFree <= 0L) "مكتملة" else "${t.seatsFree} من ${t.seatsTotal} فاضية", fontSize = 12.sp, color = Color(0xFFD7D7DB))
             }
@@ -240,3 +238,22 @@ fun VantaNav(items: List<Pair<Int, String>>, selected: Int, onPick: (Int) -> Uni
 }
 
 val VantaPageBg = Brush.verticalGradient(listOf(Color(0xFF212123), Color(0xFF050505), Color.Black), 0f, 1400f)
+
+
+/** Main amber action of the rider app. */
+@Composable
+fun AmberBtn(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Box(
+        modifier.fillMaxWidth().height(50.dp).squeeze(onClick).clip(RoundedCornerShape(25.dp)).background(Amber),
+        contentAlignment = Alignment.Center
+    ) { Text(text, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black) }
+}
+
+/** Quiet outlined action on dark glass. */
+@Composable
+fun GhostBtn(text: String, modifier: Modifier = Modifier, color: Color = Color.White, onClick: () -> Unit) {
+    Box(
+        modifier.height(42.dp).squeeze(onClick).clip(RoundedCornerShape(21.dp)).border(1.dp, color.copy(alpha = .35f), RoundedCornerShape(21.dp)).padding(horizontal = 16.dp),
+        contentAlignment = Alignment.Center
+    ) { Text(text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = color) }
+}

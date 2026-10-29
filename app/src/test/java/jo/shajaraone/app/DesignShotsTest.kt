@@ -1,24 +1,20 @@
 package jo.shajaraone.app
 
 import android.graphics.Bitmap
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.automirrored.filled.List
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,7 +23,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.io.File
 
-/** Renders the REAL components with sample data to PNG files (uploaded by CI so the design can be seen before installing). */
+/** Renders the REAL screens with sample data to PNG files (uploaded by CI so the design can be seen before installing). */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [34], qualifiers = "w390dp-h844dp-xxhdpi")
@@ -37,376 +33,77 @@ class DesignShotsTest {
     private val soon = System.currentTimeMillis() + 3 * 3_600_000L
     private val t1 = Trip(
         id = "1", captainUid = "c", captainName = "أحمد", captainPhone = "0790000000", carText = "كيا سيراتو بيضاء",
-        from = "عمراوة", to = "إربد", road = "الطريق الرئيسي", departAt = soon, seatsTotal = 4, seatsFree = 3,
-        price = 1.0, acceptsParcels = true
+        from = "عمراوة", to = "عمّان", road = "شارع الأردن", departAt = soon, seatsTotal = 4, seatsFree = 3, price = 4.0
     )
-    private val t2 = t1.copy(id = "2", captainName = "خالد", carText = "هيونداي إلنترا رمادية", seatsFree = 1, price = null, road = "")
+    private val t2 = t1.copy(id = "2", captainName = "خالد", carText = "هيونداي إلنترا رمادية", from = "الرمثا", to = "إربد", road = NORTH_INNER, seatsFree = 1, price = 1.0, departAt = soon + 86_400_000L)
+    private val t3 = t1.copy(id = "3", captainName = "سامر", carText = "تويوتا كورولا", from = "إربد", to = "الزرقاء", road = "طريق الزرقاء", price = null, departAt = soon + 5 * 3_600_000L)
 
-    private fun shot(name: String, advanceMs: Long = 0, content: @Composable () -> Unit) {
+    private fun save(name: String) {
+        val bmp = rule.onRoot().captureToImage().asAndroidBitmap()
+        val dir = File("build/design-shots").apply { mkdirs() }
+        File(dir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
+    private fun shot(name: String, advanceMs: Long = 600, content: @Composable () -> Unit) {
+        rule.mainClock.autoAdvance = false
+        rule.setContent { ShajaraTheme { AppBackground { content() } } }
+        rule.mainClock.advanceTimeBy(advanceMs)
+        save(name)
+    }
+
+    private fun capShot(name: String, content: @Composable () -> Unit) {
         rule.mainClock.autoAdvance = false
         rule.setContent {
             ShajaraTheme {
-                AppBackground { Surface(Modifier.fillMaxSize(), color = androidx.compose.ui.graphics.Color.Transparent) { content() } }
+                CompositionLocalProvider(LocalContentColor provides CapInk) { Box(Modifier.fillMaxSize().background(CapBg)) { content() } }
             }
         }
-        rule.mainClock.advanceTimeBy(if (advanceMs > 0) advanceMs else 400)
-        val bmp = rule.onRoot().captureToImage().asAndroidBitmap()
-        val dir = File("build/design-shots").apply { mkdirs() }
-        File(dir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        rule.mainClock.advanceTimeBy(600)
+        save(name)
     }
 
-    @Test fun splash() = shot("0-splash", advanceMs = 1300) { SplashScreen(onDone = {}) }
+    @Test fun splash() = shot("0-splash", 1300) { SplashScreen(onDone = {}) }
+    @Test fun login() = shot("6-login", 900) { AuthScreen() }
 
-    @Test fun login() = shot("6-login", advanceMs = 900) { AuthScreen() }
-
-    @Test fun captainWaiting() = shot("7-captain-waiting", advanceMs = 600) {
-        CaptainStatusScreen(UserProfile(role = ROLE_CAPTAIN, name = "أحمد", phone = "0790000000", status = USER_PENDING))
-    }
-
-    @Test fun riderHome() = shot("1-rider-home") {
-        Column(Modifier.fillMaxSize()) {
-            HeroHeader("أهلاً محمد", "أبناء الشمال • وين رايح اليوم؟")
-            Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                FilterSummaryBar("عمراوة  ←  إربد  •  اليوم", false) {}
-                Text("2 رحلة متاحة", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 4.dp))
-                listOf(t1, t2).forEach { t ->
-                    TicketCard(t) {
-                        Button(onClick = {}, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text("احجز مقعد", style = MaterialTheme.typography.titleMedium) }
-                        ContactRow(t.to, "0790000000", "")
-                    }
-                }
-            }
-        }
-    }
-
-    @Test fun riderHomeFilterOpen() = shot("1b-rider-home-filter-open") {
-        Column(Modifier.fillMaxSize()) {
-            HeroHeader("أهلاً محمد", "أبناء الشمال • وين رايح اليوم؟")
-            Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                FilterSummaryBar("عمراوة  ←  إربد  •  اليوم", true) {}
-                AppCard {
-                    SectionLabel("من")
-                    ScrollChips(listOf("all" to "الكل", "a" to "الطرة", "b" to "الذنيبة"), "a") {}
-                    SectionLabel("إلى")
-                    ScrollChips(listOf("all" to "الكل", "a" to "إربد", "b" to "عمّان"), "a") {}
-                    SectionLabel("متى؟")
-                    ScrollChips(listOf("all" to "كل الأيام", "0" to "اليوم", "1" to "غداً"), "0") {}
-                }
-            }
-        }
-    }
-
-    private fun ledgerShot(name: String, content: @Composable () -> Unit) {
-        rule.mainClock.autoAdvance = false
-        rule.setContent { LedgerTheme { content() } }
-        rule.mainClock.advanceTimeBy(400)
-        val bmp = rule.onRoot().captureToImage().asAndroidBitmap()
-        val dir = File("build/design-shots").apply { mkdirs() }
-        File(dir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
-    }
-
-    @Test fun optSwipe() = ledgerShot("O1-swipe") {
-        Column(Modifier.fillMaxSize()) {
-            Box(Modifier.padding(16.dp)) { SlidingTabs(listOf("الكل", "شمال ← جنوب", "جنوب ← شمال", "داخل الشمال"), 1, {}) }
-            RideSwipe(listOf(t1, t2, t1.copy(id = "3")), Modifier.weight(1f)) { LedgerPrimaryButton("احجز مقعد", {}) }
-        }
-    }
-
-    @Test fun optRoad() = ledgerShot("O2-road") {
-        Column(Modifier.fillMaxSize()) {
-            Box(Modifier.padding(16.dp)) { SlidingTabs(listOf("الكل", "شمال ← جنوب", "جنوب ← شمال", "داخل الشمال"), 1, {}) }
-            RoadTimeline(listOf(t1, t2, t1.copy(id = "3", departAt = soon + 5_400_000L)), "عمراوة (الشمال)", "إربد (الجنوب)")
-        }
-    }
-
-    @Test fun destSwipe() = ledgerShot("E1-ember-swipe") {
-        Column(Modifier.fillMaxSize()) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                DestinationTabs(1, {}, false, {}, "", {}, -1, {})
-            }
-            RideSwipe(listOf(t1, t2), Modifier.weight(1f)) { LedgerPrimaryButton("احجز مقعد", {}) }
-        }
-    }
-
-    @Test fun capSwipe() = ledgerShot("C1-captain-swipe") {
-        Column(Modifier.fillMaxSize()) {
-            Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                Column(Modifier.weight(1f).glass(18.dp).padding(12.dp)) { Text("رحلاتك", fontSize = 12.sp); Text("2", fontSize = 26.sp) }
-                Column(Modifier.weight(1f).glass(18.dp).padding(12.dp)) { Text("طلبات جديدة", fontSize = 12.sp); Text("1", fontSize = 26.sp, color = Brand.Teal) }
-                Box(Modifier.weight(1.2f)) { LedgerPrimaryButton("+ رحلة جديدة", {}) }
-            }
-            RideSwipe(listOf(t1, t2), Modifier.weight(1f), bookedMode = true) {
-                Column(Modifier.fillMaxWidth().glass(20.dp).padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("الحجوزات (2)")
-                    BookingRow(Booking(passengerName = "محمد", seats = 2, dropoff = "الدوار الرابع", status = BK_PENDING, passengerPhone = "0780000000"), {})
-                    BookingRow(Booking(passengerName = "سارة", seats = 1, dropoff = "وسط البلد", status = BK_ACCEPTED, passengerPhone = "0770000000"), {})
-                }
-            }
-            GlassNav(listOf(androidx.compose.material.icons.Icons.AutoMirrored.Filled.List to "رحلاتي والطلبات (1)", androidx.compose.material.icons.Icons.Default.Add to "نشر رحلة"), 0, {})
-        }
-    }
-
-    @Test fun capPublish() = ledgerShot("P1-publish") {
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SeatsRingHeader(3, 4)
-            GlassStep("١", "الخط") {
-                SectionLabel("من وين؟")
-                ChoiceChips(listOf("الطرة", "الذنيبة", "عمراوة"), "عمراوة") {}
-                SectionLabel("لوين؟")
-                ChoiceChips(listOf("إربد", "عمّان", "الزرقاء"), "إربد") {}
-            }
-            GlassStep("٢", "الوقت") { ScrollChips(listOf("0" to "اليوم", "1" to "غداً"), "0") {} }
-            GlassStep("٣", "المقاعد والسعر") {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { for (i in 1..4) SeatShape(if (i <= 3) SeatState.PICKED else SeatState.FREE, 38.dp) {} }
-                ScrollChips(listOf("1", "1.5", "2", "3").map { it to "$it د.أ" }, "1") {}
-            }
-            LedgerPrimaryButton("انشر الرحلة", {})
-        }
-    }
-
-    @Test fun vRiderHome() = ledgerShot("R1-rider-home") {
+    @Test fun riderHome() = shot("R1-rider-home") {
         Box(Modifier.fillMaxSize()) {
-            RiderHomeView("محمد", 1, {}, 1, {}, 0, {}, "", {}, listOf(t1, t2), {}, {})
-            Box(Modifier.align(androidx.compose.ui.Alignment.BottomCenter).fillMaxWidth(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                VantaNav(listOf(0 to "الرئيسية", 1 to "الرحلات", 2 to "حجوزاتي"), 0)
+            RiderTripsView("محمد", listOf(t1, t2, t3), false, 0, {}, -1, {}) { t ->
+                AmberBtn("احجز") {}
+            }
+            Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                VantaNav(listOf(1 to "الرحلات", 2 to "حجوزاتي"), 0)
             }
         }
     }
 
-    @Test fun vRiderTrips() = ledgerShot("R2-rider-trips") {
+    @Test fun riderFiltered() = shot("R2-rider-filtered") {
         Box(Modifier.fillMaxSize()) {
-            RiderTripsView(listOf(t1, t2), false, 1, {}, 0, {}, 0, {}) { LedgerPrimaryButton("احجز مقعد", {}) }
-            Box(Modifier.align(androidx.compose.ui.Alignment.BottomCenter).fillMaxWidth(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                VantaNav(listOf(0 to "الرئيسية", 1 to "الرحلات", 2 to "حجوزاتي"), 1)
+            RiderTripsView("محمد", listOf(t1), false, 1, {}, 0, {}) { AmberBtn("احجز") {} }
+            Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                VantaNav(listOf(1 to "الرحلات", 2 to "حجوزاتي"), 0)
             }
         }
     }
 
-    @Test fun ledgerHome() = ledgerShot("L1-ledger-home") {
-        Column(Modifier.fillMaxSize()) {
-            LedgerTopBar("أهلاً محمد", "أبناء الشمال")
-            Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                LedgerSearchBar("عمراوة  ←  إربد  •  اليوم") {}
-                Text("2 رحلة متاحة", style = MaterialTheme.typography.titleMedium)
-                listOf(t1, t2).forEach { t ->
-                    TicketCard(t) {
-                        LedgerPrimaryButton("احجز مقعد", {})
-                        LedgerSecondaryRow(listOf("الموقع", "اتصال", "واتساب"))
-                    }
-                }
-            }
-        }
+    private val b1 = Booking(id = "b1", tripId = "1", passengerName = "محمد العلي", seats = 2, tripSummary = "عمراوة ← عمّان", departAt = soon)
+    private val b2 = b1.copy(id = "b2", passengerName = "ليلى حسن", seats = 1, departAt = soon + 5 * 3_600_000L, tripSummary = "إربد ← الزرقاء")
+
+    @Test fun captainDashboard() = capShot("C1-captain-home") {
+        CapDashboard("أحمد", listOf(t1, t3.copy(captainUid = "c")), listOf(b1, b2), onPublish = {})
     }
 
-    @Test fun neonHome() = ledgerShot("N1-neon-home") {
-        val route = androidx.compose.runtime.remember { RouteState(kind = KIND_NS) }
-        Column(Modifier.fillMaxSize()) {
-            androidx.compose.foundation.lazy.LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                neonHeader(listOf(t1, t2), route, -1, -1, {}, {}, "2 رحلة متاحة")
-                items(listOf(t1, t2)) { t ->
-                    RideTile(t) { LedgerPrimaryButton("احجز مقعد", {}) }
-                }
-            }
-            GlassNav(listOf(androidx.compose.material.icons.Icons.Default.Search to "الرحلات", androidx.compose.material.icons.Icons.AutoMirrored.Filled.List to "حجوزاتي (1)"), 0, {})
-        }
+    @Test fun captainEmpty() = capShot("C2-captain-empty") {
+        CapDashboard("أحمد", emptyList(), emptyList(), onPublish = {})
     }
 
-    @Test fun ledgerSeats() = ledgerShot("L2-ledger-seats") {
-        Column(Modifier.fillMaxSize()) {
-            LedgerTopBar("اختر مقعدك", "عمراوة ← إربد")
-            Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                LedgerSeatChart(total = 7, taken = setOf(1, 4), picked = setOf(2, 3))
-                LedgerLegend()
-                Text("اخترت مقعدين: 02 ، 03", style = MaterialTheme.typography.titleMedium)
-                LedgerPrimaryButton("أرسل الطلب", {})
-            }
-        }
+    @Test fun captainPublish() = capShot("C3-captain-publish") {
+        CapPublishPreview()
     }
 
-    @Test fun ledgerWelcome() = ledgerShot("L3-welcome") {
-        Column(Modifier.fillMaxSize()) {
-            LedgerWelcomeHeader("أهلاً محمد", "وين رايح اليوم؟")
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                LedgerStepCard("1", "أنت وين هسه؟", null, "اضغط واختار مكانك")
-                LedgerStepCard("2", "لوين رايح؟", null, "اختار مكانك أول", enabled = false)
-            }
-        }
-    }
-
-    @Test fun ledgerWhereOpen() = ledgerShot("L4-where-open") {
-        Column(Modifier.fillMaxSize()) {
-            LedgerWelcomeHeader("أهلاً محمد", "وين رايح اليوم؟")
-            Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                LedgerStepCard("1", "أنت وين هسه؟", null, "") {
-                    LedgerChoice("أنا بالشمال", "إربد، الرمثا، المفرق، الشجرة، الطرة، عمراوة، الذنيبة، المغيّر...")
-                    LedgerChoice("أنا بعمّان أو الزرقاء", "صويلح، خلدا، الجامعة الأردنية، الشميساني، رصيفة، سحاب...")
-                }
-                LedgerStepCard("2", "لوين رايح؟", null, "اختار مكانك أول", enabled = false)
-            }
-        }
-    }
-
-    @Test fun ledgerRoads() = ledgerShot("L5-roads") {
-        Column(Modifier.fillMaxSize()) {
-            LedgerWelcomeHeader("أهلاً محمد", "وين رايح اليوم؟")
-            Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                LedgerStepCard("1", "أنت وين هسه؟", "عمّان أو الزرقاء", "") {
-                    LedgerFindBox("اكتب اسم منطقتك (مثلاً: خلدا)")
-                    Text("أو اختار الطريق اللي بتركب منه:", fontSize = 13.sp, color = Ledger.Muted)
-                    LedgerChoice("طريق صويلح", "صويلح، دابوق، خلدا، المدينة الطبية، جسر ناعور، دوار السابع...")
-                    LedgerChoice("شارع الأردن", "الجامعة الأردنية، الشميساني، الجاردنز، الدوار الأول، مطار الملكة علياء...")
-                    LedgerChoice("طريق الزرقاء", "رصيفة، ماركا، الموقر، سحاب، طبربور...")
-                }
-            }
-        }
-    }
-
-    /** The REAL guided picker, driven by clicks like a user would. */
-    private fun guidedShot(name: String) {
-        rule.waitForIdle()
-        val bmp = rule.onRoot().captureToImage().asAndroidBitmap()
-        val dir = File("build/design-shots").apply { mkdirs() }
-        File(dir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
-    }
-
-    @Test fun guidedFlow() {
-        rule.setContent {
-            ShajaraTheme {
-                AppBackground {
-                    Column(Modifier.fillMaxSize()) {
-                        HeroHeader("أهلاً محمد", "أبناء الشمال • وين رايح اليوم؟")
-                        Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp)) { GuidedRoutePicker(rememberRouteState()) }
-                    }
-                }
-            }
-        }
-        guidedShot("G1-start")
-        rule.onNodeWithText("أنا بالشمال").performClick(); guidedShot("G2-north")
-        rule.onNodeWithText("عمراوة").performClick(); guidedShot("G3-card2")
-        rule.onNodeWithText("عمّان أو الزرقاء").performClick(); guidedShot("G4-south-roads")
-        rule.onNodeWithText("طريق صويلح").performClick(); guidedShot("G5-stops")
-        rule.onNodeWithText("خلدا").performClick(); guidedShot("G6-done")
-    }
-
-    @Test fun riderUnverified() = shot("9-rider-unverified") {
-        val places = listOf("all" to "الكل", "1" to "الرمثا", "2" to "الذنيبة", "3" to "عمراوة", "4" to "الطرة", "5" to "الرمثا", "6" to "إربد", "7" to "عمّان", "8" to "الزرقاء")
-        Column(Modifier.fillMaxSize()) {
-            HeroHeader("أهلاً محمد", "أبناء الشمال • وين رايح اليوم؟")
-            VerifyBar(UserProfile(name = "محمد", phone = "0790000000", verifyCode = "432244"))
-            Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                AppCard {
-                    Text("وين مشوارك؟", style = MaterialTheme.typography.titleLarge)
-                    SectionLabel("من")
-                    ScrollChips(places, "1") {}
-                    SectionLabel("إلى")
-                    ScrollChips(places, "6") {}
-                    SectionLabel("متى؟")
-                    ScrollChips(listOf("all" to "كل الأيام", "0" to "اليوم", "1" to "غداً", "2" to "بعد غد", "3" to "الجمعة"), "0") {}
-                }
-                AppCard {
-                    TripInfo(t1)
-                    HorizontalDivider()
-                    Button(onClick = {}, modifier = Modifier.fillMaxWidth().height(48.dp)) { Text("احجز مقعد") }
-                }
-            }
-        }
-    }
-
-    @Test fun routeSouthRoad() = shot("10-route-north-to-south") {
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            AppCard {
-                RoutePicker(RouteState(kind = KIND_NS, north = "عمراوة", road = "طريق صويلح", south = "دابوق"), allowAll = false)
-            }
-        }
-    }
-
-    @Test fun routeInsideNorth() = shot("11-route-inside-north") {
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            AppCard {
-                RoutePicker(RouteState(kind = KIND_NN, north = "الرمثا", spot = IRBID_OTHER), allowAll = true)
-            }
-        }
-    }
-
-    @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-    @Test fun calendarAndClock() = shot("12-calendar") {
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            AppCard { WhenPicker(dayOffset = 2, minutes = 7 * 60 + 30, onDay = {}, onMinutes = {}, allowClear = false) }
-            androidx.compose.material3.DatePicker(state = androidx.compose.material3.rememberDatePickerState(initialSelectedDateMillis = pickerMillisOfOffset(2)))
-        }
-    }
-
-    @Test fun riderTrips() = shot("2-rider-trips") {
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            AppCard { TripInfo(t1) }
-            AppCard { TripInfo(t2) }
-        }
-    }
-
-    @Test fun bookingSheet() = shot("3-booking-seat-map") {
+    @Test fun bookingSheet() = shot("R3-booking-seat-map") {
         Column(Modifier.padding(20.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text("عمراوة  ←  إربد", style = MaterialTheme.typography.titleLarge)
-            Text("اليوم 7:30 ص  •  1 دينار", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("اضغط على المقاعد اللي بدك ياها", style = MaterialTheme.typography.titleSmall)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                CarSeatMap(total = 4, free = 3, picked = setOf(1, 2), onToggle = {})
-            }
+            CarSeatMap(total = 4, free = 3, picked = setOf(1, 2), onToggle = {})
             SeatLegend()
-            Text("اخترت مقعدين", style = MaterialTheme.typography.titleMedium, color = androidx.compose.ui.graphics.Color(0xFF2DE2C0))
-            SectionLabel("وين بدك تنزل؟")
-            ChoiceChips(listOf("الدوار الرابع", "وسط البلد", "حسب اتفاق الكابتن"), "وسط البلد") {}
-            BigButton("أرسل الطلب") {}
-        }
-    }
-
-    @Test fun captainHome() = shot("4-captain-home") {
-        Column(Modifier.fillMaxSize()) {
-            HeroHeader("أهلاً أحمد", "أبناء الشمال • تطبيق الكابتن")
-            Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    StatTile("رحلاتك", "2", Modifier.weight(1f))
-                    StatTile("طلبات جديدة", "2", Modifier.weight(1f), highlight = true)
-                }
-                BigButton("انشر رحلة جديدة") {}
-                AppCard {
-                    TripInfo(t1, showCaptain = false)
-                    HorizontalDivider()
-                    Text("الحجوزات (2)", style = MaterialTheme.typography.titleSmall)
-                    BookingRow(Booking(passengerName = "محمد", seats = 2, dropoff = "الدوار الرابع", status = BK_PENDING, passengerPhone = "0780000000"), {})
-                    BookingRow(Booking(passengerName = "سارة", seats = 1, dropoff = "وسط البلد", status = BK_ACCEPTED, passengerPhone = "0770000000"), {})
-                }
-            }
-        }
-    }
-
-    @Test fun captainPublish() = shot("5-captain-publish") {
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("نشر رحلة جديدة", style = MaterialTheme.typography.headlineSmall)
-            AppCard {
-                Text("١. الخط", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-                SectionLabel("من وين؟")
-                ChoiceChips(listOf("الطرة", "الذنيبة", "عمراوة"), "عمراوة") {}
-                SectionLabel("لوين؟")
-                ChoiceChips(listOf("إربد", "عمّان", "الزرقاء"), "إربد") {}
-            }
-            AppCard {
-                Text("٣. المقاعد والسعر", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    for (i in 1..4) SeatShape(if (i <= 3) SeatState.PICKED else SeatState.FREE, 38.dp) {}
-                }
-                ScrollChips(listOf("1", "1.5", "2", "3").map { it to "$it د.أ" }, "1") {}
-            }
-        }
-    }
-
-    @Test fun liveTrackPanel() = shot("8-live-track-panel") {
-        val me = android.location.Location("x").apply { latitude = 32.5500; longitude = 35.8500 }
-        Column(Modifier.fillMaxSize()) {
-            Box(Modifier.weight(1f).fillMaxWidth())
-            LiveInfo(
-                LiveLoc(32.5560, 35.8540, 12.0, 10.0, System.currentTimeMillis() - 18_000), me,
-                System.currentTimeMillis(), "أحمد", "0791234567"
-            )
         }
     }
 }
