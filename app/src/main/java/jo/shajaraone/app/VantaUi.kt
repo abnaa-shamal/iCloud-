@@ -42,10 +42,13 @@ fun Modifier.darkGlass(r: Dp = 22.dp): Modifier = glassPanel(r, Color(0xFF2C2C30
 
 fun Modifier.glassPanel(r: Dp, top: Color, bottom: Color, sheen: Color): Modifier {
     val s = RoundedCornerShape(r)
+    // stronger sheen: the caller's sheen is boosted, plus a soft light band at the top edge
+    val strong = sheen.copy(alpha = (sheen.alpha * 2.2f).coerceAtMost(0.55f))
     return this.clip(s)
         .background(Brush.verticalGradient(listOf(top, bottom)))
-        .background(Brush.linearGradient(listOf(sheen, Color.Transparent, Color.Transparent), Offset(0f, 0f), Offset(700f, 900f)))
-        .border(1.dp, Brush.linearGradient(listOf(Color(0x77FFFFFF), Color(0x0AFFFFFF), Color(0x40FFFFFF)), Offset(0f, 0f), Offset(600f, 800f)), s)
+        .background(Brush.linearGradient(listOf(strong, Color.Transparent, Color.Transparent), Offset(0f, 0f), Offset(700f, 900f)))
+        .background(Brush.verticalGradient(0f to Color(0x22FFFFFF), 0.28f to Color.Transparent))
+        .border(1.dp, Brush.linearGradient(listOf(Color(0xB0FFFFFF), Color(0x14FFFFFF), Color(0x66FFFFFF)), Offset(0f, 0f), Offset(600f, 800f)), s)
 }
 
 /** Press = a small spring squeeze. */
