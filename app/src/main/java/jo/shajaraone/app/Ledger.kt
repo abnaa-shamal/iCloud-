@@ -32,15 +32,16 @@ import androidx.compose.ui.unit.sp
  * Preview-only for now: the live app still uses the Aurora theme until this look is approved.
  */
 object Ledger {
-    val Olive = Color(0xFF2D4436)
-    val Terracotta = Color(0xFFBA5A31)
-    val Ochre = Color(0xFFD9A84E)
-    val Basalt = Color(0xFF2B2621)
-    val Parchment = Color(0xFFF5EFEB)
-    val Stock = Color(0xFFFFFFFF)
-    val Pressed = Color(0xFFEAE0D5)
-    val Rule = Color(0xFFD6C7B7)
-    val Muted = Color(0xFF6E655B)
+    // Mapped onto the Aurora (deep space) brand so the ticket components follow the app theme.
+    val Olive = Brand.Violet
+    val Terracotta = Brand.Teal
+    val Ochre = Brand.Ochre
+    val Basalt = Brand.Ink
+    val Parchment = Brand.Navy
+    val Stock = Brand.Stock
+    val Pressed = Brand.Pressed
+    val Rule = Brand.Rule
+    val Muted = Brand.Muted
 }
 
 private val LedgerScheme = lightColorScheme(
@@ -53,18 +54,7 @@ private val LedgerScheme = lightColorScheme(
 
 @Composable
 fun LedgerTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = LedgerScheme, typography = Typography().let {
-        it.copy(
-            headlineSmall = it.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
-            titleLarge = it.titleLarge.copy(fontWeight = FontWeight.Bold),
-            titleMedium = it.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-        )
-    }) {
-        CompositionLocalProvider(
-            LocalLayoutDirection provides LayoutDirection.Rtl,
-            LocalContentColor provides Ledger.Basalt
-        ) { Box(Modifier.fillMaxSize().background(Ledger.Parchment)) { content() } }
-    }
+    ShajaraTheme { AppBackground { content() } }
 }
 
 private val numberFont = FontFamily.Monospace

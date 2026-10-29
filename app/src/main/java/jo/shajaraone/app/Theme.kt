@@ -27,59 +27,58 @@ import androidx.compose.ui.unit.dp
  * so a new look is mostly a matter of editing this block (plus NightColors below for the Material roles).
  */
 object Brand {
-    // Regional Boarding Ledger palette (olive / terracotta / ochre on parchment). The old Aurora names are kept so
-    // every screen keeps working; they now point at the new colors.
-    val Violet = Color(0xFF2D4436)       // main actions, selected items (olive)
-    val VioletSoft = Color(0xFF5E7C69)   // outlines
-    val VioletLight = Color(0xFF4C6454)  // subtitles, selected navigation, links
-    val Teal = Color(0xFFBA5A31)         // highlights: prices, free seats, live status (terracotta)
-    val Navy = Color(0xFFF5EFEB)         // base background (parchment)
-    val Ink = Color(0xFF2B2621)          // main text (basalt)
-    val Muted = Color(0xFF6E655B)        // secondary text
-    val OnTeal = Color(0xFFFFFFFF)       // text on top of terracotta
-    val Ochre = Color(0xFFD9A84E)
-    val Stock = Color(0xFFFFFFFF)        // ticket / card surface
-    val Pressed = Color(0xFFEAE0D5)      // recessed wells, inactive seats
-    val Rule = Color(0xFFD6C7B7)         // borders and perforation lines
+    val Violet = Color(0xFF6B4BFF)       // main actions, selected items, logo
+    val VioletSoft = Color(0xFF8E86FF)   // outlines and the car drawing
+    val VioletLight = Color(0xFFB9B2FF)  // subtitles, selected navigation, soft highlights
+    val Teal = Color(0xFF2DE2C0)         // highlights: prices, free seats, links, live status
+    val Navy = Color(0xFF0B1030)         // base background
+    val Ink = Color(0xFFF5F6FF)          // main text
+    val Muted = Color(0xFFB7BBE0)        // secondary text
+    val OnTeal = Color(0xFF06251F)       // text on top of teal
+    // extra tokens used by the newer components (ticket cards, wells, rules) - glass look on the dark sky
+    val Ochre = Color(0xFFF5C76B)        // gold highlight
+    val Stock = Color(0x1FFFFFFF)        // glass card surface
+    val Pressed = Color(0x33000000)      // recessed wells, inactive seats
+    val Rule = Color(0x33FFFFFF)         // borders and perforation lines
 }
 
-// Light "ledger" palette: parchment canvas, white ticket stock, olive actions.
-private val NightColors = lightColorScheme(
+// "Night" palette: deep navy, violet actions, teal highlights. The app is always dark.
+private val NightColors = darkColorScheme(
     primary = Brand.Violet,
-    onPrimary = Color(0xFFF5EFEB),
-    primaryContainer = Color(0xFFCEE9D5),
-    onPrimaryContainer = Color(0xFF092014),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFF2A2370),
+    onPrimaryContainer = Color(0xFFE4DEFF),
     secondary = Brand.Teal,
-    onSecondary = Color.White,
-    secondaryContainer = Color(0xFFFFDBCE),
-    onSecondaryContainer = Color(0xFF370E00),
-    tertiary = Brand.Ochre,
-    tertiaryContainer = Color(0xFFFFDEA9),
-    onTertiaryContainer = Color(0xFF271900),
+    onSecondary = Brand.OnTeal,
+    secondaryContainer = Color(0xFF0F4D47),
+    onSecondaryContainer = Color(0xFFB9F6EA),
+    tertiary = Color(0xFFFF8A7A),
+    tertiaryContainer = Color(0xFF5A2018),
+    onTertiaryContainer = Color(0xFFFFDAD3),
     background = Brand.Navy,
     onBackground = Brand.Ink,
-    surface = Brand.Stock,
+    surface = Brand.Navy,
     onSurface = Brand.Ink,
-    surfaceVariant = Brand.Pressed,
+    surfaceVariant = Color(0xFF2A2F5C),
     onSurfaceVariant = Brand.Muted,
-    surfaceContainerLowest = Color(0xFFFFFFFF),
-    surfaceContainerLow = Color(0xFFFCF2EA),
-    surfaceContainer = Color(0xFFF7ECE4),
-    surfaceContainerHigh = Color(0xFFF1E6DE),
-    surfaceContainerHighest = Color(0xFFEBE1D9),
-    outline = Color(0xFF737973),
-    outlineVariant = Brand.Rule,
-    error = Color(0xFFBA1A1A),
-    errorContainer = Color(0xFFFFDAD6),
-    onErrorContainer = Color(0xFF93000A)
+    surfaceContainerLowest = Color(0xFF11163A),
+    surfaceContainerLow = Color(0xFF151A42),
+    surfaceContainer = Color(0xFF1B2050),
+    surfaceContainerHigh = Color(0xFF232958),
+    surfaceContainerHighest = Color(0xFF2C3262),
+    outline = Color(0xFF7F84B8),
+    outlineVariant = Color(0xFF3A4078),
+    error = Color(0xFFFF8A80),
+    errorContainer = Color(0xFF5C1A1A),
+    onErrorContainer = Color(0xFFFFDAD6)
 )
 
 private val AppShapes = Shapes(
-    extraSmall = RoundedCornerShape(4.dp),
-    small = RoundedCornerShape(6.dp),
-    medium = RoundedCornerShape(8.dp),
-    large = RoundedCornerShape(10.dp),
-    extraLarge = RoundedCornerShape(12.dp)
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(20.dp)
 )
 
 private val AppTypography = Typography().let { d ->
@@ -106,10 +105,45 @@ fun ShajaraTheme(content: @Composable () -> Unit) {
     }
 }
 
-/** The app background: warm parchment paper. */
+/** The app background: deep space with twinkling stars and slowly drifting colored glows. */
 @Composable
 fun AppBackground(content: @Composable () -> Unit) {
-    Box(Modifier.fillMaxSize().background(Brand.Navy)) {
+    val inf = androidx.compose.animation.core.rememberInfiniteTransition(label = "space")
+    val tw by inf.animateFloat(
+        0f, 1f,
+        androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(5000, easing = androidx.compose.animation.core.LinearEasing)),
+        label = "twinkle"
+    )
+    val drift by inf.animateFloat(
+        0f, 1f,
+        androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(18000, easing = androidx.compose.animation.core.LinearEasing)),
+        label = "drift"
+    )
+    val stars = androidx.compose.runtime.remember {
+        val r = kotlin.random.Random(7)
+        List(90) { floatArrayOf(r.nextFloat(), r.nextFloat(), 0.6f + r.nextFloat() * 1.6f, r.nextFloat()) }
+    }
+    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF050818), Color(0xFF0B0F2E), Color(0xFF0A1B2E))))) {
+        androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+            val w = size.width
+            val h = size.height
+            val two = (2 * Math.PI).toFloat()
+            fun orb(cx: Float, cy: Float, rad: Float, c: Color, phase: Float) {
+                val dx = kotlin.math.sin((drift + phase) * two) * 0.06f * w
+                val dy = kotlin.math.cos((drift + phase) * two) * 0.04f * h
+                drawCircle(
+                    Brush.radialGradient(listOf(c.copy(alpha = 0.55f), c.copy(alpha = 0f)), center = androidx.compose.ui.geometry.Offset(cx * w + dx, cy * h + dy), radius = rad),
+                    radius = rad, center = androidx.compose.ui.geometry.Offset(cx * w + dx, cy * h + dy)
+                )
+            }
+            orb(0.15f, 0.18f, w * 0.75f, Brand.Violet, 0f)
+            orb(0.92f, 0.52f, w * 0.7f, Brand.Teal, 0.33f)
+            orb(0.25f, 0.92f, w * 0.8f, Color(0xFF2F6BFF), 0.66f)
+            stars.forEach { s ->
+                val a = 0.25f + 0.75f * ((kotlin.math.sin((tw + s[3]) * two) + 1f) / 2f)
+                drawCircle(Color.White.copy(alpha = a), radius = s[2], center = androidx.compose.ui.geometry.Offset(s[0] * w, s[1] * h))
+            }
+        }
         androidx.compose.runtime.CompositionLocalProvider(
             androidx.compose.material3.LocalContentColor provides Brand.Ink
         ) { content() }
