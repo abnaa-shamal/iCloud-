@@ -49,9 +49,10 @@ fun CaptainHome(me: UserProfile) {
     CompositionLocalProvider(LocalContentColor provides CapInk) {
         Box(Modifier.fillMaxSize().background(CapBg)) {
             if (tab == 1) CapPublish(me, onBack = { tab = 0 })
+            else if (tab == 2) CapToolsScreen()
             else CapDashboard(me.name.trim().substringBefore(" "), trips, bookings)
             Box(Modifier.align(Alignment.BottomCenter)) {
-                CapNav(listOf(Triple(0, "الرئيسية", pending), Triple(6, "رحلة جديدة", 0)), tab) { tab = it }
+                CapNav(listOf(Triple(0, "الرئيسية", pending), Triple(6, "رحلة جديدة", 0), Triple(5, "أدوات", 0)), tab) { tab = it }
             }
         }
     }
@@ -213,7 +214,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
 internal fun CapPublishPreview() = CapPublish(UserProfile(name = "أحمد", phone = "0790000000"), onBack = {})
 
 @Composable
-private fun CapBigChoice(title: String, sub: String, index: Int, onClick: () -> Unit) {
+internal fun CapBigChoice(title: String, sub: String, index: Int, onClick: () -> Unit) {
     Row(
         Modifier.entrance(index).fillMaxWidth().squeeze(onClick).capCard(28.dp).padding(horizontal = 22.dp, vertical = 26.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -260,7 +261,7 @@ private fun CapRoadCard(title: String, places: List<String>, open: Boolean, inde
 }
 
 @Composable
-private fun CapBackBar(title: String, onBack: () -> Unit) {
+internal fun CapBackBar(title: String, onBack: () -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Box(Modifier.size(46.dp).squeeze(onBack).capCard(23.dp), contentAlignment = Alignment.Center) { Glyph(4, CapInk, 20.dp) }
         Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = CapInk, maxLines = 1)
