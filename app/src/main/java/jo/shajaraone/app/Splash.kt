@@ -23,7 +23,7 @@ import kotlinx.coroutines.delay
 
 /** The one place the app's display name lives. */
 const val APP_DISPLAY_NAME = "أبناء الشمال"
-const val WELCOME_LINE = "هلا بعيال صويت عروس الشمال، وهلا بأهل الشمال"
+const val WELCOME_LINE = "هلا بعيال صويت، وهلا بأهل الشمال"
 const val SPLASH_MILLIS = 2000L
 
 /** Two-second welcome: the name with a glowing light sweep, then the welcome line fades in. */
