@@ -317,7 +317,7 @@ private fun BookingDialog(t: Trip, me: UserProfile, onClose: () -> Unit, onBooke
             SeatLegend()
             Text(
                 "اخترت ${seatsText(picked.size.toLong())}",
-                style = MaterialTheme.typography.titleMedium, color = Brand.Teal
+                style = MaterialTheme.typography.titleMedium, color = Brand.Violet
             )
 
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
