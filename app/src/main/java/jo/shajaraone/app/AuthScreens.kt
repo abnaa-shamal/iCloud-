@@ -220,37 +220,36 @@ fun CaptainStatusScreen(me: UserProfile) {
     val ctx = LocalContext.current
     val rejected = me.status == USER_REJECTED
     Column(
-        Modifier.fillMaxSize().systemBarsPadding().padding(28.dp),
+        Modifier.fillMaxSize().systemBarsPadding().padding(22.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(if (rejected) "🚫" else "⏳", fontSize = 64.sp)
-        Spacer(Modifier.height(12.dp))
-        Text(
-            if (rejected) "ما تمت الموافقة على حسابك" else "حسابك بانتظار موافقة المشرف",
-            style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            if (rejected) "للاستفسار تواصل مع المشرف."
-            else "أهلاً كابتن ${me.name} 👋\nأول ما يوافق المشرف بيفتحلك التطبيق لحاله.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(24.dp))
-        if (me.needsVerification) {
-            // Reverse verification: the code must come to the support WhatsApp from the captain's own number.
-            Text("رمز التحقق: ${me.verifyCode}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(8.dp))
-            Button(onClick = {
-                openWhatsApp(ctx, SUPPORT_PHONE,
-                    "رمز التحقق: ${me.verifyCode}\nالاسم: ${me.name}\nالرقم: ${me.phone}\nتطبيق الكابتن")
-            }) { Text("✅ وثّق رقمك على واتساب") }
-            Spacer(Modifier.height(8.dp))
+        Column(
+            Modifier.fillMaxWidth().darkGlass(28.dp).padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(if (rejected) "🚫" else "⏳", fontSize = 56.sp)
+            Text(
+                if (rejected) "ما تمت الموافقة على حسابك" else "حسابك بانتظار موافقة المشرف",
+                fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center
+            )
+            Text(
+                if (rejected) "للاستفسار تواصل مع المشرف."
+                else "أهلاً كابتن ${me.name}\nأول ما يوافق المشرف بيفتحلك التطبيق لحاله.",
+                color = Brand.Muted, textAlign = TextAlign.Center
+            )
+            if (me.needsVerification) {
+                // Reverse verification: the code must come to the support WhatsApp from the captain's own number.
+                Text("رمز التحقق: ${me.verifyCode}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Brand.Violet)
+                BigButton("وثّق رقمك على واتساب") {
+                    openWhatsApp(ctx, SUPPORT_PHONE,
+                        "رمز التحقق: ${me.verifyCode}\nالاسم: ${me.name}\nالرقم: ${me.phone}\nتطبيق الكابتن")
+                }
+            }
+            GhostBtn("تواصل مع المشرف", Modifier.fillMaxWidth()) {
+                openWhatsApp(ctx, SUPPORT_PHONE, "مرحبا، أنا الكابتن ${me.name} (${me.phone})، سجّلت بتطبيق $APP_DISPLAY_NAME وبانتظار الموافقة.")
+            }
         }
-        OutlinedButton(onClick = {
-            openWhatsApp(ctx, SUPPORT_PHONE, "مرحبا، أنا الكابتن ${me.name} (${me.phone})، سجّلت بتطبيق $APP_DISPLAY_NAME وبانتظار الموافقة.")
-        }) { Text("💬 تواصل مع المشرف") }
-        TextButton(onClick = { Repo.signOut() }) { Text("تسجيل الخروج") }
+        TextButton(onClick = { Repo.signOut() }) { Text("تسجيل الخروج", color = Brand.Muted) }
     }
 }
