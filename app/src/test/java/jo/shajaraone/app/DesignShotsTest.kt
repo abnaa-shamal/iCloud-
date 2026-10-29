@@ -2,6 +2,7 @@ package jo.shajaraone.app
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -114,6 +115,19 @@ class DesignShotsTest {
                     }
                 }
             }
+        }
+    }
+
+    @Test fun neonHome() = ledgerShot("N1-neon-home") {
+        val route = androidx.compose.runtime.remember { RouteState(kind = KIND_NS) }
+        Column(Modifier.fillMaxSize()) {
+            androidx.compose.foundation.lazy.LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                neonHeader(listOf(t1, t2), route, -1, -1, {}, {}, "2 رحلة متاحة")
+                items(listOf(t1, t2)) { t ->
+                    RideTile(t) { LedgerPrimaryButton("احجز مقعد", {}) }
+                }
+            }
+            GlassNav(listOf(androidx.compose.material.icons.Icons.Filled.Search to "الرحلات", androidx.compose.material.icons.Icons.AutoMirrored.Filled.List to "حجوزاتي (1)"), 0, {})
         }
     }
 

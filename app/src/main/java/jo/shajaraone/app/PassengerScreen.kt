@@ -1,5 +1,6 @@
 package jo.shajaraone.app
 
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
@@ -45,26 +46,19 @@ fun PassengerHome(me: UserProfile) {
     val upcoming = myBookings.count { it.isActive && it.departAt > System.currentTimeMillis() }
     Column(Modifier.fillMaxSize()) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
-            if (tab == 0) TripsList(me, myBookings, onBooked = { tab = 1 }) else MyBookings(myBookings)
+            androidx.compose.animation.AnimatedContent(
+                targetState = tab,
+                transitionSpec = {
+                    (androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(260)) +
+                        androidx.compose.animation.slideInVertically(androidx.compose.animation.core.tween(260)) { it / 12 }) togetherWith
+                        androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(140))
+                }, label = "page"
+            ) { t -> if (t == 0) TripsList(me, myBookings, onBooked = { tab = 1 }) else MyBookings(myBookings) }
         }
-        NavigationBar(containerColor = navBarColor()) {
-            NavigationBarItem(
-                selected = tab == 0, onClick = { tab = 0 },
-                icon = { Icon(Icons.Filled.Search, null) },
-                label = { Text("الرحلات") },
-                colors = navItemColors()
-            )
-            NavigationBarItem(
-                selected = tab == 1, onClick = { tab = 1 },
-                icon = {
-                    BadgedBox(badge = { if (upcoming > 0) Badge { Text("$upcoming") } }) {
-                        Icon(Icons.AutoMirrored.Filled.List, null)
-                    }
-                },
-                label = { Text("حجوزاتي") },
-                colors = navItemColors()
-            )
-        }
+        GlassNav(
+            listOf(Icons.Filled.Search to "الرحلات", Icons.AutoMirrored.Filled.List to (if (upcoming > 0) "حجوزاتي ($upcoming)" else "حجوزاتي")),
+            tab, { tab = it }
+        )
     }
 }
 
@@ -103,30 +97,14 @@ private fun TripsList(me: UserProfile, myBookings: List<Booking>, onBooked: () -
         verticalArrangement = Arrangement.spacedBy(14.dp),
         modifier = Modifier.fillMaxSize()
     ) {
-        item { GuidedRoutePicker(route) }
-        item {
-            AppCard {
-                SectionLabel("متى؟")
-                WhenPicker(
-                    dayOffset = day.takeIf { it >= 0 }, minutes = mins.takeIf { it >= 0 },
-                    onDay = { day = it ?: -1 }, onMinutes = { mins = it ?: -1 }, allowClear = true
-                )
-            }
-        }
-        item {
-            Text(
-                if (trips == null) "" else "${shown.size} رحلة متاحة",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(horizontal = 4.dp)
-            )
-        }
+        neonHeader(shown, route, day, mins, { day = it }, { mins = it }, if (trips == null) "" else "${shown.size} رحلة متاحة")
         when {
             trips == null -> item { LoadingBox() }
             failed && shown.isEmpty() -> item { EmptyState("📶", "ما قدرت أجيب الرحلات، تأكد من الإنترنت") }
             shown.isEmpty() -> item { EmptyState("🚌", "ما في رحلات بهالاختيار هلأ.\nجرّب يوم أو خط ثاني.") }
             else -> items(shown, key = { it.id }) { t ->
                 val mine = myBookings.firstOrNull { it.tripId == t.id && it.isActive }
-                TicketCard(t) {
+                RideTile(t) {
                     if (mine?.status == BK_ACCEPTED) {
                         Button(
                             onClick = { tracking = t },
