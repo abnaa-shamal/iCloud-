@@ -29,7 +29,7 @@ object Repo {
         is FirebaseAuthInvalidUserException -> "ما في حساب بهالرقم"
         is FirebaseAuthInvalidCredentialsException -> "الرقم أو كلمة السر غلط"
         is FirebaseNetworkException -> "تأكد من الإنترنت"
-        else -> "صار خطأ، جرّب كمان مرة\n[${e?.javaClass?.simpleName}] ${e?.message?.take(160)}"
+        else -> (e?.message ?: "").let { m -> if (m.contains("[")) m.substringAfter("[").trim(' ', ']') else m }.take(110).ifBlank { "صار خطأ، جرّب كمان مرة" }
     }
 
     fun signIn(phone: String, password: String, onResult: (String?) -> Unit) {
