@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>أبناء الشمال</title>
+<meta name="description" content="احجز مقعدك أو انشر رحلتك. بدون قروبات واتساب.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700;900&family=Reem+Kufi:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#14233a;--night:#0f1b2e;--copper:#c4733f;--gold:#e0b35a;--paper:#f6efe6;--rule:#d9cbb8;--muted:#6b7280}
+*{box-sizing:border-box;margin:0}
+body{font-family:Cairo,system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.7}
+.wrap{max-width:560px;margin:0 auto;padding:0 18px}
+header{background:var(--night);color:#fff;padding:46px 0 86px;position:relative;overflow:hidden}
+header:before{content:"";position:absolute;inset:auto 0 0 0;height:90px;background:
+ linear-gradient(135deg,transparent 49%,var(--paper) 50%) 0 100%/90px 90px repeat-x}
+.road{position:absolute;inset:0;opacity:.18;background:repeating-linear-gradient(115deg,transparent 0 38px,var(--gold) 38px 40px)}
+.logo{font-family:"Reem Kufi",Cairo;font-size:44px;font-weight:700;letter-spacing:.5px;position:relative}
+.logo b{color:var(--gold)}
+.tag{margin-top:8px;font-size:18px;color:#d8dee9;position:relative;max-width:420px}
+.stars{color:var(--gold);letter-spacing:6px;font-size:13px;margin-bottom:10px;position:relative}
+main{margin-top:-46px;position:relative}
+.ticket{background:#fff;border:1px solid var(--rule);border-radius:14px;padding:20px;position:relative;margin-bottom:18px}
+.ticket:before,.ticket:after{content:"";position:absolute;top:50%;width:22px;height:22px;background:var(--paper);border:1px solid var(--rule);border-radius:50%;margin-top:-11px}
+.ticket:before{right:-12px;clip-path:inset(0 12px 0 0)}
+.ticket:after{left:-12px;clip-path:inset(0 0 0 12px)}
+.ticket h2{font-size:20px;font-weight:900}
+.ticket p{color:var(--muted);font-size:15px;margin-top:2px}
+.dash{border-top:2px dashed var(--rule);margin:14px 0}
+.btn{display:flex;align-items:center;justify-content:space-between;width:100%;padding:15px 18px;border-radius:12px;text-decoration:none;font-weight:900;font-size:18px;margin-top:10px}
+.btn small{display:block;font-weight:500;font-size:12.5px;opacity:.8}
+.rider{background:var(--ink);color:#fff}
+.cap{background:var(--copper);color:#fff}
+.arrow{font-size:22px}
+h3{font-size:19px;font-weight:900;margin:26px 0 10px}
+.steps{list-style:none;padding:0;counter-reset:s}
+.steps li{counter-increment:s;display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid var(--rule);border-radius:12px;padding:12px 14px;margin-bottom:8px;font-size:15.5px}
+.steps li:before{content:counter(s);flex:none;width:30px;height:30px;border-radius:50%;background:var(--gold);color:var(--night);font-weight:900;display:grid;place-items:center}
+.note{font-size:13.5px;color:var(--muted);margin-top:8px}
+footer{text-align:center;color:var(--muted);font-size:14px;padding:34px 0 40px}
+footer b{color:var(--ink)}
+</style>
+</head>
+<body>
+<header>
+  <div class="road"></div>
+  <div class="wrap">
+    <div class="stars">✦ ✦ ✦</div>
+    <div class="logo">أبناء <b>الشمال</b></div>
+    <p class="tag">احجز مقعدك أو انشر رحلتك. كل شي بمكان واحد، بدون قروبات واتساب.</p>
+  </div>
+</header>
+<main class="wrap">
+  <section class="ticket">
+    <h2>نزّل التطبيق</h2>
+    <p>التحميل مباشر ومجاني، وبيتحدث لحاله.</p>
+    <div class="dash"></div>
+    <a class="btn rider" id="dl-rider" href="#"><span>تطبيق الراكب<small>احجز مقعد برحلة</small></span><span class="arrow">⬇</span></a>
+    <a class="btn cap" id="dl-cap" href="#"><span>تطبيق الكابتن<small>انشر رحلتك واستقبل الحجوزات</small></span><span class="arrow">⬇</span></a>
+    <p class="note" id="ver"></p>
+  </section>
+
+  <h3>كيف أثبّته؟</h3>
+  <ol class="steps">
+    <li>اضغط الزر ونزّل الملف.</li>
+    <li>افتح الملف من التنزيلات، واذا طلب منك «السماح بالتثبيت من هذا المصدر» وافق.</li>
+    <li>افتح التطبيق وسجّل حسابك. الكابتن بيستنى موافقة المشرف.</li>
+  </ol>
+  <p class="note">اذا ظهرت رسالة تحذير من المتصفح، اضغط «احتفظ بالملف». التطبيق موقّع وآمن.</p>
+</main>
+<footer>تطوير وتصميم: <b>أبو تالة</b></footer>
+<script>
+// Change only this line if the repository moves.
+var REPO = "khubaibalramdan489-source/iCloud-";
+fetch("https://api.github.com/repos/" + REPO + "/releases?per_page=5").then(function(r){return r.json()}).then(function(list){
+  var best = {};
+  list.forEach(function(rel){
+    var n = parseInt(String(rel.tag_name).replace("build-",""),10); if(!n) return;
+    (rel.assets||[]).forEach(function(a){
+      var k = /-rider-/.test(a.name) ? "rider" : /-captain-/.test(a.name) ? "captain" : null;
+      if(k && (!best[k] || n > best[k].n)) best[k] = {n:n, url:a.browser_download_url};
+    });
+  });
+  if(best.rider) document.getElementById("dl-rider").href = best.rider.url;
+  if(best.captain) document.getElementById("dl-cap").href = best.captain.url;
+  if(best.rider) document.getElementById("ver").textContent = "آخر نسخة: " + best.rider.n;
+}).catch(function(){
+  var u = "https://github.com/" + REPO + "/releases";
+  document.getElementById("dl-rider").href = u; document.getElementById("dl-cap").href = u;
+});
+</script>
+</body>
+</html>
