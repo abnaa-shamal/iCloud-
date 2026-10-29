@@ -17,6 +17,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.List
 import org.junit.Rule
 import org.junit.Test
@@ -124,6 +125,24 @@ class DesignShotsTest {
                 DestinationTabs(1, {}, false, {}, "", {}, -1, {})
             }
             RideSwipe(listOf(t1, t2), Modifier.weight(1f)) { LedgerPrimaryButton("احجز مقعد", {}) }
+        }
+    }
+
+    @Test fun capSwipe() = ledgerShot("C1-captain-swipe") {
+        Column(Modifier.fillMaxSize()) {
+            Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Column(Modifier.weight(1f).glass(18.dp).padding(12.dp)) { Text("رحلاتك", fontSize = 12.sp); Text("2", fontSize = 26.sp) }
+                Column(Modifier.weight(1f).glass(18.dp).padding(12.dp)) { Text("طلبات جديدة", fontSize = 12.sp); Text("1", fontSize = 26.sp, color = Brand.Teal) }
+                Box(Modifier.weight(1.2f)) { LedgerPrimaryButton("+ رحلة جديدة", {}) }
+            }
+            RideSwipe(listOf(t1, t2), Modifier.weight(1f), bookedMode = true) {
+                Column(Modifier.fillMaxWidth().glass(20.dp).padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("الحجوزات (2)")
+                    BookingRow(Booking(passengerName = "محمد", seats = 2, dropoff = "الدوار الرابع", status = BK_PENDING, passengerPhone = "0780000000"), {})
+                    BookingRow(Booking(passengerName = "سارة", seats = 1, dropoff = "وسط البلد", status = BK_ACCEPTED, passengerPhone = "0770000000"), {})
+                }
+            }
+            GlassNav(listOf(androidx.compose.material.icons.Icons.AutoMirrored.Filled.List to "رحلاتي والطلبات (1)", androidx.compose.material.icons.Icons.Default.Add to "نشر رحلة"), 0, {})
         }
     }
 

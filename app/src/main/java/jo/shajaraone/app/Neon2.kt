@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.sp
 /** Option 1: ONE ride fills the screen; swipe sideways for the next one. The ring IS the card. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun RideSwipe(trips: List<Trip>, modifier: Modifier = Modifier, actions: @Composable ColumnScope.(Trip) -> Unit) {
+fun RideSwipe(trips: List<Trip>, modifier: Modifier = Modifier, bookedMode: Boolean = false, actions: @Composable ColumnScope.(Trip) -> Unit) {
     val pager = rememberPagerState { trips.size }
     Column(modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         HorizontalPager(pager, Modifier.weight(1f), pageSpacing = 16.dp) { i ->
@@ -33,17 +33,18 @@ fun RideSwipe(trips: List<Trip>, modifier: Modifier = Modifier, actions: @Compos
                 Text(dayName(t.departAt), fontSize = 13.sp, color = Color(0x99FFFFFF))
                 Text(clockText(t.departAt), fontSize = 54.sp, fontWeight = FontWeight.ExtraLight, color = Color.White)
                 Spacer(Modifier.height(8.dp))
-                GlowRing(t.seatsFree.toFloat() / t.seatsTotal.coerceAtLeast(1), 250.dp, 8.dp) {
+                val shownCount = if (bookedMode) (t.seatsTotal - t.seatsFree) else t.seatsFree
+                GlowRing(shownCount.toFloat() / t.seatsTotal.coerceAtLeast(1), 250.dp, 8.dp) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("${t.seatsFree}", fontSize = 88.sp, fontWeight = FontWeight.ExtraLight, color = Color.White, lineHeight = 90.sp)
-                        Text("مقعد فاضي من ${t.seatsTotal}", fontSize = 13.sp, color = Brand.Violet)
+                        Text("$shownCount", fontSize = 88.sp, fontWeight = FontWeight.ExtraLight, color = Color.White, lineHeight = 90.sp)
+                        Text(if (bookedMode) "مقعد محجوز من ${t.seatsTotal}" else "مقعد فاضي من ${t.seatsTotal}", fontSize = 13.sp, color = Brand.Violet)
                     }
                 }
                 Spacer(Modifier.height(10.dp))
                 Text("${t.from} ← ${t.to}", fontSize = 22.sp, fontWeight = FontWeight.Light, color = Color.White)
                 if (t.road.isNotBlank()) Text("عن طريق ${t.road}", fontSize = 12.sp, color = Color(0x99FFFFFF))
                 Spacer(Modifier.height(10.dp))
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (!bookedMode) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Box(Modifier.size(32.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Brand.Violet, Brand.Teal))), contentAlignment = Alignment.Center) {
                         Text(t.captainName.take(1), color = Color.White, fontWeight = FontWeight.Bold)
                     }

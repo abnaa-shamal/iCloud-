@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun CaptainHome(me: UserProfile) {
@@ -51,20 +52,10 @@ fun CaptainHome(me: UserProfile) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             if (tab == 0) MyTrips(me, onPublish = { tab = 1 }) else PublishTrip(me, onPublished = { tab = 0 })
         }
-        NavigationBar(containerColor = navBarColor()) {
-            NavigationBarItem(
-                selected = tab == 0, onClick = { tab = 0 },
-                icon = { BadgedBox(badge = { if (pending > 0) Badge { Text("$pending") } }) { Icon(Icons.AutoMirrored.Filled.List, null) } },
-                label = { Text("رحلاتي والطلبات") },
-                colors = navItemColors()
-            )
-            NavigationBarItem(
-                selected = tab == 1, onClick = { tab = 1 },
-                icon = { Icon(Icons.Filled.Add, null) },
-                label = { Text("نشر رحلة") },
-                colors = navItemColors()
-            )
-        }
+        GlassNav(
+            listOf(Icons.AutoMirrored.Filled.List to (if (pending > 0) "رحلاتي والطلبات ($pending)" else "رحلاتي والطلبات"), Icons.Filled.Add to "نشر رحلة"),
+            tab, { tab = it }
+        )
     }
 }
 
@@ -209,42 +200,33 @@ private fun MyTrips(me: UserProfile, onPublish: () -> Unit) {
     val list = trips
     when {
         list == null -> LoadingBox()
-        else -> LazyColumn(
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            item {
-                val pend = bookings.count { it.status == BK_PENDING && it.departAt > System.currentTimeMillis() }
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        StatTile("رحلاتك", "${list.count { it.status != TRIP_CANCELLED }}", Modifier.weight(1f))
-                        StatTile("طلبات جديدة", "$pend", Modifier.weight(1f), highlight = pend > 0)
-                    }
-                    BigButton("انشر رحلة جديدة", onClick = onPublish)
+        else -> Column(Modifier.fillMaxSize()) {
+            val pend = bookings.count { it.status == BK_PENDING && it.departAt > System.currentTimeMillis() }
+            Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f).glass(18.dp).padding(12.dp)) {
+                    Text("رحلاتك", fontSize = 12.sp, color = androidx.compose.ui.graphics.Color(0x99FFFFFF))
+                    Text("${list.count { it.status != TRIP_CANCELLED }}", fontSize = 26.sp, fontWeight = FontWeight.ExtraLight)
                 }
+                Column(Modifier.weight(1f).glass(18.dp).padding(12.dp)) {
+                    Text("طلبات جديدة", fontSize = 12.sp, color = androidx.compose.ui.graphics.Color(0x99FFFFFF))
+                    Text("$pend", fontSize = 26.sp, fontWeight = FontWeight.ExtraLight, color = if (pend > 0) Brand.Teal else androidx.compose.ui.graphics.Color.White)
+                }
+                Box(Modifier.weight(1.2f)) { LedgerPrimaryButton("+ رحلة جديدة", onPublish) }
             }
-            if (list.isEmpty()) item { EmptyState("🚗", "ما عندك رحلات جاية.\nانشر أول رحلة بالزر فوق.") }
-            items(list, key = { it.id }) { t ->
+            val active = list.filter { it.status != TRIP_CANCELLED }
+            if (active.isEmpty()) EmptyState("🚗", "ما عندك رحلات جاية.\nانشر أول رحلة بالزر فوق.")
+            else RideSwipe(active, Modifier.weight(1f), bookedMode = true) { t ->
                 val reqs = bookings.filter { it.tripId == t.id }
                     .sortedBy { if (it.status == BK_PENDING) 0 else if (it.status == BK_ACCEPTED) 1 else 2 }
-                AppCard {
-                    TripInfo(t, showCaptain = false)
+                Column(Modifier.fillMaxWidth().glass(20.dp).padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     LiveShareControl(t)
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
                     if (reqs.isEmpty()) {
-                        Text("ما في حجوزات لسا", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("ما في حجوزات لسا", color = androidx.compose.ui.graphics.Color(0x99FFFFFF))
                     } else {
-                        Text(
-                            "الحجوزات (${reqs.count { it.isActive }})",
-                            style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold
-                        )
+                        Text("الحجوزات (${reqs.count { it.isActive }})", fontWeight = FontWeight.Bold)
                         reqs.forEach { b -> BookingRow(b, onCancel = { cancelBooking = b }) }
                     }
-                    if (t.status != TRIP_CANCELLED) {
-                        TextButton(onClick = { cancelTrip = t }) {
-                            Text("إلغاء الرحلة كاملة", color = MaterialTheme.colorScheme.error)
-                        }
-                    }
+                    TextButton(onClick = { cancelTrip = t }) { Text("إلغاء الرحلة كاملة", color = MaterialTheme.colorScheme.error) }
                 }
             }
         }
