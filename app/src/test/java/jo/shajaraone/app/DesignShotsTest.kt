@@ -105,9 +105,6 @@ class DesignShotsTest {
     }
 
     @Test fun bookingSheet() = shot("R3-booking-seat-map") {
-        Column(Modifier.padding(20.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            CarSeatMap(total = 4, free = 3, picked = setOf(1, 2), onToggle = {})
-            SeatLegend()
-        }
+        BookingBody(t1, 4, 3, setOf(1, 2), {}, listOf("الدوار الرابع", "وسط البلد"), "وسط البلد", {}, "", {}, false) {}
     }
 }

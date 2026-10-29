@@ -142,95 +142,6 @@ private fun TripsTab(me: UserProfile, myBookings: List<Booking>, flow: RiderFlow
 }
 
 
-/** Top-view car drawn as a glass outline: tap the free seats you want. Taken seats are locked, the driver is fixed. */
-@Composable
-internal fun CarSeatMap(total: Int, free: Int, picked: Set<Int>, onToggle: (Int) -> Unit) {
-    val taken = (total - free).coerceAtLeast(0)
-    fun state(i: Int) = when {
-        i < taken -> SeatState.TAKEN
-        i in picked -> SeatState.PICKED
-        else -> SeatState.FREE
-    }
-    val seat = 50.dp
-    val body = Brand.VioletSoft
-    Box(
-        Modifier
-            .width(236.dp)
-            .drawBehind {
-                val w = size.width
-                val h = size.height
-                val side = 14.dp.toPx()
-                // Wheels poke out of the sides.
-                val wheelH = 46.dp.toPx()
-                listOf(h * 0.17f, h * 0.68f).forEach { y ->
-                    drawRoundRect(body.copy(alpha = 0.30f), Offset(0f, y), Size(side + 4.dp.toPx(), wheelH), CornerRadius(6.dp.toPx()))
-                    drawRoundRect(body.copy(alpha = 0.30f), Offset(w - side - 4.dp.toPx(), y), Size(side + 4.dp.toPx(), wheelH), CornerRadius(6.dp.toPx()))
-                }
-                // Side mirrors.
-                drawRoundRect(body.copy(alpha = 0.45f), Offset(2.dp.toPx(), h * 0.20f), Size(12.dp.toPx(), 8.dp.toPx()), CornerRadius(4.dp.toPx()))
-                drawRoundRect(body.copy(alpha = 0.45f), Offset(w - 14.dp.toPx(), h * 0.20f), Size(12.dp.toPx(), 8.dp.toPx()), CornerRadius(4.dp.toPx()))
-                // Body.
-                val bodyTl = Offset(side, 0f)
-                val bodySize = Size(w - side * 2, h)
-                drawRoundRect(Brand.Pressed.copy(alpha = 0.6f), bodyTl, bodySize, CornerRadius(80.dp.toPx(), 80.dp.toPx()))
-                drawRoundRect(body.copy(alpha = 0.6f), bodyTl, bodySize, CornerRadius(80.dp.toPx(), 80.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(1.5.dp.toPx()))
-                // Windshield.
-                drawRoundRect(
-                    body.copy(alpha = 0.40f), Offset(side + 28.dp.toPx(), 26.dp.toPx()), Size(w - side * 2 - 56.dp.toPx(), 30.dp.toPx()),
-                    CornerRadius(10.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(1.2.dp.toPx())
-                )
-                // Rear window.
-                drawRoundRect(
-                    body.copy(alpha = 0.30f), Offset(side + 30.dp.toPx(), h - 40.dp.toPx()), Size(w - side * 2 - 60.dp.toPx(), 16.dp.toPx()),
-                    CornerRadius(8.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(1.2.dp.toPx())
-                )
-            }
-            .padding(start = 40.dp, end = 40.dp, top = 84.dp, bottom = 80.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(34.dp)) {
-            // Front row: passenger seat on the right, driver on the left (car seen from above, facing up).
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                if (total >= 1) SeatShape(state(0), seat, "1") { onToggle(0) } else Spacer(Modifier.size(seat))
-                Box(contentAlignment = Alignment.Center) {
-                    SeatShape(SeatState.DRIVER, seat)
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Filled.Person, null, tint = Brand.Muted, modifier = Modifier.size(18.dp))
-                        Text("الكابتن", fontSize = 10.sp, color = Brand.Muted, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-            (1 until total).toList().chunked(3).forEach { row ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    row.forEach { i -> SeatShape(state(i), seat, "${i + 1}") { onToggle(i) } }
-                    repeat(3 - row.size) { Spacer(Modifier.size(seat)) }
-                }
-            }
-        }
-    }
-}
-
-/** Seat legend: free, taken, yours. */
-@Composable
-internal fun SeatLegend() {
-    Row(
-        Modifier.fillMaxWidth().background(Brand.Pressed.copy(alpha = 0.6f), RoundedCornerShape(10.dp))
-            .border(1.dp, Brand.Rule, RoundedCornerShape(10.dp)).padding(vertical = 10.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically
-    ) {
-        LegendItem("شاغر") { Box(Modifier.size(18.dp).border(1.5.dp, Brand.Rule, CircleShape)) }
-        LegendItem("محجوز") { Icon(Icons.Filled.Lock, null, tint = Brand.Muted, modifier = Modifier.size(18.dp)) }
-        LegendItem("اختيارك") { Box(Modifier.size(18.dp).background(Brand.Violet, CircleShape)) }
-    }
-}
-
-@Composable
-private fun LegendItem(text: String, icon: @Composable () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        icon()
-        Text(text, style = MaterialTheme.typography.labelLarge)
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BookingDialog(t: Trip, me: UserProfile, onClose: () -> Unit, onBooked: () -> Unit) {
@@ -244,76 +155,31 @@ private fun BookingDialog(t: Trip, me: UserProfile, onClose: () -> Unit, onBooke
     val areas = subAreasFor(t.to, t.road)
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    ModalBottomSheet(
-        onDismissRequest = onClose,
-        sheetState = sheet,
-        containerColor = MaterialTheme.colorScheme.background
-    ) {
-        Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().imePadding()
-                .padding(horizontal = 20.dp).padding(bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text("${t.from}  ←  ${t.to}", style = MaterialTheme.typography.titleLarge)
-            Text(
-                "${timeText(t.departAt)}  •  ${priceText(t.price)}",
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text("اضغط على المقاعد اللي بدك ياها", style = MaterialTheme.typography.titleSmall)
-            CarSeatMap(total, free, picked) { i ->
+    ModalBottomSheet(onDismissRequest = onClose, sheetState = sheet, containerColor = Color(0xFF0B0B0D)) {
+        BookingBody(
+            t, total, free, picked,
+            onToggle = { i ->
                 val taken = total - free
-                if (i >= taken) {
-                    picked = if (i in picked) {
-                        if (picked.size > 1) picked - i else picked
-                    } else picked + i
-                }
-            }
-            SeatLegend()
-            Text(
-                "اخترت ${seatsText(picked.size.toLong())}",
-                style = MaterialTheme.typography.titleMedium, color = Brand.Violet
-            )
-
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SectionLabel("وين بدك تنزل؟")
-                if (areas != null) {
-                    ChoiceChips(areas + ANY_PLACE + OTHER_PLACE, point) { point = it }
-                    if (point == OTHER_PLACE) {
-                        OutlinedTextField(
-                            value = other, onValueChange = { other = it.take(60) },
-                            label = { Text("اكتب المكان") }, singleLine = true,
-                            shape = MaterialTheme.shapes.medium,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                } else {
-                    OutlinedTextField(
-                        value = other, onValueChange = { other = it.take(60) },
-                        label = { Text(if (t.to == IRBID_OTHER) "وين بالضبط بإربد؟" else "نقطة النزول (اختياري)") }, placeholder = { Text("مثلاً: مجمع الشمال") },
-                        singleLine = true, shape = MaterialTheme.shapes.medium,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-
-            BigButton(if (sending) "لحظة..." else "أرسل الطلب", enabled = !sending) {
-                val dropoff = if (areas != null && point.isNotBlank() && point != OTHER_PLACE) point
-                    else if (areas != null && point.isBlank()) ANY_PLACE else other.trim()
-                when {
-                    dropoff.isBlank() && t.to == IRBID_OTHER -> toast(ctx, "اكتب نقطة النزول")
-                    else -> {
-                        sending = true
-                        Repo.book(t, me, picked.size.toLong(), dropoff.ifBlank { ANY_PLACE }) { ok ->
-                            sending = false
-                            if (ok) {
-                                AppFeedback.success(ctx)
-                                toast(ctx, "تم إرسال طلبك، الكابتن رح يرد عليك")
-                                onBooked()
-                            } else {
-                                AppFeedback.error(ctx)
-                                toast(ctx, "ما قدرت أرسل، تأكد من الإنترنت")
-                            }
+                if (i >= taken) picked = if (i in picked) { if (picked.size > 1) picked - i else picked } else picked + i
+            },
+            areas = areas, point = point, onPoint = { point = it }, other = other, onOther = { other = it.take(60) },
+            sending = sending
+        ) {
+            val dropoff = if (areas != null && point.isNotBlank() && point != OTHER_PLACE) point
+                else if (areas != null && point.isBlank()) ANY_PLACE else other.trim()
+            when {
+                dropoff.isBlank() && t.to == IRBID_OTHER -> toast(ctx, "اكتب نقطة النزول")
+                else -> {
+                    sending = true
+                    Repo.book(t, me, picked.size.toLong(), dropoff.ifBlank { ANY_PLACE }) { ok ->
+                        sending = false
+                        if (ok) {
+                            AppFeedback.success(ctx)
+                            toast(ctx, "تم إرسال طلبك، الكابتن رح يرد عليك")
+                            onBooked()
+                        } else {
+                            AppFeedback.error(ctx)
+                            toast(ctx, "ما قدرت أرسل، تأكد من الإنترنت")
                         }
                     }
                 }

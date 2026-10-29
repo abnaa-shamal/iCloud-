@@ -84,7 +84,7 @@ fun flowMatches(t: Trip, fs: RiderFlowState): Boolean {
 // ---------- small glass building blocks (rider look) ----------
 
 @Composable
-private fun GlassSection(title: String, content: @Composable ColumnScope.() -> Unit) {
+internal fun GlassSection(title: String, content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.fillMaxWidth().darkGlass(24.dp).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Dim)
         content()
@@ -92,7 +92,7 @@ private fun GlassSection(title: String, content: @Composable ColumnScope.() -> U
 }
 
 @Composable
-private fun GlassChip(text: String, on: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+internal fun GlassChip(text: String, on: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val s = RoundedCornerShape(16.dp)
     Box(
         modifier.clip(s).background(if (on) Amber else Color(0x1AFFFFFF)).border(1.dp, if (on) Amber else Color(0x26FFFFFF), s)
@@ -102,7 +102,7 @@ private fun GlassChip(text: String, on: Boolean, modifier: Modifier = Modifier, 
 }
 
 @Composable
-private fun GlassGrid(items: List<String>, selected: String, cols: Int = 3, onPick: (String) -> Unit) {
+internal fun GlassGrid(items: List<String>, selected: String, cols: Int = 3, onPick: (String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items.chunked(cols).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
