@@ -89,11 +89,12 @@ class DesignShotsTest {
     private val b2 = b1.copy(id = "b2", passengerName = "ليلى حسن", seats = 1, departAt = soon + 5 * 3_600_000L, tripSummary = "إربد ← الزرقاء")
 
     @Test fun captainDashboard() = capShot("C1-captain-home") {
-        CapDashboard("أحمد", listOf(t1, t3.copy(captainUid = "c")), listOf(b1, b2), onPublish = {})
+        CapDashboard("أحمد", listOf(t1, t3.copy(captainUid = "c")), listOf(b1, b2))
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) { CapNav(listOf(Triple(0, "الرئيسية", 2), Triple(6, "رحلة جديدة", 0)), 0) {} }
     }
 
     @Test fun captainEmpty() = capShot("C2-captain-empty") {
-        CapDashboard("أحمد", emptyList(), emptyList(), onPublish = {})
+        CapDashboard("أحمد", emptyList(), emptyList())
     }
 
     @Test fun captainPublish() = capShot("C3-captain-publish") {

@@ -92,6 +92,10 @@ fun Glyph(kind: Int, color: Color, size: Dp = 22.dp) {
                 drawLine(color, Offset(w * .78f, w * .5f), Offset(w * .55f, w * .27f), st.width, StrokeCap.Round)
                 drawLine(color, Offset(w * .78f, w * .5f), Offset(w * .55f, w * .73f), st.width, StrokeCap.Round)
             }
+            6 -> { // plus
+                drawLine(color, Offset(w * .5f, w * .2f), Offset(w * .5f, w * .8f), st.width, StrokeCap.Round)
+                drawLine(color, Offset(w * .2f, w * .5f), Offset(w * .8f, w * .5f), st.width, StrokeCap.Round)
+            }
             5 -> { // sliders
                 drawLine(color, Offset(w * .18f, w * .34f), Offset(w * .82f, w * .34f), st.width, StrokeCap.Round)
                 drawLine(color, Offset(w * .18f, w * .66f), Offset(w * .82f, w * .66f), st.width, StrokeCap.Round)

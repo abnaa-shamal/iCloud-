@@ -18,25 +18,28 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// The captain app is deliberately the opposite of the rider app: light paper, deep green, big decisions.
-val CapBg = Color(0xFFF3F0E8)
-val CapInk = Color(0xFF14201B)
-val CapGreen = Color(0xFF12A36A)
-val CapMute = Color(0xFF7E8782)
-val CapLine = Color(0xFFE4DFD2)
-val CapRed = Color(0xFFD64545)
+// Captain app: graphite surfaces, electric-blue accent, warm peach request tiles, docked bottom bar.
+val CapBg = androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFF26272B), Color(0xFF141517)))
+val CapInk = Color(0xFFF4F4F6)
+val CapAccent = Color(0xFF3D8BFF)
+val CapMute = Color(0xFF9A9CA3)
+val CapLine = Color(0x26FFFFFF)
+val CapRed = Color(0xFFFF6B6B)
+val CapSurface = Color(0xFF2B2C31)
+val CapPeach = Color(0xFFF8E8D2)
+val CapDark = Color(0xFF16171A)
 
 fun Modifier.capCard(r: Dp = 22.dp): Modifier {
     val s = RoundedCornerShape(r)
-    return this.clip(s).background(Color.White).border(1.dp, CapLine, s)
+    return this.clip(s).background(CapSurface).border(1.dp, CapLine, s)
 }
 
 @Composable
-fun CapBtn(text: String, modifier: Modifier = Modifier, filled: Boolean = true, color: Color = CapGreen, height: Dp = 54.dp, onClick: () -> Unit) {
+fun CapBtn(text: String, modifier: Modifier = Modifier, filled: Boolean = true, color: Color = CapAccent, height: Dp = 54.dp, onClick: () -> Unit) {
     val s = RoundedCornerShape(16.dp)
     Box(
         modifier.height(height).squeeze(onClick).clip(s)
-            .then(if (filled) Modifier.background(color) else Modifier.border(1.5.dp, color.copy(alpha = .55f), s)),
+            .then(if (filled) Modifier.background(color) else Modifier.border(1.5.dp, color.copy(alpha = .6f), s)),
         contentAlignment = Alignment.Center
     ) { Text(text, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (filled) Color.White else color) }
 }
@@ -45,10 +48,10 @@ fun CapBtn(text: String, modifier: Modifier = Modifier, filled: Boolean = true, 
 fun CapChip(text: String, on: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val s = RoundedCornerShape(14.dp)
     Box(
-        modifier.clip(s).background(if (on) CapInk else Color.White).border(1.dp, if (on) CapInk else CapLine, s)
+        modifier.clip(s).background(if (on) CapAccent else CapSurface).border(1.dp, if (on) CapAccent else CapLine, s)
             .clickable(remember { MutableInteractionSource() }, null) { onClick() }.padding(horizontal = 16.dp, vertical = 11.dp),
         contentAlignment = Alignment.Center
-    ) { Text(text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = if (on) Color.White else CapInk) }
+    ) { Text(text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color.White) }
 }
 
 /** Day strip in the captain look: light tiles, green when picked. */
@@ -59,8 +62,8 @@ fun CapDays(days: List<Pair<String, String>>, selected: Int, onPick: (Int) -> Un
             val on = i == selected
             Column(
                 Modifier.weight(1f).height(68.dp).clip(RoundedCornerShape(18.dp))
-                    .background(if (on) CapGreen else Color.White)
-                    .border(1.dp, if (on) CapGreen else CapLine, RoundedCornerShape(18.dp))
+                    .background(if (on) CapAccent else CapSurface)
+                    .border(1.dp, if (on) CapAccent else CapLine, RoundedCornerShape(18.dp))
                     .clickable(remember { MutableInteractionSource() }, null) { onPick(i) },
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
             ) {
@@ -73,7 +76,35 @@ fun CapDays(days: List<Pair<String, String>>, selected: Int, onPick: (Int) -> Un
 
 @Composable
 fun CapAvatar(name: String, size: Dp = 42.dp) {
-    Box(Modifier.size(size).clip(CircleShape).background(Color(0xFFE3F4EC)), contentAlignment = Alignment.Center) {
-        Text(name.trim().take(1), fontSize = (size.value * .42f).sp, fontWeight = FontWeight.Bold, color = CapGreen)
+    Box(Modifier.size(size).clip(CircleShape).background(Color(0xFF3A3B41)), contentAlignment = Alignment.Center) {
+        Text(name.trim().take(1), fontSize = (size.value * .42f).sp, fontWeight = FontWeight.Bold, color = CapAccent)
+    }
+}
+
+/** Docked bottom bar: the selected item gets a glowing outlined tile. */
+@Composable
+fun CapNav(items: List<Triple<Int, String, Int>>, selected: Int, onPick: (Int) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).background(Color(0xFF1B1C1F))
+            .border(1.dp, CapLine, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).padding(horizontal = 24.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically
+    ) {
+        items.forEachIndexed { i, (g, name, badge) ->
+            val on = i == selected
+            Box {
+                Column(
+                    Modifier.width(110.dp).clip(RoundedCornerShape(18.dp))
+                        .then(if (on) Modifier.background(Color(0xFF2D2F35)).border(1.5.dp, CapAccent.copy(alpha = .7f), RoundedCornerShape(18.dp)) else Modifier)
+                        .clickable(remember { MutableInteractionSource() }, null) { onPick(i) }.padding(vertical = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Glyph(g, if (on) Color.White else CapMute, 24.dp)
+                    Text(name, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = if (on) Color.White else CapMute)
+                }
+                if (badge > 0) Box(Modifier.align(Alignment.TopEnd).padding(top = 2.dp, end = 10.dp).size(20.dp).clip(CircleShape).background(CapAccent), contentAlignment = Alignment.Center) {
+                    Text("$badge", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+        }
     }
 }

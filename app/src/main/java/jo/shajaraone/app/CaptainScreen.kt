@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun CaptainHome(me: UserProfile) {
     val uid = Repo.auth.currentUser?.uid ?: ""
-    var publishing by rememberSaveable { mutableStateOf(false) }
+    var tab by rememberSaveable { mutableIntStateOf(0) }
     var trips by remember { mutableStateOf<List<Trip>?>(null) }
     var bookings by remember { mutableStateOf<List<Booking>>(emptyList()) }
     DisposableEffect(uid) {
@@ -46,8 +46,11 @@ fun CaptainHome(me: UserProfile) {
     }
     CompositionLocalProvider(LocalContentColor provides CapInk) {
         Box(Modifier.fillMaxSize().background(CapBg)) {
-            if (publishing) CapPublish(me, onBack = { publishing = false })
-            else CapDashboard(me.name.trim().substringBefore(" "), trips, bookings, onPublish = { publishing = true })
+            if (tab == 1) CapPublish(me, onBack = { tab = 0 })
+            else CapDashboard(me.name.trim().substringBefore(" "), trips, bookings)
+            Box(Modifier.align(Alignment.BottomCenter)) {
+                CapNav(listOf(Triple(0, "الرئيسية", pending), Triple(6, "رحلة جديدة", 0)), tab) { tab = it }
+            }
         }
     }
 }
@@ -55,7 +58,7 @@ fun CaptainHome(me: UserProfile) {
 // ===== Dashboard: requests first, then my rides =====
 
 @Composable
-fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, onPublish: () -> Unit) {
+fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
     val ctx = LocalContext.current
     var cancelTrip by remember { mutableStateOf<Trip?>(null) }
     var cancelBooking by remember { mutableStateOf<Booking?>(null) }
@@ -66,7 +69,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, onPu
 
     Box(Modifier.fillMaxSize()) {
         androidx.compose.foundation.lazy.LazyColumn(
-            Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 44.dp, bottom = 110.dp),
+            Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 44.dp, bottom = 120.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
@@ -78,20 +81,22 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, onPu
             }
             items(pend.size, key = { pend[it].id }) { i ->
                 val b = pend[i]
-                Column(Modifier.entrance(i).fillMaxWidth().capCard().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.entrance(i).fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(CapPeach).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        CapAvatar(b.passengerName)
-                        Column(Modifier.weight(1f)) {
-                            Text(b.passengerName, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = CapInk)
-                            Text("${seatsText(b.seats)} • ${b.tripSummary}", fontSize = 12.sp, color = CapMute)
+                        Box(Modifier.size(44.dp).clip(androidx.compose.foundation.shape.CircleShape).background(CapDark), contentAlignment = Alignment.Center) {
+                            Text(b.passengerName.trim().take(1), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
-                        Text(clockText(b.departAt), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = CapGreen)
+                        Column(Modifier.weight(1f)) {
+                            Text(b.passengerName, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = CapDark)
+                            Text("${seatsText(b.seats)} • ${b.tripSummary}", fontSize = 12.sp, color = Color(0xFF6B5E4F))
+                        }
+                        Text(clockText(b.departAt), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = CapDark)
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        CapBtn("قبول", Modifier.weight(1.4f)) {
+                        CapBtn("قبول", Modifier.weight(1.4f), color = CapDark) {
                             Repo.accept(b) { ok -> toast(ctx, if (ok) "تم القبول ✅" else "ما في مقاعد كافية أو الطلب تغيّر") }
                         }
-                        CapBtn("رفض", Modifier.weight(1f), filled = false, color = CapRed) {
+                        CapBtn("رفض", Modifier.weight(1f), filled = false, color = CapDark) {
                             Repo.reject(b) { ok -> if (!ok) toast(ctx, "ما قدرت أرفض، جرّب كمان مرة") }
                         }
                     }
@@ -120,7 +125,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, onPu
                             Text("${dayName(t.departAt)} • ${clockText(t.departAt)} • ${priceText(t.price)}", fontSize = 12.sp, color = CapMute)
                         }
                         Box(Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFFE3F4EC)).padding(horizontal = 12.dp, vertical = 7.dp)) {
-                            Text(if (t.seatsFree <= 0L) "مكتملة" else "${t.seatsFree} فاضية", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CapGreen)
+                            Text(if (t.seatsFree <= 0L) "مكتملة" else "${t.seatsFree} فاضية", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CapAccent)
                         }
                     }
                     if (isOpen) {
@@ -142,11 +147,6 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, onPu
                 }
             }
         }
-        Box(
-            Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, CapBg, CapBg)))
-                .padding(horizontal = 18.dp).padding(top = 28.dp, bottom = 16.dp)
-        ) { CapBtn("+  رحلة جديدة", Modifier.fillMaxWidth(), height = 58.dp, onClick = onPublish) }
     }
 
     cancelTrip?.let { t ->
@@ -175,7 +175,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, onPu
 private val capDests = listOf("عمّان", "الزرقاء", "إربد")
 
 @Composable
-internal fun CapPublishPreview() = CapPublish(UserProfile(name = "أحمد", phone = "0790000000", carText = "كيا سيراتو"), onBack = {})
+internal fun CapPublishPreview() = CapPublish(UserProfile(name = "أحمد", phone = "0790000000"), onBack = {})
 
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
@@ -198,7 +198,7 @@ private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
     val maxSeats = me.maxSeats.coerceIn(1, 8)
 
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 40.dp, bottom = 24.dp),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 40.dp, bottom = 120.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -233,7 +233,7 @@ private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
         CapDays(pillDays(5), day) { day = it }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.weight(1f).height(56.dp).capCard(16.dp).clickable { showTime = true }, contentAlignment = Alignment.Center) {
-                Text(if (minutes >= 0) "الساعة ${clockText(dayStart(day) + minutes * 60_000L)}" else "اختر الساعة", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (minutes >= 0) CapInk else CapGreen)
+                Text(if (minutes >= 0) "الساعة ${clockText(dayStart(day) + minutes * 60_000L)}" else "اختر الساعة", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (minutes >= 0) CapInk else CapAccent)
             }
             Row(Modifier.capCard(16.dp).height(56.dp).padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(44.dp).clickable { if (seats > 1) seats-- }, contentAlignment = Alignment.Center) { Text("−", fontSize = 24.sp, color = CapInk) }
