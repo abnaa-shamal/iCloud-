@@ -19,6 +19,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -123,7 +124,7 @@ private fun BigChoice(title: String, sub: String, index: Int, onClick: () -> Uni
             Text(sub, fontSize = 13.sp, color = Dim)
         }
         Box(Modifier.size(44.dp).clip(RoundedCornerShape(22.dp)).background(Amber), contentAlignment = Alignment.Center) {
-            Glyph(4, Color.Black, 20.dp)
+            Box(Modifier.rotate(180f)) { Glyph(4, Color.Black, 20.dp) }
         }
     }
 }
