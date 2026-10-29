@@ -104,6 +104,20 @@ class DesignShotsTest {
         File(dir, "$name.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
+    @Test fun optSwipe() = ledgerShot("O1-swipe") {
+        Column(Modifier.fillMaxSize()) {
+            Box(Modifier.padding(16.dp)) { SlidingTabs(listOf("الكل", "شمال ← جنوب", "جنوب ← شمال", "داخل الشمال"), 1, {}) }
+            RideSwipe(listOf(t1, t2, t1.copy(id = "3")), Modifier.weight(1f)) { LedgerPrimaryButton("احجز مقعد", {}) }
+        }
+    }
+
+    @Test fun optRoad() = ledgerShot("O2-road") {
+        Column(Modifier.fillMaxSize()) {
+            Box(Modifier.padding(16.dp)) { SlidingTabs(listOf("الكل", "شمال ← جنوب", "جنوب ← شمال", "داخل الشمال"), 1, {}) }
+            RoadTimeline(listOf(t1, t2, t1.copy(id = "3", departAt = soon + 5_400_000L)), "عمراوة (الشمال)", "إربد (الجنوب)")
+        }
+    }
+
     @Test fun ledgerHome() = ledgerShot("L1-ledger-home") {
         Column(Modifier.fillMaxSize()) {
             LedgerTopBar("أهلاً محمد", "أبناء الشمال")
