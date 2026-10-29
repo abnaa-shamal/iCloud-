@@ -84,8 +84,8 @@ fun CapAvatar(name: String, size: Dp = 42.dp) {
 @Composable
 fun CapNav(items: List<Triple<Int, String, Int>>, selected: Int, onPick: (Int) -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).background(Color(0xFF1B1C1F))
-            .border(1.dp, CapLine, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).padding(horizontal = 24.dp, vertical = 12.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).glassPanel(28.dp, Color(0xFF2A2B30), Color(0xFF141517), Color(0x2E5C9DFF))
+            .border(1.dp, CapLine, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).navigationBarsPadding().padding(horizontal = 24.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically
     ) {
         items.forEachIndexed { i, (g, name, badge) ->

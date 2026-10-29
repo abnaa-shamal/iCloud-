@@ -69,9 +69,10 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
     val pend = bookings.filter { it.status == BK_PENDING && it.departAt > now }.sortedBy { it.departAt }
     val active = (trips ?: emptyList()).filter { it.status != TRIP_CANCELLED && it.departAt > now - 4 * 3_600_000L }.sortedBy { it.departAt }
 
+    val past = (trips ?: emptyList()).filter { t -> active.none { it.id == t.id } }.sortedByDescending { it.departAt }
     Box(Modifier.fillMaxSize()) {
         androidx.compose.foundation.lazy.LazyColumn(
-            Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 44.dp, bottom = 120.dp),
+            Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 44.dp, bottom = 170.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
@@ -91,6 +92,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
                         Column(Modifier.weight(1f)) {
                             Text(b.passengerName, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = CapDark)
                             Text("${seatsText(b.seats)} • ${b.tripSummary}", fontSize = 12.sp, color = Color(0xFF6B5E4F))
+                            if (b.dropoff.isNotBlank()) Text("وجهته: ${b.dropoff}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = CapDark)
                         }
                         Text(clockText(b.departAt), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = CapDark)
                     }
@@ -145,6 +147,39 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
                         }
                         LiveShareControl(t)
                         Text("إلغاء الرحلة", Modifier.clickable { cancelTrip = t }.padding(vertical = 6.dp), fontSize = 13.sp, color = CapRed)
+                    }
+                }
+            }
+            if (past.isNotEmpty()) {
+                item { Text("سجل رحلاتي", Modifier.padding(top = 14.dp), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = CapInk) }
+                items(past.size, key = { "h" + past[it].id }) { i ->
+                    val t = past[i]
+                    val riders = bookings.filter { it.tripId == t.id && it.status == BK_ACCEPTED }
+                    val isOpen = open == "h" + t.id
+                    Column(Modifier.fillMaxWidth().capCard().animateContentSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(
+                            Modifier.fillMaxWidth().clickable(remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, null) { open = if (isOpen) "" else "h" + t.id },
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text("${t.from}  ←  ${t.to}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = CapInk)
+                                Text("${dayName(t.departAt)} • ${clockText(t.departAt)} • ${priceText(t.price)}", fontSize = 12.sp, color = CapMute)
+                            }
+                            Text(if (t.status == TRIP_CANCELLED) "ملغية" else if (t.seatsFree <= 0L) "اكتملت" else "${riders.sumOf { it.seats }} راكب",
+                                fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (t.status == TRIP_CANCELLED) CapRed else CapAccent)
+                        }
+                        if (isOpen) {
+                            if (riders.isEmpty()) Text("ما في ركاب", fontSize = 13.sp, color = CapMute)
+                            riders.forEach { b ->
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    CapAvatar(b.passengerName, 34.dp)
+                                    Column(Modifier.weight(1f)) {
+                                        Text(b.passengerName, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = CapInk)
+                                        Text(seatsText(b.seats) + if (b.dropoff.isNotBlank()) " • ${b.dropoff}" else "", fontSize = 11.sp, color = CapMute)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -233,7 +268,7 @@ private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
     }
     BackHandler { goBack() }
 
-    val colMod = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 44.dp, bottom = 120.dp)
+    val colMod = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 44.dp, bottom = 170.dp)
     when (step) {
         0 -> Column(colMod, verticalArrangement = Arrangement.spacedBy(14.dp)) {
             CapBackBar("رحلة جديدة") { onBack() }
@@ -250,13 +285,10 @@ private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
                     CapGrid(listOf("كل إربد") + irbidSpots, "", 1) { spot = if (it == "كل إربد") "" else it; step = 2 }
                 }
             } else if (road.isBlank()) {
-                southRoads.entries.forEachIndexed { i, (r, stops) ->
-                    CapBigChoice(r, (if (r == "طريق الزرقاء") listOf("الصحراوي") + stops.take(3) else stops.take(4)).joinToString(" • "), i) { road = r; stop = "" }
+                southRoads.keys.forEachIndexed { i, r ->
+                    CapBigChoice(r, if (r == "طريق الزرقاء") "الزرقاء • الصحراوي" else "عمّان", i) { road = r; stop = "" }
                 }
             } else {
-                CapSection("المنطقة (اختياري)") {
-                    CapGrid(listOf("أي منطقة") + (southRoads[road] ?: emptyList()), if (stop.isBlank()) "أي منطقة" else stop, 3) { stop = if (it == "أي منطقة") "" else it }
-                }
                 CapSection(if (group == "الشمال") "لأي بلد بالشمال؟" else "من أي بلد بالشمال؟") {
                     CapGrid(villages, village, 3) { village = it; step = 2 }
                 }
