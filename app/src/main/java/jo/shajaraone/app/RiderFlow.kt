@@ -168,7 +168,7 @@ fun RiderFlow(
             when (fs.group) {
                 G_SOUTH -> if (fs.road.isBlank()) {
                     southRoads.entries.forEachIndexed { i, (road, stops) ->
-                        BigChoice(road, stops.take(4).joinToString(" • "), i) { fs.road = road }
+                        BigChoice(road, (if (road == "طريق الزرقاء") listOf("الصحراوي") + stops.take(3) else stops.take(4)).joinToString(" • "), i) { fs.road = road }
                     }
                 } else {
                     GlassSection("وين وجهتك؟ (اختياري)") {
