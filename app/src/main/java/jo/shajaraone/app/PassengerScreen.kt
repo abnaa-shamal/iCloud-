@@ -39,8 +39,7 @@ fun PassengerHome(me: UserProfile) {
     val uid = Repo.auth.currentUser?.uid ?: ""
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var myBookings by remember { mutableStateOf<List<Booking>>(emptyList()) }
-    var dest by rememberSaveable { mutableIntStateOf(0) }
-    var day by rememberSaveable { mutableIntStateOf(-1) }
+    val flow = rememberRiderFlow()
 
     DisposableEffect(uid) {
         val r = Repo.listenBookings("passengerUid", uid) { myBookings = it }
@@ -58,66 +57,13 @@ fun PassengerHome(me: UserProfile) {
             }, label = "page"
         ) { t ->
             when (t) {
-                0 -> TripsTab(me, myBookings, dest, { dest = it }, day, { day = it })
-                else -> MyBookings(myBookings)
+                0 -> TripsTab(me, myBookings, flow)
+                1 -> MyBookings(myBookings)
+                else -> SoonScreen()
             }
         }
         Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth(), contentAlignment = Alignment.Center) {
-            VantaNav(listOf(1 to "الرحلات", 2 to (if (upcoming > 0) "حجوزاتي ($upcoming)" else "حجوزاتي")), tab, { tab = it })
-        }
-    }
-}
-
-// ===== Browse trips =====
-
-val destChoices = listOf("الكل", "عمّان", "الزرقاء", "إربد", "راجع لعندنا")
-
-/** Both choices are optional: dest 0 / day -1 mean «any». */
-fun vantaMatches(t: Trip, dest: Int, day: Int): Boolean {
-    val kind = kindOf(t)
-    val zarqa = t.road == "طريق الزرقاء"
-    val destOk = when (dest) {
-        1 -> kind == KIND_NS && !zarqa && t.road != NORTH_INNER
-        2 -> kind == KIND_NS && zarqa
-        3 -> kind == KIND_NN || t.to == "إربد"
-        4 -> kind == KIND_SN
-        else -> true
-    }
-    return destOk && (day < 0 || dayOffsetOf(t.departAt) == day)
-}
-
-/** The whole rider home: pick a day, pick a place, tap «احجز». Everything is optional. */
-@Composable
-fun RiderTripsView(
-    name: String, shown: List<Trip>?, failed: Boolean, dest: Int, onDest: (Int) -> Unit, day: Int, onDay: (Int) -> Unit,
-    actions: @Composable ColumnScope.(Trip) -> Unit
-) {
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 120.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item {
-            Column(Modifier.fillMaxWidth().padding(horizontal = 18.dp).padding(top = 44.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Column {
-                    Text("أهلاً $name", fontSize = 14.sp, color = Dim)
-                    Text("وين رايح؟", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                }
-                DayPills(pillDays(5), day) { onDay(if (day == it) -1 else it) }
-                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    destChoices.forEachIndexed { i, n ->
-                        Box(
-                            Modifier.clip(RoundedCornerShape(20.dp)).background(if (dest == i) Amber else Color(0xFF2B2B2E))
-                                .clickable { onDest(i) }.padding(horizontal = 16.dp, vertical = 10.dp)
-                        ) { Text(n, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = if (dest == i) Color.Black else Color.White) }
-                    }
-                }
-            }
-        }
-        when {
-            shown == null -> item { LoadingBox() }
-            failed && shown.isEmpty() -> item { EmptyState("📶", "ما قدرت أجيب الرحلات، تأكد من الإنترنت") }
-            shown.isEmpty() -> item { EmptyState("🚌", "ما في رحلات بهالاختيار.\nجرّب يوم ثاني.") }
-            else -> items(shown.size) { i ->
-                val t = shown[i]
-                TripCard(t, Modifier.padding(horizontal = 18.dp), index = i, nearest = i == 0 && day < 0 && dest == 0, actions = { actions(t) })
-            }
+            VantaNav(listOf(1 to "الرحلات", 2 to (if (upcoming > 0) "حجوزاتي ($upcoming)" else "حجوزاتي"), 7 to "اشتراكات"), tab, { tab = it })
         }
     }
 }
@@ -132,10 +78,7 @@ private fun MiniContact(phone: String, msg: String) {
 }
 
 @Composable
-private fun TripsTab(
-    me: UserProfile, myBookings: List<Booking>,
-    dest: Int, onDest: (Int) -> Unit, day: Int, onDay: (Int) -> Unit
-) {
+private fun TripsTab(me: UserProfile, myBookings: List<Booking>, flow: RiderFlowState) {
     var trips by remember { mutableStateOf<List<Trip>?>(null) }
     var failed by remember { mutableStateOf(false) }
     var booking by remember { mutableStateOf<Trip?>(null) }
@@ -152,11 +95,10 @@ private fun TripsTab(
 
     val now = System.currentTimeMillis()
     val shown = trips?.filter { t ->
-        t.captainUid.isNotBlank() && t.captainUid != me.uid && t.status != TRIP_CANCELLED && t.departAt > now &&
-            vantaMatches(t, dest, day)
+        t.captainUid.isNotBlank() && t.captainUid != me.uid && t.status != TRIP_CANCELLED && t.departAt > now && flowMatches(t, flow)
     }
 
-    RiderTripsView(me.name.trim().substringBefore(" "), shown, failed, dest, onDest, day, onDay) { t ->
+    RiderFlow(me.name.trim().substringBefore(" "), flow, shown, failed) { t ->
         val mine = myBookings.firstOrNull { it.tripId == t.id && it.isActive }
         when {
             mine?.status == BK_ACCEPTED -> {

@@ -99,6 +99,12 @@ fun Glyph(kind: Int, color: Color, size: Dp = 22.dp) {
                 drawLine(color, Offset(w * .5f, w * .2f), Offset(w * .5f, w * .8f), st.width, StrokeCap.Round)
                 drawLine(color, Offset(w * .2f, w * .5f), Offset(w * .8f, w * .5f), st.width, StrokeCap.Round)
             }
+            7 -> { // calendar
+                drawRoundRect(color, Offset(w * .14f, w * .22f), Size(w * .72f, w * .64f), CornerRadius(w * .1f), style = st)
+                drawLine(color, Offset(w * .14f, w * .42f), Offset(w * .86f, w * .42f), st.width, StrokeCap.Round)
+                drawLine(color, Offset(w * .34f, w * .12f), Offset(w * .34f, w * .28f), st.width, StrokeCap.Round)
+                drawLine(color, Offset(w * .66f, w * .12f), Offset(w * .66f, w * .28f), st.width, StrokeCap.Round)
+            }
             5 -> { // sliders
                 drawLine(color, Offset(w * .18f, w * .34f), Offset(w * .82f, w * .34f), st.width, StrokeCap.Round)
                 drawLine(color, Offset(w * .18f, w * .66f), Offset(w * .82f, w * .66f), st.width, StrokeCap.Round)

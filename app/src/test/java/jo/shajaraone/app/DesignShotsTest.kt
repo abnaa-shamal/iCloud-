@@ -65,22 +65,25 @@ class DesignShotsTest {
     @Test fun splash() = shot("0-splash", 1300) { SplashScreen(onDone = {}) }
     @Test fun login() = shot("6-login", 900) { AuthScreen() }
 
-    @Test fun riderHome() = shot("R1-rider-home") {
+    private fun rider(name: String, fs: RiderFlowState, list: List<Trip>) = shot(name) {
         Box(Modifier.fillMaxSize()) {
-            RiderTripsView("محمد", listOf(t1, t2, t3), false, 0, {}, -1, {}) { t ->
-                AmberBtn("احجز") {}
-            }
+            RiderFlow("محمد", fs, list, false) { AmberBtn("احجز") {} }
             Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                VantaNav(listOf(1 to "الرحلات", 2 to "حجوزاتي"), 0)
+                VantaNav(listOf(1 to "الرحلات", 2 to "حجوزاتي", 7 to "اشتراكات"), 0)
             }
         }
     }
 
-    @Test fun riderFiltered() = shot("R2-rider-filtered") {
+    @Test fun riderStart() = rider("R1-where-to", RiderFlowState(), emptyList())
+    @Test fun riderSouth() = rider("R2-south", RiderFlowState(step = 1, group = G_SOUTH), emptyList())
+    @Test fun riderNorth() = rider("R3-north", RiderFlowState(step = 1, group = G_NORTH), emptyList())
+    @Test fun riderInner() = rider("R4-inner", RiderFlowState(step = 1, group = G_INNER, place = "الشجرة"), emptyList())
+    @Test fun riderResults() = rider("R5-results", RiderFlowState(step = 2, group = G_SOUTH, road = "شارع الأردن", place = "", day = 0), listOf(t1))
+    @Test fun riderSoon() = shot("R6-soon") {
         Box(Modifier.fillMaxSize()) {
-            RiderTripsView("محمد", listOf(t1), false, 1, {}, 0, {}) { AmberBtn("احجز") {} }
+            SoonScreen()
             Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                VantaNav(listOf(1 to "الرحلات", 2 to "حجوزاتي"), 0)
+                VantaNav(listOf(1 to "الرحلات", 2 to "حجوزاتي", 7 to "اشتراكات"), 2)
             }
         }
     }

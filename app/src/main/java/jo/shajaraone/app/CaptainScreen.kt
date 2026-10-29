@@ -172,19 +172,18 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
 
 // ===== Publish: direction, place, village, day, time, seats =====
 
-private val capDests = listOf("عمّان", "الزرقاء", "إربد")
-
 @Composable
 internal fun CapPublishPreview() = CapPublish(UserProfile(name = "أحمد", phone = "0790000000"), onBack = {})
 
-@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
     val ctx = LocalContext.current
-    var back by rememberSaveable { mutableStateOf(false) }       // false = going out (رايح), true = coming home (راجع)
-    var dest by rememberSaveable { mutableStateOf("") }
+    var group by rememberSaveable { mutableStateOf("") }       // الجنوب / الشمال / داخل الشمال
+    var road by rememberSaveable { mutableStateOf("") }
+    var stop by rememberSaveable { mutableStateOf("") }
     var village by rememberSaveable { mutableStateOf("") }
-    var road by rememberSaveable { mutableStateOf("شارع الأردن") }
+    var spot by rememberSaveable { mutableStateOf("") }
     var day by rememberSaveable { mutableIntStateOf(0) }
     var minutes by rememberSaveable { mutableIntStateOf(-1) }
     var seats by rememberSaveable { mutableIntStateOf(3) }
@@ -192,7 +191,7 @@ private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
     var showTime by remember { mutableStateOf(false) }
     var sending by remember { mutableStateOf(false) }
 
-    val inner = dest == "إربد"
+    val inner = group == "داخل الشمال"
     val priceChips = if (inner) listOf("1", "1.5") else listOf("3", "3.5", "4", "4.5", "5")
     val villages = if (inner) northVillages else northPlaces
     val maxSeats = me.maxSeats.coerceIn(1, 8)
@@ -206,21 +205,22 @@ private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
             Text("رحلة جديدة", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = CapInk)
         }
 
-        CapSection("الاتجاه") {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                CapChip("رايح", !back, Modifier.weight(1f)) { back = false }
-                CapChip("راجع", back, Modifier.weight(1f)) { back = true }
+        CapSection("لوين رايح؟") {
+            CapGrid(listOf("الجنوب", "الشمال", "داخل الشمال"), group, 3) { group = it; priceStr = ""; if (it == "داخل الشمال" && village == "إربد") village = "" }
+        }
+        if (group == "الجنوب" || group == "الشمال") {
+            CapSection("من أي طريق؟") {
+                CapGrid(southRoads.keys.toList(), road, 3) { road = it; stop = "" }
+            }
+            if (road.isNotBlank()) CapSection("المنطقة (اختياري)") {
+                CapGrid(listOf("أي منطقة") + (southRoads[road] ?: emptyList()), if (stop.isBlank()) "أي منطقة" else stop, 3) { stop = if (it == "أي منطقة") "" else it }
             }
         }
-        CapSection(if (back) "راجع من وين؟" else "رايح لوين؟") {
-            CapGrid(capDests, dest, 3) {
-                dest = it; priceStr = ""
-                if (it == "إربد" && village == "إربد") village = ""
-            }
-            if (dest == "عمّان") CapGrid(listOf("شارع الأردن", "طريق صويلح"), road, 2) { road = it }
-        }
-        CapSection(if (back) "لأي بلد بالشمال؟" else "من أي بلد بالشمال؟") {
+        if (group.isNotBlank()) CapSection(if (group == "الشمال") "لأي بلد بالشمال؟" else "من أي بلد بالشمال؟") {
             CapGrid(villages, village, 3) { village = it }
+        }
+        if (inner && village.isNotBlank()) CapSection("وين بإربد؟") {
+            CapGrid(irbidSpots, spot, 1) { spot = it }
         }
         CapSection("اليوم والساعة") {
             CapDays(pillDays(5), day) { day = it }
@@ -244,15 +244,19 @@ private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
         CapBtn(if (sending) "جاري النشر..." else "انشر الرحلة", Modifier.fillMaxWidth(), height = 58.dp) {
             val departAt = if (minutes >= 0) dayStart(day) + minutes * 60_000L else 0L
             when {
-                dest.isBlank() -> toast(ctx, "اختر الوجهة")
+                group.isBlank() -> toast(ctx, "اختر وين رايح")
+                !inner && road.isBlank() -> toast(ctx, "اختر الطريق")
                 village.isBlank() -> toast(ctx, "اختر البلد")
                 minutes < 0 -> toast(ctx, "اختر الساعة")
                 departAt < System.currentTimeMillis() -> toast(ctx, "هالوقت فات، اختر وقت جاي")
                 sending -> {}
                 else -> {
-                    val roadField = when (dest) { "إربد" -> NORTH_INNER; "الزرقاء" -> "طريق الزرقاء"; else -> road }
-                    val from = if (back) dest else village
-                    val to = if (back) village else dest
+                    val southPlace = stop.ifBlank { if (road == "طريق الزرقاء") ZARQA else AMMAN }
+                    val (from, to, roadField) = when (group) {
+                        "الجنوب" -> Triple(village, southPlace, road)
+                        "الشمال" -> Triple(southPlace, village, road)
+                        else -> Triple(village, spot.ifBlank { "إربد" }, NORTH_INNER)
+                    }
                     sending = true
                     Repo.publishTrip(
                         Trip(
@@ -281,8 +285,6 @@ private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
         )
     }
 }
-
-
 
 /** One button to start sharing the live location, one to stop. */
 @Composable
