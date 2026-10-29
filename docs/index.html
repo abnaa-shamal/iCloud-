@@ -37,7 +37,8 @@ h2{font-size:20px;font-weight:900}
 .rider{background:var(--amber);color:#000}
 .cap{background:var(--blue);color:#fff}
 .arrow{font-size:22px}
-.car{display:block;width:150px;margin:6px auto 0;animation:drive 5s ease-in-out infinite alternate}
+.cap-card{background:linear-gradient(160deg,rgba(61,139,255,.16),rgba(255,255,255,.02) 40%),linear-gradient(#303136,#1c1d20)}
+.car{display:block;width:150px;margin:0 0 6px;animation:drive 5s ease-in-out infinite alternate}
 @keyframes drive{from{transform:translateX(-60px)}to{transform:translateX(60px)}}
 .steps{list-style:none;padding:0;counter-reset:s;display:grid;gap:10px;margin-top:12px}
 .steps li{counter-increment:s;display:flex;gap:12px;align-items:flex-start;font-size:15.5px}
@@ -58,29 +59,19 @@ footer{text-align:center;color:var(--dim);font-size:13px;padding:26px 0 40px}
   </div>
 </header>
 <main class="wrap">
-  <section class="glass">
-    <h2>نزّل التطبيق</h2>
-    <p class="sub">التحميل مباشر ومجاني، وبيتحدث لحاله.</p>
+  <section class="glass app rider-card">
     <svg class="car" viewBox="0 0 150 60"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6e6e9"/><stop offset="1" stop-color="#55555b"/></linearGradient></defs><path d="M6 46V36q1-6 8-8l14-3 14-15q3-3 9-3h30q7 0 11 6l11 12 17 3q6 2 6 9v9z" fill="url(#g)"/><path d="M38 26 49 14h18v12zM73 26V14h12q4 0 7 5l7 7z" fill="#16161a"/><circle cx="38" cy="47" r="10" fill="#050506"/><circle cx="38" cy="47" r="6" fill="#3a3a3f"/><circle cx="116" cy="47" r="10" fill="#050506"/><circle cx="116" cy="47" r="6" fill="#3a3a3f"/></svg>
-    <a class="btn rider" id="dl-rider" href="#"><span>تطبيق العميل<small>احجز مقعد برحلة</small></span><span class="arrow">⬇</span></a>
-    <a class="btn cap" id="dl-cap" href="#"><span>تطبيق الكابتن<small>انشر رحلتك واستقبل الحجوزات</small></span><span class="arrow">⬇</span></a>
-    <p class="note" id="ver"></p>
+    <h2>تطبيق العميل</h2>
+    <p class="sub">احجز مقعدك بخطوتين.</p>
+    <a class="btn rider" id="dl-rider" href="#"><span>تحميل</span><span class="arrow">⬇</span></a>
   </section>
-
-  <section class="glass">
-    <h2>كيف أثبّته؟</h2>
-    <ol class="steps">
-      <li>اضغط الزر ونزّل الملف.</li>
-      <li>افتح الملف من التنزيلات، واذا طلب «السماح بالتثبيت من هذا المصدر» وافق.</li>
-      <li>افتح التطبيق وسجّل حسابك. الكابتن بيستنى موافقة المشرف.</li>
-    </ol>
-    <p class="note">اذا ظهرت رسالة تحذير من المتصفح، اضغط «احتفظ بالملف». التطبيق موقّع وآمن.</p>
+  <section class="glass app cap-card">
+    <h2>تطبيق الكابتن</h2>
+    <p class="sub">انشر رحلتك ووافق على الطلبات.</p>
+    <a class="btn cap" id="dl-cap" href="#"><span>تحميل</span><span class="arrow">⬇</span></a>
   </section>
-
-  <section class="glass soon">
-    <div style="flex:1"><h2>اشتراكات شهرية</h2><p class="sub">سيارات مشاهرة للمعلمات وطلاب المدارس والجامعات بأفضل الأسعار.</p></div>
-    <span class="badge">قريباً</span>
-  </section>
+  <p class="note" id="ver" style="text-align:center"></p>
+  <p class="note" style="text-align:center">بعد التنزيل افتح الملف ووافق على «السماح بالتثبيت من هذا المصدر».</p>
 </main>
 <footer dir="ltr">Developed &amp; Designed by <b style="color:#f4f4f6">Abo-tala</b></footer>
 <script>
