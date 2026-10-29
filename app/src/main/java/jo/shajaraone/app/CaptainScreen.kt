@@ -86,22 +86,19 @@ private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).imePadding().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("نشر رحلة جديدة", style = MaterialTheme.typography.headlineSmall)
-        AppCard {
-            Text("١. الخط", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+        SeatsRingHeader(seats, me.maxSeats.coerceIn(1, 8))
+        GlassStep("١", "الخط") {
             RoutePicker(route, allowAll = false)
         }
 
-        AppCard {
-            Text("٢. الوقت", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+        GlassStep("٢", "الوقت") {
             WhenPicker(
                 dayOffset = day.takeIf { it >= 0 }, minutes = minutes.takeIf { it >= 0 },
                 onDay = { day = it ?: -1 }, onMinutes = { minutes = it ?: -1 }, allowClear = false
             )
         }
 
-        AppCard {
-            Text("٣. المقاعد والسعر", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+        GlassStep("٣", "المقاعد والسعر") {
             SectionLabel("كم مقعد فاضي؟ (اضغط على المقعد)")
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 for (i in 1..me.maxSeats.coerceIn(1, 8)) {
@@ -128,8 +125,7 @@ private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
             }
         }
 
-        AppCard {
-            Text("٤. تفاصيل إضافية", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+        GlassStep("٤", "تفاصيل إضافية") {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("بقبل أمانات بهالرحلة", modifier = Modifier.weight(1f))
                 Switch(checked = parcels, onCheckedChange = { parcels = it })

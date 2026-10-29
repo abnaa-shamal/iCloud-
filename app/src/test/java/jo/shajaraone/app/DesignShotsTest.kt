@@ -146,6 +146,24 @@ class DesignShotsTest {
         }
     }
 
+    @Test fun capPublish() = ledgerShot("P1-publish") {
+        Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SeatsRingHeader(3, 4)
+            GlassStep("١", "الخط") {
+                SectionLabel("من وين؟")
+                ChoiceChips(listOf("الطرة", "الذنيبة", "عمراوة"), "عمراوة") {}
+                SectionLabel("لوين؟")
+                ChoiceChips(listOf("إربد", "عمّان", "الزرقاء"), "إربد") {}
+            }
+            GlassStep("٢", "الوقت") { ScrollChips(listOf("0" to "اليوم", "1" to "غداً"), "0") {} }
+            GlassStep("٣", "المقاعد والسعر") {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { for (i in 1..4) SeatShape(if (i <= 3) SeatState.PICKED else SeatState.FREE, 38.dp) {} }
+                ScrollChips(listOf("1", "1.5", "2", "3").map { it to "$it د.أ" }, "1") {}
+            }
+            LedgerPrimaryButton("انشر الرحلة", {})
+        }
+    }
+
     @Test fun ledgerHome() = ledgerShot("L1-ledger-home") {
         Column(Modifier.fillMaxSize()) {
             LedgerTopBar("أهلاً محمد", "أبناء الشمال")

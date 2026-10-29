@@ -134,3 +134,31 @@ fun DestinationTabs(
         }
     }
 }
+
+/** One publishing step: glowing number badge + title, glass body. */
+@Composable
+fun GlassStep(num: String, title: String, content: @Composable ColumnScope.() -> Unit) {
+    Column(Modifier.fillMaxWidth().glass(22.dp).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(Modifier.size(30.dp).clip(CircleShape).background(Brush.linearGradient(listOf(Brand.Violet, Brand.Teal))), contentAlignment = Alignment.Center) {
+                Text(num, color = Color(0xFF1A0E00), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            }
+            Text(title, fontSize = 17.sp, fontWeight = FontWeight.Light, color = Color.White)
+        }
+        content()
+    }
+}
+
+/** Top of the publish screen: the ring fills with the seats on offer. */
+@Composable
+fun SeatsRingHeader(seats: Int, max: Int) {
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("نشر رحلة جديدة", fontSize = 15.sp, color = Color(0x99FFFFFF))
+        GlowRing(seats.toFloat() / max.coerceAtLeast(1), 170.dp, 7.dp) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("$seats", fontSize = 56.sp, fontWeight = FontWeight.ExtraLight, color = Color.White, lineHeight = 60.sp)
+                Text("مقعد فاضي", fontSize = 12.sp, color = Brand.Violet)
+            }
+        }
+    }
+}
