@@ -2,7 +2,7 @@ name: Build signed APK
 
 on:
   push:
-    branches: [main]
+    branches: [main, v2]
   workflow_dispatch:
 
 permissions:
@@ -153,7 +153,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "build-${{ github.run_number }}" \
+          # main = real release (apps offer it as an update). Any other branch = a preview with a tag the updater ignores.
+          if [ "${{ github.ref_name }}" = "main" ]; then TAG="build-${{ github.run_number }}"; else TAG="preview-${{ github.ref_name }}-${{ github.run_number }}"; fi
+          gh release create "$TAG" \
             app/build/outputs/apk/rider/release/*.apk \
             app/build/outputs/apk/captain/release/*.apk \
             admin-app/build/outputs/apk/release/*.apk \
