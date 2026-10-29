@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
  * «Neon glass» building blocks: glow ring, sliding tabs, glass nav, ride tile, spring press, shimmer.
  * All colors come from Brand (cyan = Violet token, pink = Teal token), so Theme.kt stays the single place to recolor.
  */
+private const val ALL = "all"
 private val GlassFill = Brush.verticalGradient(listOf(Color(0x26FFFFFF), Color(0x0AFFFFFF)))
 
 fun Modifier.glass(radius: Dp = 22.dp): Modifier {
@@ -148,7 +149,7 @@ fun RideTile(t: Trip, modifier: Modifier = Modifier, actions: @Composable Column
                 if (t.road.isNotBlank()) Text("عن طريق ${t.road}", fontSize = 12.sp, color = Color(0x99FFFFFF))
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                if (t.status == "full") Text("مكتملة", color = Brand.Teal, fontWeight = FontWeight.Bold)
+                if (t.seatsFree <= 0L) Text("مكتملة", color = Brand.Teal, fontWeight = FontWeight.Bold)
                 else {
                     SeatDots(t.seatsFree.toInt(), t.seatsTotal.toInt())
                     Text("${t.seatsFree} من ${t.seatsTotal} فاضي", fontSize = 12.sp, color = Color(0xCCFFFFFF), modifier = Modifier.padding(top = 6.dp))
