@@ -75,12 +75,13 @@ private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
     var note by rememberSaveable { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
 
-    // Inside-north trips default to a fixed 1 JD; everything else to «حسب الاتفاق», until the captain touches the price.
-    LaunchedEffect(route.kind) {
-        val d = defaultFixedPrice(route.kind)
-        fixedPrice = d != null
-        priceStr = if (d != null) "1" else ""
-    }
+    // The price is optional: by default «حسب الاتفاق». Inside the north: 1 JD morning / 1.5 JD evening. South: 3.5 to 5 JD.
+    LaunchedEffect(route.kind) { fixedPrice = false; priceStr = "" }
+    val priceChips = if (route.kind == KIND_NN) listOf("1", "1.5") else listOf("3.5", "4", "4.5", "5")
+    val priceMin = priceChips.first().toDouble()
+    val priceMax = priceChips.last().toDouble()
+    fun suggestedPrice(): String =
+        if (route.kind == KIND_NN) (if (minutes >= 12 * 60) "1.5" else "1") else "4"
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).imePadding().padding(16.dp),
@@ -107,20 +108,16 @@ private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
                 Spacer(Modifier.weight(1f))
                 Text("$seats", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
             }
-            SectionLabel("السعر للراكب")
-            ChoiceChips(listOf("سعر محدد", "حسب الاتفاق"), if (fixedPrice) "سعر محدد" else "حسب الاتفاق") {
+            SectionLabel("السعر للراكب (اختياري)")
+            ChoiceChips(listOf("حسب الاتفاق", "سعر محدد"), if (fixedPrice) "سعر محدد" else "حسب الاتفاق") {
                 fixedPrice = it == "سعر محدد"
-                if (fixedPrice && priceStr.isBlank()) priceStr = "1"
+                if (fixedPrice && priceStr.isBlank()) priceStr = suggestedPrice()
             }
             if (fixedPrice) {
-                ScrollChips(listOf("1", "1.5", "2", "3", "5").map { it to "$it د.أ" }, priceStr) { priceStr = it }
-                OutlinedTextField(
-                    value = priceStr,
-                    onValueChange = { v -> priceStr = v.filter { it.isDigit() || it == '.' }.take(5) },
-                    label = { Text("السعر") }, suffix = { Text("دينار") }, singleLine = true,
-                    shape = MaterialTheme.shapes.medium,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth()
+                ScrollChips(priceChips.map { it to "$it د.أ" }, priceStr) { priceStr = it }
+                Text(
+                    if (route.kind == KIND_NN) "داخل الشمال: دينار صباحاً ودينار ونص مساءً" else "الجنوب: من 3.5 إلى 5 دنانير، والباقي باتفاقك مع الراكب",
+                    fontSize = 12.sp, color = androidx.compose.ui.graphics.Color(0x99FFFFFF)
                 )
             }
         }
@@ -145,7 +142,7 @@ private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
                 day < 0 -> toast(ctx, "اختار اليوم")
                 minutes < 0 -> toast(ctx, "اختار ساعة الانطلاق")
                 departAt < System.currentTimeMillis() -> toast(ctx, "هالوقت فات، اختار وقت جاي")
-                fixedPrice && (price == null || price <= 0.0) -> toast(ctx, "اكتب السعر صح")
+                fixedPrice && (price == null || price < priceMin || price > priceMax) -> toast(ctx, "السعر لازم يكون من $priceMin إلى $priceMax دينار، أو اختر حسب الاتفاق")
                 else -> {
                     sending = true
                     Repo.publishTrip(
