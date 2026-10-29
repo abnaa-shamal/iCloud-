@@ -9,6 +9,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 
     <application
@@ -39,5 +40,14 @@
             android:name=".CapMeterService"
             android:exported="false"
             android:foregroundServiceType="location" />
+
+        <service
+            android:name=".CapReceiveService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Keeps the captain online to receive seat booking requests instantly while he has a published trip" />
+        </service>
     </application>
 </manifest>

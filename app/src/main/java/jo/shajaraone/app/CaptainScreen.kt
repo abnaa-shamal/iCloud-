@@ -43,16 +43,23 @@ fun CaptainHome(me: UserProfile) {
     val feedbackCtx = LocalContext.current
     var lastPending by remember { mutableIntStateOf(-1) }
     LaunchedEffect(pending) {
-        if (lastPending >= 0 && pending > lastPending) AppFeedback.newRequest(feedbackCtx)
+        if (lastPending >= 0 && pending > lastPending) { AppFeedback.newRequest(feedbackCtx); tab = 1 }
         lastPending = pending
+    }
+    val online = trips != null && trips!!.any { it.status != TRIP_CANCELLED && it.departAt > System.currentTimeMillis() - 4 * 3_600_000L }
+    LaunchedEffect(online, trips != null) {
+        if (trips != null) { if (online) CapReceiveService.start(feedbackCtx) else CapReceiveService.stop(feedbackCtx) }
     }
     CompositionLocalProvider(LocalContentColor provides CapInk) {
         Box(Modifier.fillMaxSize().background(CapBg)) {
-            if (tab == 1) CapPublish(me, onBack = { tab = 0 })
-            else if (tab == 2) CapToolsScreen()
-            else CapDashboard(me.name.trim().substringBefore(" "), trips, bookings)
+            when (tab) {
+                0 -> CapPublish(me, online, onPublished = { tab = 1 })
+                1 -> CapDashboard(me.name.trim().substringBefore(" "), trips, bookings)
+                2 -> CapToolsScreen()
+                else -> CapSettingsScreen(trips, bookings)
+            }
             Box(Modifier.align(Alignment.BottomCenter)) {
-                CapNav(listOf(Triple(0, "الرئيسية", pending), Triple(6, "رحلة جديدة", 0), Triple(5, "أدوات", 0)), tab) { tab = it }
+                CapNav(listOf(Triple(0, "الرئيسية", 0), Triple(2, "طلبات", pending), Triple(1, "أدوات", 0), Triple(5, "إعدادات", 0)), tab) { tab = it }
             }
         }
     }
@@ -70,7 +77,6 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
     val pend = bookings.filter { it.status == BK_PENDING && it.departAt > now }.sortedBy { it.departAt }
     val active = (trips ?: emptyList()).filter { it.status != TRIP_CANCELLED && it.departAt > now - 4 * 3_600_000L }.sortedBy { it.departAt }
 
-    val past = (trips ?: emptyList()).filter { t -> active.none { it.id == t.id } }.sortedByDescending { it.departAt }
     Box(Modifier.fillMaxSize()) {
         androidx.compose.foundation.lazy.LazyColumn(
             Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 44.dp, bottom = 170.dp),
@@ -78,7 +84,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
         ) {
             item {
                 Column {
-                    Text("أهلاً كابتن $name", fontSize = 14.sp, color = CapMute)
+                    Text("طلبات الحجز • أهلاً كابتن $name", fontSize = 14.sp, color = CapMute)
                     Text(if (pend.isEmpty()) "ما في طلبات جديدة" else if (pend.size == 1) "طلب واحد بانتظارك" else "${pend.size} طلبات بانتظارك",
                         fontSize = 28.sp, fontWeight = FontWeight.Bold, color = CapInk)
                 }
@@ -151,8 +157,48 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
                     }
                 }
             }
-            if (past.isNotEmpty()) {
-                item { Text("سجل رحلاتي", Modifier.padding(top = 14.dp), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = CapInk) }
+        }
+    }
+
+    cancelTrip?.let { t ->
+        ReasonDialog(
+            title = "إلغاء رحلة ${t.from} ← ${t.to}؟", confirmText = "ألغِ الرحلة", onDismiss = { cancelTrip = null },
+            onConfirm = { reason ->
+                val act = bookings.filter { it.tripId == t.id && it.isActive }
+                Repo.cancelTrip(t, reason, act) { ok -> toast(ctx, if (ok) "انلغت الرحلة" else "ما قدرت ألغي، جرّب كمان مرة") }
+                cancelTrip = null
+            }
+        )
+    }
+    cancelBooking?.let { b ->
+        ReasonDialog(
+            title = "إلغاء حجز ${b.passengerName}؟", confirmText = "ألغِ الحجز", onDismiss = { cancelBooking = null },
+            onConfirm = { reason ->
+                Repo.cancelBooking(b, BK_CANCELLED_CAPTAIN, reason) { ok -> toast(ctx, if (ok) "انلغى الحجز" else "ما قدرت ألغي، جرّب كمان مرة") }
+                cancelBooking = null
+            }
+        )
+    }
+}
+
+
+// ===== Settings: trip history (more later) =====
+
+@Composable
+fun CapSettingsScreen(trips: List<Trip>?, bookings: List<Booking>) {
+    var open by rememberSaveable { mutableStateOf("") }
+    val now = System.currentTimeMillis()
+    val past = (trips ?: emptyList()).filter { t -> !(t.status != TRIP_CANCELLED && t.departAt > now - 4 * 3_600_000L) }.sortedByDescending { it.departAt }
+    androidx.compose.foundation.lazy.LazyColumn(
+        Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 44.dp, bottom = 170.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item { Text("الإعدادات", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk) }
+        item { Text("سجل الرحلات", Modifier.padding(top = 6.dp), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = CapInk) }
+        if (past.isEmpty()) item {
+            Box(Modifier.fillMaxWidth().capCard().padding(24.dp), contentAlignment = Alignment.Center) { Text("ما في رحلات سابقة", color = CapMute) }
+        }
+            run {
                 items(past.size, key = { "h" + past[it].id }) { i ->
                     val t = past[i]
                     val riders = bookings.filter { it.tripId == t.id && it.status == BK_ACCEPTED }
@@ -184,34 +230,13 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
                     }
                 }
             }
-        }
-    }
-
-    cancelTrip?.let { t ->
-        ReasonDialog(
-            title = "إلغاء رحلة ${t.from} ← ${t.to}؟", confirmText = "ألغِ الرحلة", onDismiss = { cancelTrip = null },
-            onConfirm = { reason ->
-                val act = bookings.filter { it.tripId == t.id && it.isActive }
-                Repo.cancelTrip(t, reason, act) { ok -> toast(ctx, if (ok) "انلغت الرحلة" else "ما قدرت ألغي، جرّب كمان مرة") }
-                cancelTrip = null
-            }
-        )
-    }
-    cancelBooking?.let { b ->
-        ReasonDialog(
-            title = "إلغاء حجز ${b.passengerName}؟", confirmText = "ألغِ الحجز", onDismiss = { cancelBooking = null },
-            onConfirm = { reason ->
-                Repo.cancelBooking(b, BK_CANCELLED_CAPTAIN, reason) { ok -> toast(ctx, if (ok) "انلغى الحجز" else "ما قدرت ألغي، جرّب كمان مرة") }
-                cancelBooking = null
-            }
-        )
     }
 }
 
 // ===== Publish: direction, place, village, day, time, seats =====
 
 @Composable
-internal fun CapPublishPreview() = CapPublish(UserProfile(name = "أحمد", phone = "0790000000"), onBack = {})
+internal fun CapPublishPreview() = CapPublish(UserProfile(name = "أحمد", phone = "0790000000"), false, onPublished = {})
 
 @Composable
 internal fun CapBigChoice(title: String, sub: String, index: Int, onClick: () -> Unit) {
@@ -270,7 +295,7 @@ internal fun CapBackBar(title: String, onBack: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
+private fun CapPublish(me: UserProfile, online: Boolean, onPublished: () -> Unit) {
     val ctx = LocalContext.current
     var step by rememberSaveable { mutableIntStateOf(0) }      // 0 = direction, 1 = place, 2 = time and publish
     var group by rememberSaveable { mutableStateOf("") }       // الجنوب / الشمال / داخل الشمال
@@ -297,16 +322,19 @@ private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
             step == 2 -> step = 1
             step == 1 && !inner && road.isNotBlank() -> { road = ""; stop = ""; village = "" }
             step == 1 -> { step = 0; group = ""; road = ""; stop = ""; village = ""; spot = "" }
-            else -> onBack()
+            else -> {}
         }
     }
-    BackHandler { goBack() }
+    BackHandler(enabled = step > 0) { goBack() }
 
     val colMod = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 44.dp, bottom = 170.dp)
     when (step) {
         0 -> Column(colMod, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            CapBackBar("رحلة جديدة") { onBack() }
-            Text("لوين رايح؟", Modifier.padding(top = 6.dp, bottom = 4.dp), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.size(10.dp).clip(androidx.compose.foundation.shape.CircleShape).background(if (online) Color(0xFF34C759) else CapMute))
+                Text(if (online) "أونلاين: عندك رحلة منشورة" else "أوفلاين: ما عندك رحلة منشورة", fontSize = 13.sp, color = if (online) Color(0xFF34C759) else CapMute)
+            }
+            Text("وجهة انطلاقك؟", Modifier.padding(top = 6.dp, bottom = 4.dp), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk)
             CapBigChoice("الشمال", northPlaces.joinToString(" • "), 0) { group = "الشمال"; priceStr = ""; step = 1 }
             CapBigChoice("الجنوب", "عمّان والزرقاء", 1) { group = "الجنوب"; priceStr = ""; step = 1 }
             CapBigChoice("داخل الشمال", (northVillages + "إربد").joinToString(" • "), 2) { group = "داخل الشمال"; priceStr = ""; step = 1 }
@@ -386,7 +414,7 @@ private fun CapPublish(me: UserProfile, onBack: () -> Unit) {
                             )
                         ) { ok ->
                             sending = false
-                            if (ok) { toast(ctx, "تم نشر الرحلة ✅"); onBack() }
+                            if (ok) { toast(ctx, "تم نشر الرحلة ✅"); onPublished() }
                             else toast(ctx, "ما قدرت أنشر. تأكد من الإنترنت ومن موافقة المشرف على حسابك")
                         }
                     }
