@@ -27,10 +27,10 @@ import androidx.compose.ui.unit.dp
  * so a new look is mostly a matter of editing this block (plus NightColors below for the Material roles).
  */
 object Brand {
-    val Violet = Color(0xFF29D9FF)       // main actions, selected items, logo
-    val VioletSoft = Color(0xFF6FD3EA)   // outlines and the car drawing
-    val VioletLight = Color(0xFF9BE7FF)  // subtitles, selected navigation, soft highlights
-    val Teal = Color(0xFFFF4D7E)         // highlights: prices, free seats, links, live status
+    val Violet = Color(0xFFFFB020)       // main actions, selected items, logo
+    val VioletSoft = Color(0xFFE8B25A)   // outlines and the car drawing
+    val VioletLight = Color(0xFFFFD58A)  // subtitles, selected navigation, soft highlights
+    val Teal = Color(0xFFFF5A36)         // highlights: prices, free seats, links, live status
     val Navy = Color(0xFF05070D)         // base background
     val Ink = Color(0xFFF4F7FF)          // main text
     val Muted = Color(0xFFA9B4CC)        // secondary text
@@ -45,9 +45,9 @@ object Brand {
 // "Night" palette: deep navy, violet actions, teal highlights. The app is always dark.
 private val NightColors = darkColorScheme(
     primary = Brand.Violet,
-    onPrimary = Color(0xFF03121A),
-    primaryContainer = Color(0xFF0B3F4E),
-    onPrimaryContainer = Color(0xFFCFF6FF),
+    onPrimary = Color(0xFF1A0E00),
+    primaryContainer = Color(0xFF4A3000),
+    onPrimaryContainer = Color(0xFFFFEBC8),
     secondary = Brand.Teal,
     onSecondary = Brand.OnTeal,
     secondaryContainer = Color(0xFF5A1230),

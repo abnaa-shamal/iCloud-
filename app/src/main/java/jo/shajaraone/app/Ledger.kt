@@ -188,7 +188,7 @@ fun LedgerPrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = 
             .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(Brand.Violet, Brand.Teal)))
             .clickable { AppFeedback.tap(ctx); onClick() },
         contentAlignment = Alignment.Center
-    ) { Text(text, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White) }
+    ) { Text(text, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1A0E00)) }
 }
 
 /** Seat lamps: lit = free seat (cyan to pink glow), dim = taken. */

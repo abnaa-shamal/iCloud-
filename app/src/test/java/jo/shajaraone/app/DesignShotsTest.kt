@@ -118,7 +118,7 @@ class DesignShotsTest {
         }
     }
 
-    @Test fun destSwipe() = ledgerShot("D1-dest-swipe") {
+    @Test fun destSwipe() = ledgerShot("E1-ember-swipe") {
         Column(Modifier.fillMaxSize()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 DestinationTabs(1, {}, false, {}, "", {}, -1, {})
