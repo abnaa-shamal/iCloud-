@@ -24,19 +24,19 @@ import androidx.compose.ui.unit.sp
 /** Option 1: ONE ride fills the screen; swipe sideways for the next one. The ring IS the card. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun RideSwipe(trips: List<Trip>, modifier: Modifier = Modifier, bookedMode: Boolean = false, actions: @Composable ColumnScope.(Trip) -> Unit) {
+fun RideSwipe(trips: List<Trip>, modifier: Modifier = Modifier, bookedMode: Boolean = false, ringSize: androidx.compose.ui.unit.Dp = 250.dp, actions: @Composable ColumnScope.(Trip) -> Unit) {
     val pager = rememberPagerState { trips.size }
     Column(modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         HorizontalPager(pager, Modifier.weight(1f), pageSpacing = 16.dp) { i ->
             val t = trips[i]
             Column(Modifier.fillMaxSize().verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 Text(dayName(t.departAt), fontSize = 13.sp, color = Color(0x99FFFFFF))
-                Text(clockText(t.departAt), fontSize = 54.sp, fontWeight = FontWeight.ExtraLight, color = Color.White)
+                Text(clockText(t.departAt), fontSize = if (bookedMode) 40.sp else 54.sp, fontWeight = FontWeight.ExtraLight, color = Color.White)
                 Spacer(Modifier.height(8.dp))
                 val shownCount = if (bookedMode) (t.seatsTotal - t.seatsFree) else t.seatsFree
-                GlowRing(shownCount.toFloat() / t.seatsTotal.coerceAtLeast(1), 250.dp, 8.dp) {
+                GlowRing(shownCount.toFloat() / t.seatsTotal.coerceAtLeast(1), if (bookedMode) 170.dp else ringSize, 8.dp) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("$shownCount", fontSize = 88.sp, fontWeight = FontWeight.ExtraLight, color = Color.White, lineHeight = 90.sp)
+                        Text("$shownCount", fontSize = if (bookedMode) 56.sp else 88.sp, fontWeight = FontWeight.ExtraLight, color = Color.White, lineHeight = 60.sp)
                         Text(if (bookedMode) "مقعد محجوز من ${t.seatsTotal}" else "مقعد فاضي من ${t.seatsTotal}", fontSize = 13.sp, color = Brand.Violet)
                     }
                 }
