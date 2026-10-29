@@ -27,11 +27,11 @@ import androidx.compose.ui.unit.dp
  * so a new look is mostly a matter of editing this block (plus NightColors below for the Material roles).
  */
 object Brand {
-    val Violet = Color(0xFFFFB020)       // main actions, selected items, logo
-    val VioletSoft = Color(0xFFE8B25A)   // outlines and the car drawing
-    val VioletLight = Color(0xFFFFD58A)  // subtitles, selected navigation, soft highlights
-    val Teal = Color(0xFFFF5A36)         // highlights: prices, free seats, links, live status
-    val Navy = Color(0xFF05070D)         // base background
+    val Violet = Color(0xFFF2B300)       // main actions, selected items, logo
+    val VioletSoft = Color(0xFFD9A200)   // outlines and the car drawing
+    val VioletLight = Color(0xFFFFD866)  // subtitles, selected navigation, soft highlights
+    val Teal = Color(0xFFFFE08A)         // highlights: prices, free seats, links, live status
+    val Navy = Color(0xFF000000)         // base background
     val Ink = Color(0xFFF4F7FF)          // main text
     val Muted = Color(0xFFA9B4CC)        // secondary text
     val OnTeal = Color(0xFFFFFFFF)       // text on top of teal
@@ -108,42 +108,9 @@ fun ShajaraTheme(content: @Composable () -> Unit) {
 /** The app background: deep space with twinkling stars and slowly drifting colored glows. */
 @Composable
 fun AppBackground(content: @Composable () -> Unit) {
-    val inf = androidx.compose.animation.core.rememberInfiniteTransition(label = "space")
-    val tw by inf.animateFloat(
-        0f, 1f,
-        androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(5000, easing = androidx.compose.animation.core.LinearEasing)),
-        label = "twinkle"
-    )
-    val drift by inf.animateFloat(
-        0f, 1f,
-        androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(18000, easing = androidx.compose.animation.core.LinearEasing)),
-        label = "drift"
-    )
-    val stars = androidx.compose.runtime.remember {
-        val r = kotlin.random.Random(7)
-        List(90) { floatArrayOf(r.nextFloat(), r.nextFloat(), 0.6f + r.nextFloat() * 1.6f, r.nextFloat()) }
-    }
-    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF05070D), Color(0xFF070B14), Color(0xFF0A0710))))) {
-        androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
-            val w = size.width
-            val h = size.height
-            val two = (2 * Math.PI).toFloat()
-            fun orb(cx: Float, cy: Float, rad: Float, c: Color, phase: Float) {
-                val dx = kotlin.math.sin((drift + phase) * two) * 0.06f * w
-                val dy = kotlin.math.cos((drift + phase) * two) * 0.04f * h
-                drawCircle(
-                    Brush.radialGradient(listOf(c.copy(alpha = 0.55f), c.copy(alpha = 0f)), center = androidx.compose.ui.geometry.Offset(cx * w + dx, cy * h + dy), radius = rad),
-                    radius = rad, center = androidx.compose.ui.geometry.Offset(cx * w + dx, cy * h + dy)
-                )
-            }
-            orb(0.15f, 0.18f, w * 0.75f, Brand.Violet, 0f)
-            orb(0.92f, 0.52f, w * 0.7f, Brand.Teal, 0.33f)
-            orb(0.25f, 0.92f, w * 0.8f, Brand.Teal.copy(alpha = 0.5f), 0.66f)
-            stars.forEach { s ->
-                val a = 0.25f + 0.75f * ((kotlin.math.sin((tw + s[3]) * two) + 1f) / 2f)
-                drawCircle(Color.White.copy(alpha = a), radius = s[2], center = androidx.compose.ui.geometry.Offset(s[0] * w, s[1] * h))
-            }
-        }
+    androidx.compose.foundation.layout.Box(
+        androidx.compose.ui.Modifier.fillMaxSize().background(VantaPageBg)
+    ) {
         androidx.compose.runtime.CompositionLocalProvider(
             androidx.compose.material3.LocalContentColor provides Brand.Ink
         ) { content() }

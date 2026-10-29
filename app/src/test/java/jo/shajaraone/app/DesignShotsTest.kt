@@ -164,6 +164,24 @@ class DesignShotsTest {
         }
     }
 
+    @Test fun vRiderHome() = ledgerShot("R1-rider-home") {
+        Box(Modifier.fillMaxSize()) {
+            RiderHomeView("محمد", 1, {}, 1, {}, 0, {}, "", {}, listOf(t1, t2), {}, {})
+            Box(Modifier.align(androidx.compose.ui.Alignment.BottomCenter).fillMaxWidth(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                VantaNav(listOf(0 to "الرئيسية", 1 to "الرحلات", 2 to "حجوزاتي"), 0)
+            }
+        }
+    }
+
+    @Test fun vRiderTrips() = ledgerShot("R2-rider-trips") {
+        Box(Modifier.fillMaxSize()) {
+            RiderTripsView(listOf(t1, t2), false, 1, {}, 0, {}, 0, {}) { LedgerPrimaryButton("احجز مقعد", {}) }
+            Box(Modifier.align(androidx.compose.ui.Alignment.BottomCenter).fillMaxWidth(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                VantaNav(listOf(0 to "الرئيسية", 1 to "الرحلات", 2 to "حجوزاتي"), 1)
+            }
+        }
+    }
+
     @Test fun ledgerHome() = ledgerShot("L1-ledger-home") {
         Column(Modifier.fillMaxSize()) {
             LedgerTopBar("أهلاً محمد", "أبناء الشمال")
