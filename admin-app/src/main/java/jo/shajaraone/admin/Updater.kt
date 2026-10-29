@@ -15,7 +15,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /** Checks the public GitHub releases for a newer build of THIS app; shows a dialog with a download link. */
-private const val RELEASES_URL = "https://api.github.com/repos/khubaibalramdan489-source/iCloud-/releases?per_page=5"
+private const val RELEASES_URL = "https://api.github.com/repos/abnaa-shamal/iCloud-/releases?per_page=5"
 
 private class UpdateInfo(val build: Long, val url: String)
 
