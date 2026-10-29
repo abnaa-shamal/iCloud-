@@ -89,7 +89,7 @@ var REPO = "abnaa-shamal/iCloud-";
 fetch("https://api.github.com/repos/" + REPO + "/releases?per_page=5").then(function(r){return r.json()}).then(function(list){
   var best = {};
   list.forEach(function(rel){
-    var n = parseInt(String(rel.tag_name).replace("build-",""),10); if(!n) return;
+    var m = String(rel.tag_name).match(/(\d+)$/); var n = m ? parseInt(m[1],10) : 0; if(!n) return;
     (rel.assets||[]).forEach(function(a){
       var k = /-rider-/.test(a.name) ? "rider" : /-captain-/.test(a.name) ? "captain" : null;
       if(k && (!best[k] || n > best[k].n)) best[k] = {n:n, url:a.browser_download_url};
