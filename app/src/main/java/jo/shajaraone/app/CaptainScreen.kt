@@ -77,7 +77,7 @@ private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
 
     // The price is optional: by default «حسب الاتفاق». Inside the north: 1 JD morning / 1.5 JD evening. South: 3.5 to 5 JD.
     LaunchedEffect(route.kind) { fixedPrice = false; priceStr = "" }
-    val priceChips = if (route.kind == KIND_NN) listOf("1", "1.5") else listOf("3.5", "4", "4.5", "5")
+    val priceChips = if (route.kind == KIND_NN) listOf("1", "1.5") else listOf("3", "3.5", "4", "4.5", "5")
     val priceMin = priceChips.first().toDouble()
     val priceMax = priceChips.last().toDouble()
     fun suggestedPrice(): String =
@@ -115,8 +115,17 @@ private fun PublishTrip(me: UserProfile, onPublished: () -> Unit) {
             }
             if (fixedPrice) {
                 ScrollChips(priceChips.map { it to "$it د.أ" }, priceStr) { priceStr = it }
+                OutlinedTextField(
+                    value = priceStr,
+                    onValueChange = { v -> priceStr = v.filter { it.isDigit() || it == '.' }.take(4) },
+                    label = { Text("السعر (من $priceMin إلى $priceMax)") }, suffix = { Text("دينار") }, singleLine = true,
+                    shape = MaterialTheme.shapes.medium,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    isError = priceStr.toDoubleOrNull()?.let { it < priceMin || it > priceMax } ?: priceStr.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Text(
-                    if (route.kind == KIND_NN) "داخل الشمال: دينار صباحاً ودينار ونص مساءً" else "الجنوب: من 3.5 إلى 5 دنانير، والباقي باتفاقك مع الراكب",
+                    if (route.kind == KIND_NN) "داخل الشمال: دينار صباحاً ودينار ونص مساءً" else "الجنوب: من 3 إلى 5 دنانير، أو حسب الاتفاق مع الراكب",
                     fontSize = 12.sp, color = androidx.compose.ui.graphics.Color(0x99FFFFFF)
                 )
             }
