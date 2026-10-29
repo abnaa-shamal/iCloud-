@@ -50,15 +50,22 @@ fun CaptainHome(me: UserProfile) {
     LaunchedEffect(online, trips != null) {
         if (trips != null) { if (online) CapReceiveService.start(feedbackCtx) else CapReceiveService.stop(feedbackCtx) }
     }
-    CompositionLocalProvider(LocalContentColor provides CapInk) {
-        Box(Modifier.fillMaxSize().background(CapBg)) {
-            when (tab) {
-                0 -> CapPublish(me, online, onPublished = { tab = 1 })
-                1 -> CapDashboard(me.name.trim().substringBefore(" "), trips, bookings)
-                else -> CapToolsScreen(trips, bookings)
-            }
-            Box(Modifier.align(Alignment.BottomCenter)) {
-                CapNav(listOf(Triple(0, "الرئيسية", 0), Triple(2, "طلبات", pending), Triple(5, "إعدادات", 0)), tab) { tab = it }
+    var showHistory by remember { mutableStateOf(false) }
+    androidx.activity.compose.BackHandler(enabled = showHistory) { showHistory = false }
+    if (showHistory) {
+        CompositionLocalProvider(LocalContentColor provides CapInk) {
+            Box(Modifier.fillMaxSize().background(CapBg)) { CapTripHistory(trips, bookings) { showHistory = false } }
+        }
+    } else {
+        jo.shajaraone.app.hasbat.HasbatShell(
+            tab = tab, onTab = { tab = it }, requestsBadge = pending,
+            onSeatHistory = { showHistory = true }
+        ) { t ->
+            CompositionLocalProvider(LocalContentColor provides CapInk) {
+                Box(Modifier.fillMaxSize().background(CapBg)) {
+                    if (t == 0) CapPublish(me, online, onPublished = { tab = 1 })
+                    else CapDashboard(me.name.trim().substringBefore(" "), trips, bookings)
+                }
             }
         }
     }

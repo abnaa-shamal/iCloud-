@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- أيقونة الإشعار: عداد بسيط بلون أبيض (النظام يلوّنها تلقائياً) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,4C6.48,4 2,8.48 2,14c0,1.85 0.5,3.58 1.38,5.06L4.24,20.5h15.52l0.86,-1.44C21.5,17.58 22,15.85 22,14 22,8.48 17.52,4 12,4zM12,6c4.41,0 8,3.59 8,8 0,1.29 -0.31,2.5 -0.85,3.58L5.85,17.58C5.31,16.5 5,15.29 5,14c0,-4.41 3.59,-8 7,-8zM15.6,9.4l-4.24,4.24c-0.39,0.39 -0.39,1.02 0,1.41s1.02,0.39 1.41,0l4.24,-4.24 -1.41,-1.41z" />
+</vector>
