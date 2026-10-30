@@ -208,20 +208,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
                     if (isOpen) {
                         Text("إدارة الركاب", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = CapMute)
                         if (reqs.isEmpty()) Text("ما في ركاب لسا", fontSize = 13.sp, color = CapMute)
-                        reqs.forEach { b ->
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                CapAvatar(b.passengerName, 36.dp)
-                                Column(Modifier.weight(1f)) {
-                                    Text(b.passengerName, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = CapInk)
-                                    Text(seatsText(b.seats) + if (b.dropoff.isNotBlank()) " • ${b.dropoff}" else "", fontSize = 11.sp, color = CapMute)
-                                }
-                                if (sg < 2) {
-                                    CapBtn("اتصال", filled = false, color = CapInk, height = 38.dp) { callPhone(ctx, b.passengerPhone) }
-                                    if (sg == 0) CapBtn("إلغاء", filled = false, color = CapRed, height = 38.dp) { cancelBooking = b }
-                                }
-                            }
-                            if (sg < 2) RiderDirectionsButton(b)
-                        }
+                        reqs.forEach { b -> RiderCard(b, canCancel = sg == 0) { cancelBooking = b } }
                         if (sg < 2) {
                             LiveShareControl(t)
                             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

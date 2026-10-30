@@ -15,6 +15,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
@@ -87,25 +96,67 @@ fun CaptainInfoCard(b: Booking) {
     }
 }
 
-/** Captain side: opens the map app with directions to the rider once he has shared his place. */
+private fun appIcon(ctx: Context, vararg pkgs: String): androidx.compose.ui.graphics.ImageBitmap? {
+    for (p in pkgs) {
+        val d = runCatching { ctx.packageManager.getApplicationIcon(p) }.getOrNull() ?: continue
+        return runCatching {
+            val bmp = android.graphics.Bitmap.createBitmap(96, 96, android.graphics.Bitmap.Config.ARGB_8888)
+            val c = android.graphics.Canvas(bmp); d.setBounds(0, 0, 96, 96); d.draw(c)
+            bmp.asImageBitmap()
+        }.getOrNull()
+    }
+    return null
+}
+
 @Composable
-fun RiderDirectionsButton(b: Booking) {
+private fun RoundAction(label: String, onClick: () -> Unit, enabled: Boolean = true, content: @Composable () -> Unit) {
+    Column(Modifier.alpha(if (enabled) 1f else 0.4f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Box(
+            Modifier.size(48.dp).clip(CircleShape).background(CapInk.copy(alpha = 0.08f)).clickable(enabled = enabled, onClick = onClick),
+            contentAlignment = Alignment.Center
+        ) { content() }
+        Text(label, fontSize = 11.sp, color = CapMute)
+    }
+}
+
+/** Captain side: one clear card per confirmed rider: name, phone, call / WhatsApp / directions (with the real app icons). */
+@Composable
+fun RiderCard(b: Booking, canCancel: Boolean, onCancel: () -> Unit) {
     val ctx = LocalContext.current
     var loc by remember(b.id) { mutableStateOf<Pair<Double, Double>?>(null) }
     DisposableEffect(b.id) {
         val r: ListenerRegistration = Repo.listenRiderLoc(b.id) { loc = it }
         onDispose { r.remove() }
     }
+    val wa = remember { appIcon(ctx, "com.whatsapp", "com.whatsapp.w4b") }
+    val maps = remember { appIcon(ctx, "com.google.android.apps.maps") }
     val l = loc
-    Text("📞 ${b.passengerPhone}", fontSize = 12.sp, color = CapMute, modifier = Modifier.padding(start = 46.dp))
-    if (l == null) {
-        Text("موقع العميل لسا ما وصل", fontSize = 11.sp, color = CapMute, modifier = Modifier.padding(start = 46.dp))
-    } else {
-        CapBtn("اتجاهات للعميل", Modifier.fillMaxWidth(), height = 40.dp) {
-            val nav = Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=${l.first},${l.second}")).setPackage("com.google.android.apps.maps")
-            val web = Intent(Intent.ACTION_VIEW, Uri.parse("geo:${l.first},${l.second}?q=${l.first},${l.second}"))
-            runCatching { ctx.startActivity(nav.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                .onFailure { runCatching { ctx.startActivity(web.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.onFailure { toast(ctx, "ما في تطبيق خرائط") } }
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CapInk.copy(alpha = 0.05f)).padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            CapAvatar(b.passengerName, 44.dp)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(b.passengerName, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = CapInk)
+                Text(b.passengerPhone, fontSize = 13.sp, color = CapMute)
+                Text(seatsText(b.seats) + if (b.dropoff.isNotBlank()) " • ${b.dropoff}" else "", fontSize = 12.sp, color = CapMute)
+            }
+            if (canCancel) CapBtn("إلغاء", filled = false, color = CapRed, height = 34.dp) { onCancel() }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+            RoundAction("اتصال", { callPhone(ctx, b.passengerPhone) }) {
+                Icon(Icons.Filled.Phone, null, tint = CapAccent, modifier = Modifier.size(24.dp))
+            }
+            RoundAction("واتساب", { openWhatsApp(ctx, b.passengerPhone, "مرحبا ${b.passengerName}، أنا الكابتن بخصوص حجزك") }) {
+                if (wa != null) Image(wa, null, Modifier.size(30.dp)) else Text("💬", fontSize = 22.sp)
+            }
+            RoundAction(if (l != null) "اتجاهات" else "الموقع لم يصل", {
+                val ll = l ?: return@RoundAction
+                val nav = Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=${ll.first},${ll.second}")).setPackage("com.google.android.apps.maps")
+                val web = Intent(Intent.ACTION_VIEW, Uri.parse("geo:${ll.first},${ll.second}?q=${ll.first},${ll.second}"))
+                runCatching { ctx.startActivity(nav.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                    .onFailure { runCatching { ctx.startActivity(web.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.onFailure { toast(ctx, "ما في تطبيق خرائط") } }
+            }, enabled = l != null) {
+                if (maps != null) Image(maps, null, Modifier.size(30.dp)) else Text("📍", fontSize = 22.sp)
+            }
         }
     }
 }
