@@ -41,7 +41,7 @@ fun DocumentSnapshot.toARequest() = ARequest(
     status = getString("status") ?: "pending", createdAt = getLong("createdAt") ?: 0
 )
 
-fun requestTypeText(t: String) = when (t) { "edit" -> "تعديل الرحلة"; "postpone" -> "تأجيل الرحلة"; "close" -> "إغلاق الحجز"; else -> t }
+fun requestTypeText(t: String) = when (t) { "edit" -> "تعديل الرحلة"; "postpone" -> "تأجيل الرحلة"; "close" -> "إغلاق الحجز"; "cancelTrip" -> "إلغاء الرحلة"; "cancelBooking" -> "إلغاء حجز عميل"; else -> t }
 
 fun DocumentSnapshot.toAUser() = AUser(
     uid = id, role = getString("role") ?: "passenger", status = getString("status") ?: "active",

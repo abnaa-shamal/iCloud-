@@ -395,10 +395,10 @@ fun RequestsScreen(requests: List<ARequest>, onApprove: (ARequest) -> Unit, onRe
                         when (r.status) { "approved" -> Royal.Emerald; "rejected" -> Royal.Ruby; else -> Royal.Amber })
                 }
                 Text("${r.captainName}  •  ${r.tripSummary}", color = Royal.GoldLight)
-                if (r.detail.isNotBlank()) Text(r.detail, color = Royal.Muted, fontSize = 13.sp)
+                if (r.type == "cancelBooking") r.detail.split("|").let { p -> Text("العميل: ${p.getOrNull(1) ?: ""} • السبب: ${p.getOrNull(2) ?: ""}", color = Royal.Muted, fontSize = 13.sp) } else if (r.detail.isNotBlank()) Text(r.detail, color = Royal.Muted, fontSize = 13.sp)
                 Text(fmtTime(r.createdAt), color = Royal.Muted, fontSize = 12.sp)
                 if (r.status == "pending") Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    GoldButton("موافقة", { ask(Ask("موافقة", "${requestTypeText(r.type)} من ${r.captainName}؟ بتتطبق على الرحلة مباشرة.", "موافقة") { onApprove(r) }) }, Modifier.weight(1f))
+                    GoldButton("موافقة", { ask(Ask("موافقة", "${requestTypeText(r.type)} من ${r.captainName}؟ بتتطبق مباشرة.", "موافقة") { onApprove(r) }) }, Modifier.weight(1f))
                     GhostButton("رفض", { ask(Ask("رفض", "رفض الطلب؟", "رفض") { onReject(r) }) }, Modifier.weight(1f), color = Royal.Ruby)
                 }
             }

@@ -86,7 +86,29 @@ class AdminActions(private val report: (String) -> Unit) {
     /** Approve a captain's request: apply it to the trip first, then mark the request approved. */
     fun approve(r: ARequest) {
         val trip = db.collection("trips").document(r.tripId)
+        if (r.type == "cancelBooking") {
+            val p = r.detail.split("|")
+            val bid = p.getOrNull(0) ?: ""
+            val reason = p.getOrNull(2)?.ifBlank { null } ?: "ألغاه الكابتن بموافقة الإدارة"
+            val bref = db.collection("bookings").document(bid)
+            db.runTransaction { tx ->
+                val bk = tx.get(bref); val tr = tx.get(trip)
+                val seats = bk.getLong("seats") ?: 0L
+                if (bk.getString("status") == "accepted" && tr.exists() && tr.getString("status") != "cancelled") {
+                    val free = minOf(tr.getLong("seatsTotal") ?: 0L, (tr.getLong("seatsFree") ?: 0L) + seats)
+                    tx.update(trip, mapOf("seatsFree" to free, "status" to "open", "lastBookingId" to bid))
+                }
+                tx.update(bref, mapOf("status" to "cancelled_by_captain", "reason" to reason, "updatedAt" to System.currentTimeMillis()))
+                true
+            }.addOnSuccessListener {
+                db.collection("tripRequests").document(r.id).update(mapOf("status" to "approved", "updatedAt" to System.currentTimeMillis()))
+                    .addOnSuccessListener { report("تمت الموافقة وانلغى الحجز") }
+                    .addOnFailureListener { report("انلغى الحجز لكن تعذّر تحديث الطلب") }
+            }.addOnFailureListener { report("ما تم: ${it.message?.take(120) ?: "خطأ"}") }
+            return
+        }
         val change: Task<Void> = when (r.type) {
+            "cancelTrip" -> trip.update(mapOf("status" to "cancelled", "cancelReason" to "ألغاها الكابتن بموافقة الإدارة"))
             "close" -> trip.update(mapOf("status" to "full"))
             "postpone" -> trip.update(mapOf("departAt" to r.newDepartAt, "note" to r.newNote))
             else -> {

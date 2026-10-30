@@ -318,23 +318,25 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
     cancelTrip?.let { t ->
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { cancelTrip = null },
-            title = { Text("هل أنت متأكد من إلغاء الرحلة؟") },
-            text = { Text("${t.from} ← ${t.to}") },
+            title = { Text("طلب إلغاء الرحلة؟") },
+            text = { Text("${t.from} ← ${t.to}\nبينرسل للمشرف، وما بتنلغي إلا بعد موافقته.") },
             confirmButton = {
                 androidx.compose.material3.TextButton(onClick = {
-                    val act = bookings.filter { it.tripId == t.id && it.isActive }
-                    Repo.cancelTrip(t, "ألغى الكابتن الرحلة", act) { ok -> toast(ctx, if (ok) "انلغت الرحلة" else "ما قدرت ألغي، جرّب كمان مرة") }
+                    val prof = me
+                    if (prof != null) Repo.sendTripRequest(t, prof, "cancelTrip", "", 0L, null, "") { ok -> toast(ctx, if (ok) "انبعت الطلب للمشرف" else "ما انبعت الطلب، جرّب كمان مرة") }
                     cancelTrip = null
-                }) { Text("نعم، ألغِ", color = CapRed) }
+                }) { Text("إرسال الطلب", color = CapRed) }
             },
             dismissButton = { androidx.compose.material3.TextButton(onClick = { cancelTrip = null }) { Text("رجوع") } }
         )
     }
     cancelBooking?.let { b ->
         ReasonDialog(
-            title = "إلغاء حجز ${b.passengerName}؟", confirmText = "ألغِ الحجز", onDismiss = { cancelBooking = null },
+            title = "طلب إلغاء حجز ${b.passengerName}؟ (بعد موافقة المشرف)", confirmText = "أرسل الطلب", onDismiss = { cancelBooking = null },
             onConfirm = { reason ->
-                Repo.cancelBooking(b, BK_CANCELLED_CAPTAIN, reason) { ok -> toast(ctx, if (ok) "انلغى الحجز" else "ما قدرت ألغي، جرّب كمان مرة") }
+                val prof = me
+                val tr = trips?.firstOrNull { it.id == b.tripId }
+                if (prof != null && tr != null) Repo.sendTripRequest(tr, prof, "cancelBooking", "${b.id}|${b.passengerName.take(30)}|${reason.take(90)}", 0L, null, "") { ok -> toast(ctx, if (ok) "انبعت الطلب للمشرف" else "ما انبعت الطلب، جرّب كمان مرة") }
                 cancelBooking = null
             }
         )
