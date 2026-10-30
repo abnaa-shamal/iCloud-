@@ -400,7 +400,7 @@ private fun CapPublish(me: UserProfile, online: Boolean, onPublished: () -> Unit
     var day by rememberSaveable { mutableIntStateOf(0) }
     var fromMin by rememberSaveable { mutableIntStateOf(-1) }
     var toMin by rememberSaveable { mutableIntStateOf(-1) }
-    var seats by rememberSaveable { mutableIntStateOf(3) }
+    var seats by rememberSaveable { mutableIntStateOf(me.maxSeats.coerceIn(1, 8)) }
     var priceStr by rememberSaveable { mutableStateOf("") }
     var pick by remember { mutableIntStateOf(0) }   // 0 = closed, 1 = from, 2 = to
     var sending by remember { mutableStateOf(false) }
