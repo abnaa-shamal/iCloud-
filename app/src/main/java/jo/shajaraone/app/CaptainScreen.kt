@@ -484,6 +484,11 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
     var pick by remember { mutableIntStateOf(0) }   // 0 = closed, 1 = from, 2 = to
     var sending by remember { mutableStateOf(false) }
     var openRoad by remember { mutableStateOf("") }
+    var gpsFrom by rememberSaveable { mutableStateOf<String?>(null) }
+    var gpsHere by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(lockFrom) {
+        if (lockFrom == null && hasLocationPermission(ctx)) fetchLocation(ctx) { l -> if (l != null) gpsHere = nearestPlace(l.latitude, l.longitude) }
+    }
     var carryMafraq by rememberSaveable { mutableStateOf(false) }
 
     val inner = group == G_INNER_C
@@ -515,12 +520,21 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
                 Box(Modifier.size(10.dp).clip(androidx.compose.foundation.shape.CircleShape).background(if (online) Color(0xFF34C759) else CapMute))
                 Text(if (online) "أونلاين: عندك رحلة منشورة" else "أوفلاين: ما عندك رحلة منشورة", fontSize = 13.sp, color = if (online) Color(0xFF34C759) else CapMute)
             }
-            if (lockFrom != null) {
-                Text("انطلاقك من $lockFrom", Modifier.padding(top = 6.dp, bottom = 4.dp), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk)
-                Text("وصلت إلى $lockFrom، وين رايح بعدها؟", fontSize = 14.sp, color = CapMute)
-                CapBigChoice(G_NORTH_C, "إلى عمّان والزرقاء", 0) { group = G_NORTH_C; origin = lockFrom; priceStr = ""; step = 1 }
-                if (lockFrom != "المفرق") CapBigChoice(G_INNER_C, "بين مدن الشمال وقراه", 1) { group = G_INNER_C; origin = lockFrom; priceStr = ""; step = 1 }
+            val lf = lockFrom ?: gpsFrom
+            if (lf != null) {
+                Text("انطلاقك من $lf", Modifier.padding(top = 6.dp, bottom = 4.dp), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk)
+                Text(if (lockFrom != null) "وصلت إلى $lf، وين رايح بعدها؟" else "حسب موقعك الحالي، وين رايح؟", fontSize = 14.sp, color = CapMute)
+                CapBigChoice(G_NORTH_C, "إلى عمّان والزرقاء", 0) { group = G_NORTH_C; origin = lf; priceStr = ""; step = 1 }
+                if (lf != "المفرق") CapBigChoice(G_INNER_C, "بين مدن الشمال وقراه", 1) { group = G_INNER_C; origin = lf; priceStr = ""; step = 1 }
+                if (lockFrom == null) androidx.compose.material3.TextButton(onClick = { gpsFrom = null }) { Text("مو هيك؟ اختر بإيدك", color = CapMute) }
             } else {
+                // No running trip: the GPS suggests where the captain is; he can still choose by hand below
+                val here = gpsHere
+                if (here != null) {
+                    CapBigChoice("موقعك الحالي: $here ✓", "اضغط للانطلاق منه", 0) {
+                        if (here == AMMAN || here == ZARQA) { group = G_SOUTH_C; origin = here; priceStr = ""; step = 1 } else gpsFrom = here
+                    }
+                }
                 Text("وجهة انطلاقك؟", Modifier.padding(top = 6.dp, bottom = 4.dp), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk)
                 CapBigChoice(G_NORTH_C, "إلى عمّان والزرقاء", 0) { group = G_NORTH_C; priceStr = ""; step = 1 }
                 CapBigChoice(G_SOUTH_C, "إلى إربد والرمثا", 1) { group = G_SOUTH_C; priceStr = ""; step = 1 }
