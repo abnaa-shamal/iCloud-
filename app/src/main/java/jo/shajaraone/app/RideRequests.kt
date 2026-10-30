@@ -164,7 +164,7 @@ fun CaptainRideRequests(me: UserProfile) {
     val ctx = LocalContext.current
     var open by remember { mutableStateOf<List<Repo.RideReq>>(emptyList()) }
     var mine by remember { mutableStateOf<List<Repo.RideReq>>(emptyList()) }
-    var expanded by rememberSaveable { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
     var lastCount by remember { mutableIntStateOf(-1) }
     DisposableEffect(me.uid) {
         val uid = Repo.auth.currentUser?.uid
