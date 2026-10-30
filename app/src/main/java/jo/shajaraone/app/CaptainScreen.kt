@@ -212,13 +212,14 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
                     cancelled -> "ملغية"
                     sg == 2 -> "اكتملت"
                     sg == 1 -> "الرحلة قيد التنفيذ"
+                    t.status == "full" && t.seatsFree > 0L -> "الحجز مغلق"
                     t.seatsFree <= 0L -> "مكتملة المقاعد"
                     booked > 0 -> "$booked حجوزات مؤكدة"
                     else -> "بانتظار الركاب"
                 }
                 Column(Modifier.fillMaxWidth().capCard().animateContentSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (home && !cancelled && sg < 2) CapLiveStatus(
-                        if (sg == 1) "الرحلة جارية الآن" else if (t.seatsFree <= 0L) "المقاعد مكتملة، جاهز للانطلاق" else if (booked > 0) "بانتظار باقي الركاب" else "بانتظار الركاب",
+                        if (sg == 1) "الرحلة جارية الآن" else if (t.status == "full" && t.seatsFree > 0L) "الحجز مغلق" else if (t.seatsFree <= 0L) "المقاعد مكتملة، جاهز للانطلاق" else if (booked > 0) "بانتظار باقي الركاب" else "بانتظار الركاب",
                         booked.toFloat() / t.seatsTotal.coerceAtLeast(1L).toFloat(), sg == 1
                     )
                     Row(
@@ -256,7 +257,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
                                 }
                                 if (sg == 0) CapBtn("إلغاء الرحلة", Modifier.weight(1f), filled = false, color = CapRed, height = 42.dp) { cancelTrip = t }
                             }
-                            if (sg == 0 && !cancelled) {
+                            if (sg == 0 && !cancelled && t.status != "full") {
                                 Text("تغييرات تحتاج موافقة المشرف", fontSize = 12.sp, color = CapMute)
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     CapBtn("تعديل", Modifier.weight(1f), filled = false, color = CapInk, height = 40.dp) { reqDialog = t to "edit" }
