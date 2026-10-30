@@ -76,12 +76,12 @@ fun flowMatches(t: Trip, fs: RiderFlowState): Boolean {
         // Mafraq riders also see captains who chose to carry them (they pass through Mafraq on the desert road)
         fs.dest == MAFRAQ && fs.cur != MAFRAQ ->
             (t.from == fs.cur && t.to == MAFRAQ && (fs.road.isBlank() || t.road == fs.road)) ||
-                (takesMafraq(t) && t.from == fs.cur)
+                (passesMafraq(t) && t.from == fs.cur)
         fs.cur == MAFRAQ && (fs.dest == AMMAN || fs.dest == ZARQA) ->
             (t.from == MAFRAQ && t.to == fs.dest && (fs.road.isBlank() || t.road == fs.road)) ||
-                (takesMafraq(t) && t.from in northPlaces && t.to == fs.dest && (fs.road.isBlank() || t.road == fs.road))
+                (passesMafraq(t) && t.from in northPlaces && t.to == fs.dest && (fs.road.isBlank() || t.road == fs.road))
         fs.cur == MAFRAQ && fs.dest in northPlaces -> kindOf(t) == KIND_NN && innerTripCovers(t, fs.cur, fs.dest) ||
-            (takesMafraq(t) && (t.from == AMMAN || t.from == ZARQA) && t.to == fs.dest)
+            (passesMafraq(t) && (t.from == AMMAN || t.from == ZARQA) && t.to == fs.dest)
         fs.cur in northPlaces && fs.dest in northPlaces -> kindOf(t) == KIND_NN && innerTripCovers(t, fs.cur, fs.dest)
         else -> t.from == fs.cur && t.to == fs.dest && (fs.road.isBlank() || fs.road == NORTH_INNER || t.road == fs.road)
     }

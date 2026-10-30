@@ -587,7 +587,7 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
                 }
                 Text(if (fromMin >= 0 || toMin >= 0) "متواجد بهالفترة، أو لحد ما يكتمل العدد" else "بدون وقت: متاح لحد ما يكتمل العدد", fontSize = 12.sp, color = CapMute)
             }
-            if (dest != "المفرق" && (group == G_SOUTH_C || (group == G_NORTH_C && road == "طريق الزرقاء"))) CapSection("تحمل ركاب المفرق؟") {
+            if (dest != "المفرق" && group == G_SOUTH_C) CapSection("تحمل ركاب المفرق؟") {
                 CapGrid(listOf("لا", "نعم"), if (carryMafraq) "نعم" else "لا", 2) { carryMafraq = it == "نعم" }
                 Text("إذا نعم، رحلتك بتظهر كمان لعملاء المفرق، وطلباتهم بتوصلك بعلامة «راكب المفرق»", fontSize = 12.sp, color = CapMute)
             }
@@ -628,7 +628,7 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
                                 captainName = me.name, captainPhone = me.phone, carText = me.carText,
                                 from = from, to = to, road = roadField,
                                 departAt = departAt, seatsTotal = seats.toLong(), price = priceStr.toDoubleOrNull(),
-                                acceptsParcels = false, note = "@T:$fromMin,$toMin" + if (carryMafraq && dest != "المفرق" && (group == G_SOUTH_C || road == "طريق الزرقاء")) " @M" else ""
+                                acceptsParcels = false, note = "@T:$fromMin,$toMin" + if (carryMafraq && dest != "المفرق" && group == G_SOUTH_C) " @M" else ""
                             )
                         ) { ok ->
                             sending = false

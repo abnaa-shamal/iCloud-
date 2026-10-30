@@ -166,6 +166,9 @@ fun tripWindow(note: String): Pair<Int, Int>? {
 /** The captain chose to carry Mafraq riders on this trip (flag «@M» stored after the window in the note). */
 fun takesMafraq(t: Trip) = t.note.contains("@M")
 
+/** Does the trip pass Mafraq for a Mafraq rider? Opted in by the captain, or any north → south trip on طريق الزرقاء (the captain still accepts or rejects). */
+fun passesMafraq(t: Trip) = takesMafraq(t) || (t.road == "طريق الزرقاء" && t.from in northPlaces && t.from != "المفرق")
+
 private fun minText(m: Int) = clockText(dayStart(0) + m * 60_000L)
 
 /** Big time label of a trip: a single clock time, a window, or «وقت مفتوح». */
