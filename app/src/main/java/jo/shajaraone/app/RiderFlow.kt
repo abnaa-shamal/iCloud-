@@ -148,7 +148,8 @@ fun RiderFlow(
                 Text("أهلاً $name", fontSize = 14.sp, color = Dim)
                 Text("وين أنت حالياً؟", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
             }
-            GlassSection("اختر مكانك") { GlassGrid(currentChoices, fs.cur) { fs.cur = it; fs.step = 1 } }
+            GlassSection("مناطق الشمال") { GlassGrid(northPlaces - MAFRAQ, fs.cur) { fs.cur = it; fs.step = 1 } }
+            GlassSection("عمّان والزرقاء والمفرق") { GlassGrid(listOf(AMMAN, ZARQA, MAFRAQ), fs.cur) { fs.cur = it; fs.step = 1 } }
         }
         1 -> Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(bottom = 120.dp),

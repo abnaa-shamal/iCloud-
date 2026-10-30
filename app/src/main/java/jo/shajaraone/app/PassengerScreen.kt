@@ -101,6 +101,9 @@ private fun TripsTab(me: UserProfile, myBookings: List<Booking>, flow: RiderFlow
         t.captainUid.isNotBlank() && t.captainUid != me.uid && t.status != TRIP_CANCELLED && t.seatsFree > 0 && t.departAt > now && flowMatches(t, flow)
     }
 
+    // One confirmed trip at a time: after a captain accepts, the rider can't book another until that trip is over (or he cancels it).
+    val lockedBy = myBookings.firstOrNull { it.status == BK_ACCEPTED && it.departAt > now }
+
     RiderFlow(me.name.trim().substringBefore(" "), flow, shown, failed) { t ->
         val mine = myBookings.firstOrNull { it.tripId == t.id && it.isActive }
         when {
@@ -110,6 +113,9 @@ private fun TripsTab(me: UserProfile, myBookings: List<Booking>, flow: RiderFlow
             }
             mine != null -> Box(Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(23.dp)).background(Color(0xFF2B2B2E)), contentAlignment = Alignment.Center) {
                 Text("${seatsText(mine.seats)} • ${bookingStatusText(mine.status)}", fontSize = 14.sp, color = Amber, fontWeight = FontWeight.SemiBold)
+            }
+            lockedBy != null -> Box(Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(23.dp)).background(Color(0xFF2B2B2E)), contentAlignment = Alignment.Center) {
+                Text("عندك رحلة مؤكدة، ما بتحجز غيرها قبل ما تخلص", fontSize = 13.sp, color = Dim, fontWeight = FontWeight.SemiBold)
             }
             t.isBookable -> AmberBtn("احجز") { if (me.verified) booking = t else needVerify = true }
         }
