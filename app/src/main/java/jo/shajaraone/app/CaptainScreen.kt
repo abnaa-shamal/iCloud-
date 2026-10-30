@@ -183,6 +183,10 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
                     else -> "بانتظار الركاب"
                 }
                 Column(Modifier.fillMaxWidth().capCard().animateContentSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (home && !cancelled && sg < 2) CapLiveStatus(
+                        if (sg == 1) "الرحلة جارية الآن" else if (t.seatsFree <= 0L) "المقاعد مكتملة، جاهز للانطلاق" else if (booked > 0) "بانتظار باقي الركاب" else "بانتظار الركاب",
+                        booked.toFloat() / t.seatsTotal.coerceAtLeast(1L).toFloat(), sg == 1
+                    )
                     Row(
                         Modifier.fillMaxWidth().clickable(remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, null) { open = if (isOpen) "" else t.id },
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -247,13 +251,18 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
         )
     }
     cancelTrip?.let { t ->
-        ReasonDialog(
-            title = "إلغاء رحلة ${t.from} ← ${t.to}؟", confirmText = "ألغِ الرحلة", onDismiss = { cancelTrip = null },
-            onConfirm = { reason ->
-                val act = bookings.filter { it.tripId == t.id && it.isActive }
-                Repo.cancelTrip(t, reason, act) { ok -> toast(ctx, if (ok) "انلغت الرحلة" else "ما قدرت ألغي، جرّب كمان مرة") }
-                cancelTrip = null
-            }
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { cancelTrip = null },
+            title = { Text("هل أنت متأكد من إلغاء الرحلة؟") },
+            text = { Text("${t.from} ← ${t.to}") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    val act = bookings.filter { it.tripId == t.id && it.isActive }
+                    Repo.cancelTrip(t, "ألغى الكابتن الرحلة", act) { ok -> toast(ctx, if (ok) "انلغت الرحلة" else "ما قدرت ألغي، جرّب كمان مرة") }
+                    cancelTrip = null
+                }) { Text("نعم، ألغِ", color = CapRed) }
+            },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = { cancelTrip = null }) { Text("رجوع") } }
         )
     }
     cancelBooking?.let { b ->
@@ -264,6 +273,25 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
                 cancelBooking = null
             }
         )
+    }
+}
+
+/** A live status strip: breathing dot, travelling dots and a seat-fill bar, so the home screen always looks alive. */
+@Composable
+private fun CapLiveStatus(text: String, fill: Float, running: Boolean) {
+    val tr = androidx.compose.animation.core.rememberInfiniteTransition(label = "live")
+    val pulse by tr.animateFloat(0.35f, 1f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(900), androidx.compose.animation.core.RepeatMode.Reverse), label = "p")
+    val dots by tr.animateFloat(0f, 4f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1600, easing = androidx.compose.animation.core.LinearEasing)), label = "d")
+    val shown by androidx.compose.animation.core.animateFloatAsState(fill.coerceIn(0f, 1f), androidx.compose.animation.core.tween(700), label = "f")
+    val col = if (running) Color(0xFF22A559) else CapAccent
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(Modifier.size(10.dp).clip(RoundedCornerShape(5.dp)).background(col.copy(alpha = pulse)))
+            Text(text + ".".repeat(dots.toInt().coerceIn(0, 3)), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = col)
+        }
+        Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp)).background(CapInk.copy(alpha = 0.10f))) {
+            Box(Modifier.fillMaxWidth(if (running) 1f else shown.coerceAtLeast(0.04f)).fillMaxHeight().clip(RoundedCornerShape(3.dp)).background(col.copy(alpha = if (running) 0.35f + 0.4f * pulse else 1f)))
+        }
     }
 }
 
