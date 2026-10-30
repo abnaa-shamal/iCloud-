@@ -137,8 +137,8 @@ fun RiderFlow(
     name: String, fs: RiderFlowState, shown: List<Trip>?, failed: Boolean,
     actions: @Composable ColumnScope.(Trip) -> Unit
 ) {
-    BackHandler(enabled = fs.step > 0) { fs.back() }
-    when (fs.step) {
+    // One list with every captain's trip and destination: the rider picks the one that matches where he is going.
+    @Suppress("UNUSED_EXPRESSION") when (2) {
         0 -> Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 44.dp, bottom = 120.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -182,7 +182,12 @@ fun RiderFlow(
         else -> {
             var pickDate by remember { mutableStateOf(false) }
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 18.dp, end = 18.dp, bottom = 120.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                item { BackBar(fs.summary()) { fs.back() } }
+                item {
+                    Column(Modifier.padding(top = 44.dp, bottom = 4.dp)) {
+                        Text("أهلاً $name", fontSize = 14.sp, color = Dim)
+                        Text("رحلات الكباتن", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
+                    }
+                }
                 if (fs.group == G_SOUTH) item {
                     GlassSection("من أي بلد بالشمال؟ (اختياري)") {
                         GlassGrid(listOf("أي بلد") + northPlaces, if (fs.origin.isBlank()) "أي بلد" else fs.origin, 3) { fs.origin = if (it == "أي بلد") "" else it }
