@@ -234,7 +234,8 @@ test('trip update: seat return needs the booking leaving "accepted" in the same 
   await assertFails(leaveWith(asPax(), 'bAcc', 't1', 5));                                      // above seatsTotal and wrong amount
   await assertFails(leaveWith(asPax(), 'bAcc', 'tCancelled', 3));                              // booking is not on that trip
   await assertFails(leaveWith(asPaxS(), 'bAcc', 't1', 3));                                     // not his booking
-  await assertSucceeds(leaveWith(asPax(), 'bAcc', 't1', 3));                                   // his own accepted booking: 2 -> 3
+  await assertFails(leaveWith(asPax(), 'bAcc', 't1', 3));                                      // the passenger can no longer cancel an ACCEPTED booking directly (he sends a cancel request instead)
+  await assertSucceeds(leaveWith(asCap(), 'bAcc', 't1', 3, 'cancelled_by_captain'));          // the trip's captain cancels it: 2 -> 3
 });
 test('seats: nobody can raise or lower seatsFree alone any more (the old KNOWN LIMIT is closed)', async () => {
   for (const ctxOf of [asPax, asPax2, asOther, asCap, asCapR, asAdmin]) {
@@ -250,7 +251,8 @@ test('seats: rider books, captain accepts (4 -> 3), rider cancels (3 -> 4) — t
   await assertFails(updateDoc(doc(asCap(), 'bookings/b4'), { status: 'accepted', updatedAt: at })); // booking alone: seats not taken
   await assertSucceeds(acceptWith(asCap(), 'b4', 't4', 3));
   await assertFails(leaveWith(asPax(), 'b4', 't4', 5));                                             // cannot return more than the booking had
-  await assertSucceeds(leaveWith(asPax(), 'b4', 't4', 4));                                          // back to 4
+  await assertFails(leaveWith(asPax(), 'b4', 't4', 4));                                             // the passenger cannot cancel an accepted booking directly any more
+  await assertSucceeds(leaveWith(asCap(), 'b4', 't4', 4, 'cancelled_by_captain'));                  // the captain cancels it: back to 4
   await assertFails(leaveWith(asPax(), 'b4', 't4', 5));                                             // and cannot be returned twice
 });
 test('seats: accepting the last seat closes the trip (full); wrong status or amount is denied', async () => {
@@ -581,10 +583,11 @@ test('abuse/trips update: nobody can reopen or change a cancelled trip', async (
   await assertFails(updateDoc(doc(asPax(), 'trips/tCancelled'), { seatsFree: 4, status: 'open' }));
   await assertFails(updateDoc(doc(asAdmin(), 'trips/tCancelled'), { status: 'open' }));
 });
-test('abuse/trips update: admin can only cancel open/full trips, and nothing else', async () => {
+test('abuse/trips update: admin can cancel open/full trips and apply time/price/note changes, nothing else', async () => {
   await assertSucceeds(updateDoc(doc(asAdmin(), 'trips/tFull'), { status: 'cancelled', cancelReason: 'x' }));
   await assertFails(updateDoc(doc(asAdmin(), 'trips/tCancelled'), { status: 'cancelled', cancelReason: 'x' }));
-  await assertFails(updateDoc(doc(asAdmin(), 'trips/t1'), { price: 0 }));
+  await assertFails(updateDoc(doc(asAdmin(), 'trips/tCancelled'), { price: 5 }));               // a cancelled trip cannot be edited
+  await assertSucceeds(updateDoc(doc(asAdmin(), 'trips/t1'), { price: 0 }));                    // approved change request: price
   await assertFails(updateDoc(doc(asAdmin(), 'trips/t1'), { seatsTotal: 7 }));
 });
 test('abuse/trips delete: only the owner or the admin', async () => {
@@ -662,7 +665,8 @@ test('abuse/bookings update: the passenger can only cancel (never accept/reject/
   await assertFails(updateDoc(d('bRej'), { status: 'cancelled_by_passenger', updatedAt: at }));
   await assertFails(updateDoc(d('bCan'), { status: 'cancelled_by_passenger', updatedAt: at }));
   await assertFails(updateDoc(d('bAcc'), { status: 'cancelled_by_passenger', reason: 'x', updatedAt: at })); // seats not returned
-  await assertSucceeds(leaveWith(asPax(), 'bAcc', 't1', 3));
+  await assertFails(leaveWith(asPax(), 'bAcc', 't1', 3));                                                   // accepted: no direct cancel, even with the seats returned
+  await assertSucceeds(updateDoc(d('bAcc'), { status: 'accepted', reason: 'cancel_req', updatedAt: at }));  // ...he can only ask the captain to cancel
 });
 test('abuse/bookings update: nobody can change ownership, trip, seats or contact data of a booking', async () => {
   for (const f of [{ passengerUid: 'pax2' }, { captainUid: 'cap3' }, { tripId: 'tOther' }, { seats: 7 },
