@@ -112,6 +112,32 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
     val all = trips ?: emptyList()
     fun st(t: Trip) = CapTripState.of(t.id)
     val running = all.filter { it.status != TRIP_CANCELLED && st(it) == "started" }.sortedBy { it.departAt }
+    // About 30 minutes before arrival (≈ 25 km from the destination by GPS) the captain is asked whether to publish his next trip.
+    var askNext by remember { mutableStateOf<Trip?>(null) }
+    val watched = if (home) running.lastOrNull() else null
+    LaunchedEffect(watched?.id) {
+        val w = watched ?: return@LaunchedEffect
+        val c = placeCentres[w.to] ?: return@LaunchedEffect
+        while (CapTripState.of("near_" + w.id) != "1") {
+            if (hasLocationPermission(ctx)) fetchLocation(ctx) { l ->
+                if (l != null && CapTripState.of("near_" + w.id) != "1") {
+                    val out = FloatArray(1)
+                    android.location.Location.distanceBetween(l.latitude, l.longitude, c.first, c.second, out)
+                    if (out[0] <= 25_000f) { CapTripState.set(ctx, "near_" + w.id, "1"); askNext = w }
+                }
+            }
+            kotlinx.coroutines.delay(30_000L)
+        }
+    }
+    askNext?.let { w ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { askNext = null },
+            title = { Text("قربت من ${w.to}") },
+            text = { Text("بتحب تنشر رحلتك الجاية من ${w.to}؟") },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { askNext = null; onPublishNext() }) { Text("نعم، انشر") } },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = { askNext = null }) { Text("لا") } }
+        )
+    }
     val upcoming = all.filter { it.status != TRIP_CANCELLED && st(it) == "" && it.departAt > now - 4 * 3_600_000L }.sortedBy { it.departAt }
     val done = all.filter { it.status == TRIP_CANCELLED || st(it) == "finished" || (st(it) == "" && it.departAt <= now - 4 * 3_600_000L) }.sortedByDescending { it.departAt }
     val list = if (home) (if (running.isNotEmpty()) running else upcoming) else when (seg) { 0 -> upcoming; 1 -> running; else -> done }
@@ -159,7 +185,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
                     }
                 }
             }
-            if (home && running.isNotEmpty() && upcoming.isEmpty()) item {
+            if (home && running.isNotEmpty() && upcoming.isEmpty() && CapTripState.of("near_" + running.last().id) == "1") item {
                 CapBtn("انشر رحلة من ${running.last().to}", Modifier.fillMaxWidth(), height = 54.dp) { onPublishNext() }
             }
             if (trips == null) item { LoadingBox() }
