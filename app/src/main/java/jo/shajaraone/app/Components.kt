@@ -53,9 +53,9 @@ fun navItemColors() = NavigationBarItemDefaults.colors(
 
 // ===== Selection chips =====
 
-val SignYellow = Brand.Teal
-val SignGreen = Brand.Violet
-val BoardBlack = Brand.Navy
+val SignYellow: Color get() = Brand.Teal
+val SignGreen: Color get() = Brand.Violet
+val BoardBlack: Color get() = Brand.Navy
 
 /** Ink color for borders and hard shadows (near-black in light mode, light in dark mode). */
 @Composable

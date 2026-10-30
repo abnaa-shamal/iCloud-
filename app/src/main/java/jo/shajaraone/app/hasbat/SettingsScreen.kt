@@ -58,14 +58,19 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun CleanSettingsScreen(storage: AppDataManager, theme: AppTheme, isEnglish: Boolean, onSeatHistory: (() -> Unit)? = null, onBack: () -> Unit) {
+fun CleanSettingsScreen(storage: AppDataManager, theme: AppTheme, isEnglish: Boolean, onSeatHistory: (() -> Unit)? = null, riderMode: Boolean = false, onBack: () -> Unit) {
     val view = LocalView.current
     // -1 = القائمة، 0 السجل، 2 النسخ الاحتياطي، 3 اللغة، 4 الثيمات، 5 الأصوات، 6 الدعم
     var selectedSection by remember { mutableIntStateOf(-1) }
     val textColor = textColorFor(theme)
     val subTextColor = subTextColorFor(theme)
 
-    val sections = listOf(
+    val sections = if (riderMode) listOf(
+        Triple(11, "📜", if (isEnglish) "Trip history" else "سجل الرحلات"),
+        Triple(4, "🎨", if (isEnglish) "Themes" else "الثيمات"),
+        Triple(5, "🔊", if (isEnglish) "Sounds" else "الأصوات"),
+        Triple(9, "🤖", if (isEnglish) "Assistant (how to use)" else "المساعد (شرح التطبيق)")
+    ) else listOf(
         Triple(0, "📜", if (isEnglish) "Trip history" else "سجل الرحلات"),
         Triple(11, "🚌", if (isEnglish) "Seat trips" else "رحلات المقاعد"),
         Triple(2, "💾", if (isEnglish) "Backup" else "النسخ الاحتياطي"),
@@ -136,6 +141,7 @@ fun CleanSettingsScreen(storage: AppDataManager, theme: AppTheme, isEnglish: Boo
                     selectedSection == 3 -> LanguageSection(storage, theme, isEnglish)
                     selectedSection == 4 -> ThemeSelectorSection(storage, theme, isEnglish)
                     selectedSection == 5 -> SoundSettingsSection(storage, theme, isEnglish)
+                    selectedSection == 9 -> AssistantSection(storage, theme, isEnglish)
                     selectedSection == 8 -> VehicleReminderSection(storage, theme, isEnglish)
                     selectedSection == 10 -> FloatingBubbleSection(storage, theme, isEnglish)
                     else -> SupportAboTalaSection(storage, theme, isEnglish)

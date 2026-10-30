@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 private val LogoFront = Color(0xFFF5EFEB)   // parchment peak
-private val LogoBack = Brand.Ochre          // ochre peak
+private val LogoBack get() = Brand.Ochre          // ochre peak
 
 /** The app mark: two northern peaks (violet and teal) with a road winding between them and a small star. Drawn in code so it stays sharp at any size. */
 @Composable

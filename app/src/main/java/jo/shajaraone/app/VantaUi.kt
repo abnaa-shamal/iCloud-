@@ -34,11 +34,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-val Amber = Color(0xFFF2B300)
-val Dim = Color(0xFF9A9A9F)
+val Amber: Color get() = Brand.Violet
+val Dim: Color get() = Brand.Muted
 
 /** Glass panel: dark gradient body, a diagonal light sheen, and a rim that catches light at the corners. */
-fun Modifier.darkGlass(r: Dp = 22.dp): Modifier = glassPanel(r, Color(0xFF2C2C30), Color(0xFF0F0F10), Color(0x2EFFFFFF))
+fun Modifier.darkGlass(r: Dp = 22.dp): Modifier = capCard(r)
 
 fun Modifier.glassPanel(r: Dp, top: Color, bottom: Color, sheen: Color): Modifier {
     val s = RoundedCornerShape(r)
@@ -255,7 +255,7 @@ fun VantaNav(items: List<Pair<Int, String>>, selected: Int, onPick: (Int) -> Uni
     }
 }
 
-val VantaPageBg = Brush.verticalGradient(listOf(Color(0xFF212123), Color(0xFF050505), Color.Black), 0f, 1400f)
+val VantaPageBg: Brush get() = CapBg
 
 
 /** Main amber action of the rider app. */

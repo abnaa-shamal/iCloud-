@@ -50,7 +50,7 @@ object AppFeedback {
     private fun fire(ctx: Context, sound: String, millis: Long, amplitude: Int) {
         try {
             if (HAPTICS_ENABLED && millis > 0) vibrate(ctx, millis, amplitude)
-            if (SOUNDS_ENABLED) play(ctx, sound)
+            if (SOUNDS_ENABLED && jo.shajaraone.app.hasbat.AppDataManager.get(ctx).soundEnabled) play(ctx, sound)
         } catch (_: Exception) {
             // Feedback must never break the app.
         }

@@ -47,6 +47,7 @@ fun PassengerHome(me: UserProfile) {
     }
 
     val upcoming = myBookings.count { it.isActive && it.departAt > System.currentTimeMillis() }
+    val ctxP = LocalContext.current
     Box(Modifier.fillMaxSize()) {
         androidx.compose.animation.AnimatedContent(
             targetState = tab,
@@ -59,11 +60,18 @@ fun PassengerHome(me: UserProfile) {
             when (t) {
                 0 -> TripsTab(me, myBookings, flow)
                 1 -> MyBookings(myBookings)
+                3 -> RiderSettingsTab(myBookings) { tab = 0 }
                 else -> SoonScreen()
             }
         }
+        if (tab == 0) {
+            val hs = remember { jo.shajaraone.app.hasbat.AppDataManager.get(ctxP) }
+            Box(Modifier.fillMaxSize().systemBarsPadding()) {
+                jo.shajaraone.app.hasbat.AssistantBubble(hs, jo.shajaraone.app.hasbat.rememberHasbatTheme(hs), false, visible = true)
+            }
+        }
         Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth(), contentAlignment = Alignment.Center) {
-            VantaNav(listOf(1 to "الرحلات", 2 to (if (upcoming > 0) "حجوزاتي ($upcoming)" else "حجوزاتي"), 7 to "اشتراكات"), tab, { tab = it })
+            VantaNav(listOf(1 to "الرحلات", 2 to (if (upcoming > 0) "حجوزاتي ($upcoming)" else "حجوزاتي"), 7 to "اشتراكات", 5 to "الإعدادات"), tab, { tab = it })
         }
     }
 }
@@ -245,5 +253,47 @@ private fun MyBookings(list: List<Booking>) {
             },
             dismissButton = { TextButton(onClick = { toCancel = null }) { Text("رجوع") } }
         )
+    }
+}
+
+
+/** Rider settings: the same list design as the captain app, with only history, themes, sounds and the assistant. */
+@Composable
+private fun RiderSettingsTab(bookings: List<Booking>, onBack: () -> Unit) {
+    val ctx = LocalContext.current
+    val storage = remember { jo.shajaraone.app.hasbat.AppDataManager.get(ctx) }
+    val theme = jo.shajaraone.app.hasbat.rememberHasbatTheme(storage)
+    var history by remember { mutableStateOf(false) }
+    androidx.activity.compose.BackHandler(enabled = history) { history = false }
+    if (history) RiderHistory(bookings) { history = false }
+    else Box(Modifier.fillMaxSize().padding(top = 36.dp, bottom = 110.dp)) {
+        jo.shajaraone.app.hasbat.CleanSettingsScreen(storage, theme, false, onSeatHistory = { history = true }, riderMode = true) { onBack() }
+    }
+}
+
+/** Past, finished and cancelled bookings. */
+@Composable
+private fun RiderHistory(bookings: List<Booking>, onBack: () -> Unit) {
+    val now = System.currentTimeMillis()
+    val past = bookings.filter { !(it.isActive && it.departAt > now) }.sortedByDescending { it.departAt }
+    LazyColumn(
+        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 44.dp, bottom = 120.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxSize()
+    ) {
+        item { CapBackBar("سجل الرحلات") { onBack() } }
+        if (past.isEmpty()) item { EmptyState("📜", "ما في رحلات سابقة لسا.") }
+        items(past.size) { i ->
+            val b = past[i]
+            Column(Modifier.fillMaxWidth().darkGlass(22.dp).padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(b.tripSummary, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
+                        Text("${timeText(b.departAt)} • ${seatsText(b.seats)}", fontSize = 12.sp, color = Dim)
+                    }
+                    Text(bookingStatusText(b.status), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (b.status == BK_ACCEPTED) Amber else Dim)
+                }
+                Text("الكابتن ${b.captainName}", fontSize = 13.sp, color = Dim)
+            }
+        }
     }
 }

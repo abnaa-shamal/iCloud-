@@ -30,7 +30,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         Alerts.createChannels(this)
-        if (IS_CAPTAIN_APP) jo.shajaraone.app.hasbat.initHasbat(this)
+        if (IS_CAPTAIN_APP) jo.shajaraone.app.hasbat.initHasbat(this) else jo.shajaraone.app.hasbat.AssistantBrain.riderMode = true
         setContent {
             ShajaraTheme {
                 AppBackground {

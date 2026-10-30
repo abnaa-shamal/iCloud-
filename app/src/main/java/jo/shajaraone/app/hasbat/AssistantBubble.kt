@@ -204,7 +204,7 @@ fun AssistantBubble(storage: AppDataManager, theme: AppTheme, isEnglish: Boolean
                             .padding(14.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Text(spec.intro, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textColorFor(theme), lineHeight = 21.sp)
+                        Text(if (AssistantBrain.riderMode) spec.intro.replace("كابتن", "غالي") else spec.intro, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textColorFor(theme), lineHeight = 21.sp)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             PillChip(text = "💬 اسألني", selected = true, theme = theme) {
                                 SoundEffectsHelper.playClick(view, storage.soundEnabled)
@@ -247,7 +247,7 @@ private fun AssistantDialog(storage: AppDataManager, theme: AppTheme, isEnglish:
                             SoundEffectsHelper.playClick(view, storage.soundEnabled); onClose()
                         }
                         Spacer(modifier = Modifier.width(10.dp))
-                        Text("🧚 " + (if (isEnglish) "Fairy assistant" else "مساعدة الكابتن"), fontSize = 20.sp, fontWeight = FontWeight.Black, color = textColorFor(theme))
+                        Text("🧚 " + (if (isEnglish) "Fairy assistant" else if (AssistantBrain.riderMode) "المساعدة" else "مساعدة الكابتن"), fontSize = 20.sp, fontWeight = FontWeight.Black, color = textColorFor(theme))
                     }
                     AssistantSection(storage, theme, isEnglish, scroll)
                 }

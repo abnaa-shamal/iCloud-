@@ -13,6 +13,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
@@ -27,52 +28,48 @@ import androidx.compose.ui.unit.dp
  * so a new look is mostly a matter of editing this block (plus NightColors below for the Material roles).
  */
 object Brand {
-    // Rider app: amber on black. Captain app: electric blue on graphite.
-    val Violet = if (IS_CAPTAIN_APP) Color(0xFF3D8BFF) else Color(0xFFF2B300)       // main actions, selected items, logo
-    val VioletSoft = if (IS_CAPTAIN_APP) Color(0xFF2F73D9) else Color(0xFFD9A200)   // outlines
-    val VioletLight = if (IS_CAPTAIN_APP) Color(0xFF8DB8FF) else Color(0xFFFFD866)  // subtitles, soft highlights
-    val Teal = if (IS_CAPTAIN_APP) Color(0xFF9CC4FF) else Color(0xFFFFE08A)         // highlights
-    val Navy = if (IS_CAPTAIN_APP) Color(0xFF16171A) else Color(0xFF000000)         // base background
-    val Ink = Color(0xFFF4F7FF)          // main text
-    val Muted = Color(0xFFA9B4CC)        // secondary text
+    // Colors follow the theme picked in Settings (the same 18 themes in both apps); CapTheme.t is set in ShajaraTheme.
+    private val t get() = CapTheme.t
+    private val dark get() = t?.isDark ?: true
+    val Violet: Color get() = t?.accentColor ?: Color(0xFFFF1744)               // main actions, selected items, logo
+    val VioletSoft: Color get() = t?.accentColor?.let { androidx.compose.ui.graphics.lerp(it, Color.Black, 0.15f) } ?: Color(0xFFD50032)
+    val VioletLight: Color get() = t?.accentColor?.let { androidx.compose.ui.graphics.lerp(it, Color.White, 0.4f) } ?: Color(0xFFFF7A93)
+    val Teal: Color get() = t?.needleColor ?: Color(0xFFFF5252)                 // highlights
+    val Navy: Color get() = t?.bgGradient?.first() ?: Color(0xFF000000)         // base background
+    val Ink: Color get() = if (dark) Color(0xFFF4F7FF) else Color(0xFF1E293B)   // main text
+    val Muted: Color get() = if (dark) Color(0xFFA9B4CC) else Color(0xFF64748B) // secondary text
     val OnTeal = Color(0xFFFFFFFF)       // text on top of teal
-    // extra tokens used by the newer components (ticket cards, wells, rules) - glass look on the dark sky
     val Ochre = Color(0xFFFFC857)        // gold highlight
-    val Stock = Color(0x1FFFFFFF)        // glass card surface
-    val Pressed = Color(0x33000000)      // recessed wells, inactive seats
-    val Rule = Color(0x33FFFFFF)         // borders and perforation lines
+    val Stock: Color get() = if (dark) Color(0x1FFFFFFF) else Color(0x14000000) // glass card surface
+    val Pressed: Color get() = if (dark) Color(0x33000000) else Color(0x14000000) // recessed wells, inactive seats
+    val Rule: Color get() = if (dark) Color(0x33FFFFFF) else Color(0x33000000)  // borders and perforation lines
 }
 
-// "Night" palette: deep navy, violet actions, teal highlights. The app is always dark.
-private val NightColors = darkColorScheme(
-    primary = Brand.Violet,
-    onPrimary = if (IS_CAPTAIN_APP) Color.White else Color(0xFF1A0E00),
-    primaryContainer = if (IS_CAPTAIN_APP) Color(0xFF173A6B) else Color(0xFF4A3000),
-    onPrimaryContainer = if (IS_CAPTAIN_APP) Color(0xFFDCE9FF) else Color(0xFFFFEBC8),
-    secondary = Brand.Teal,
-    onSecondary = Brand.OnTeal,
-    secondaryContainer = Color(0xFF3A3B41),
-    onSecondaryContainer = Color(0xFFE6E6EA),
-    tertiary = Color(0xFFFF8A7A),
-    tertiaryContainer = Color(0xFF5A2018),
-    onTertiaryContainer = Color(0xFFFFDAD3),
-    background = Brand.Navy,
-    onBackground = Brand.Ink,
-    surface = Brand.Navy,
-    onSurface = Brand.Ink,
-    surfaceVariant = Color(0xFF2B2C31),
-    onSurfaceVariant = Brand.Muted,
-    surfaceContainerLowest = Color(0xFF111214),
-    surfaceContainerLow = Color(0xFF18191C),
-    surfaceContainer = Color(0xFF1F2024),
-    surfaceContainerHigh = Color(0xFF26272B),
-    surfaceContainerHighest = Color(0xFF2E2F34),
-    outline = Color(0xFF7C7E86),
-    outlineVariant = Color(0xFF3A3B41),
-    error = Color(0xFFFF8A80),
-    errorContainer = Color(0xFF5C1A1A),
-    onErrorContainer = Color(0xFFFFDAD6)
-)
+private fun nightColors(): androidx.compose.material3.ColorScheme {
+    val t = CapTheme.t
+    if (t != null && !t.isDark) return lightColorScheme(
+        primary = t.accentColor, onPrimary = Color.White, secondary = t.needleColor, onSecondary = Color.White,
+        background = t.bgGradient.first(), onBackground = Color(0xFF1E293B),
+        surface = t.cardBg, onSurface = Color(0xFF1E293B), surfaceVariant = Color(0xFFE8ECF1), onSurfaceVariant = Color(0xFF64748B),
+        surfaceContainerLowest = Color.White, surfaceContainerLow = Color(0xFFF6F8FA), surfaceContainer = Color(0xFFF0F3F6),
+        surfaceContainerHigh = Color(0xFFEAEEF2), surfaceContainerHighest = Color(0xFFE3E8ED), outline = Color(0xFF94A3B8)
+    )
+    val card = t?.cardBg ?: Color(0xFF0E0E12)
+    fun up(f: Float) = androidx.compose.ui.graphics.lerp(card, Color.White, f)
+    return darkColorScheme(
+        primary = Brand.Violet, onPrimary = Color.White,
+        primaryContainer = androidx.compose.ui.graphics.lerp(Brand.Violet, Color.Black, 0.65f), onPrimaryContainer = Color.White,
+        secondary = Brand.Teal, onSecondary = Brand.OnTeal,
+        secondaryContainer = up(0.12f), onSecondaryContainer = Color(0xFFE6E6EA),
+        tertiary = Color(0xFFFF8A7A), tertiaryContainer = Color(0xFF5A2018), onTertiaryContainer = Color(0xFFFFDAD3),
+        background = Brand.Navy, onBackground = Brand.Ink, surface = Brand.Navy, onSurface = Brand.Ink,
+        surfaceVariant = up(0.1f), onSurfaceVariant = Brand.Muted,
+        surfaceContainerLowest = up(0.02f), surfaceContainerLow = up(0.04f), surfaceContainer = up(0.06f),
+        surfaceContainerHigh = up(0.09f), surfaceContainerHighest = up(0.12f),
+        outline = Color(0xFF7C7E86), outlineVariant = up(0.15f),
+        error = Color(0xFFFF8A80), errorContainer = Color(0xFF5C1A1A), onErrorContainer = Color(0xFFFFDAD6)
+    )
+}
 
 private val AppShapes = Shapes(
     extraSmall = RoundedCornerShape(6.dp),
@@ -96,8 +93,12 @@ private val AppTypography = Typography().let { d ->
 
 @Composable
 fun ShajaraTheme(content: @Composable () -> Unit) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val storage = remember { jo.shajaraone.app.hasbat.AppDataManager.get(ctx) }
+    val hasbatTheme = jo.shajaraone.app.hasbat.rememberHasbatTheme(storage)
+    if (CapTheme.t != hasbatTheme) CapTheme.t = hasbatTheme
     MaterialTheme(
-        colorScheme = NightColors,
+        colorScheme = nightColors(),
         shapes = AppShapes,
         typography = AppTypography
     ) {
@@ -110,7 +111,7 @@ fun ShajaraTheme(content: @Composable () -> Unit) {
 @Composable
 fun AppBackground(content: @Composable () -> Unit) {
     androidx.compose.foundation.layout.Box(
-        androidx.compose.ui.Modifier.fillMaxSize().background(if (IS_CAPTAIN_APP) CapBg else VantaPageBg)
+        androidx.compose.ui.Modifier.fillMaxSize().background(CapBg)
     ) {
         androidx.compose.runtime.CompositionLocalProvider(
             androidx.compose.material3.LocalContentColor provides Brand.Ink

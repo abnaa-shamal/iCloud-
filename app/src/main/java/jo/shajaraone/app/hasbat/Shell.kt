@@ -66,17 +66,7 @@ fun HasbatShell(
     val context = LocalContext.current
     val view = LocalView.current
     val storage = remember { AppDataManager.get(context) }
-    val themes = AppTheme.values()
-    val minuteKey = MeterEngine.clockTick / 60_000L
-    val isDaytime = remember(minuteKey, storage.autoDayNight, (MeterEngine.latitude * 10).toInt(), (MeterEngine.longitude * 10).toInt()) {
-        if (!storage.autoDayNight) false else {
-            val m = IslamicCalculationHelper.prayerMinutes(MeterEngine.latitude, MeterEngine.longitude)
-            val now = Calendar.getInstance().let { it.get(Calendar.HOUR_OF_DAY) * 60 + it.get(Calendar.MINUTE) }
-            now >= m[1] && now < m[4]
-        }
-    }
-    val idx = if (storage.autoDayNight && isDaytime) storage.dayThemeIndex else storage.themeIndex
-    val theme = themes[idx.coerceIn(0, themes.size - 1)]
+    val theme = rememberHasbatTheme(storage)
     val isEnglish = storage.isEnglish
     val isTripActive = MeterEngine.isTripActive
 
@@ -212,4 +202,22 @@ private fun DockItem(icon: String, title: String, isSelected: Boolean, theme: Ap
             Text(title, fontSize = 10.sp, fontWeight = if (isSelected) FontWeight.Black else FontWeight.SemiBold, color = labelColor, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
+}
+
+/** The theme picked in Settings (same choice in the rider and captain apps), with the auto day / night switch. */
+@Composable
+fun rememberHasbatTheme(storage: AppDataManager): AppTheme {
+    val themes = AppTheme.values()
+    val minuteKey = MeterEngine.clockTick / 60_000L
+    val lat = if (MeterEngine.latitude == 0.0) 32.0 else MeterEngine.latitude
+    val lng = if (MeterEngine.longitude == 0.0) 35.9 else MeterEngine.longitude
+    val isDaytime = remember(minuteKey, storage.autoDayNight, (lat * 10).toInt(), (lng * 10).toInt()) {
+        if (!storage.autoDayNight) false else {
+            val m = IslamicCalculationHelper.prayerMinutes(lat, lng)
+            val now = Calendar.getInstance().let { it.get(Calendar.HOUR_OF_DAY) * 60 + it.get(Calendar.MINUTE) }
+            now >= m[1] && now < m[4]
+        }
+    }
+    val idx = if (storage.autoDayNight && isDaytime) storage.dayThemeIndex else storage.themeIndex
+    return themes[idx.coerceIn(0, themes.size - 1)]
 }
