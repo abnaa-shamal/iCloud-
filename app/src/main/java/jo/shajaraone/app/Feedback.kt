@@ -36,7 +36,21 @@ object AppFeedback {
     fun open(ctx: Context) = fire(ctx, SND_OPEN, millis = 0, amplitude = 0)
 
     /** A main button was pressed. */
-    fun tap(ctx: Context) = fire(ctx, SND_TAP, millis = 12, amplitude = 80)
+    fun tap(ctx: Context) = fire(ctx, TAPS[(tapIdx++) % TAPS.size], millis = 12, amplitude = 80)
+    private val TAPS = listOf("fb_tap", "fb_tap2", "fb_tap3", "fb_tap4")
+    private var tapIdx = 0
+
+    /** A message from the admin / system, or a new app update. */
+    fun system(ctx: Context) = fire(ctx, "snd_system", millis = 40, amplitude = 120)
+
+    /** A new trip / request. */
+    fun newTrip(ctx: Context) = fire(ctx, "snd_new_trip", millis = 70, amplitude = 180)
+
+    /** A trip was cancelled. */
+    fun tripCancel(ctx: Context) = fire(ctx, "snd_trip_cancel", millis = 90, amplitude = 200)
+
+    /** A message from a rider. */
+    fun riderMsg(ctx: Context) = fire(ctx, "snd_rider_msg", millis = 40, amplitude = 140)
 
     /** Something worked, e.g. a booking request was sent. */
     fun success(ctx: Context) = fire(ctx, SND_SUCCESS, millis = 40, amplitude = 160)

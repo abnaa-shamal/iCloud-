@@ -27,37 +27,43 @@ import java.util.concurrent.TimeUnit
 /** Captain alerts: distinct chime + vibration when a booking arrives or is cancelled. */
 object Alerts {
     // Channel sound can't change after creation, so the id carries a version.
-    private const val CAPTAIN_CHANNEL = "captain_bookings_v1"
+    private const val CH_NEW = "captain_new_trip_v2"
+    private const val CH_CANCEL = "captain_cancel_v2"
+    private const val CH_MSG = "captain_rider_msg_v2"
     private const val WORK_NAME = "captain_booking_check"
 
     fun createChannels(ctx: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val sound = Uri.parse("android.resource://${ctx.packageName}/${R.raw.booking_chime}")
         val attrs = AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_NOTIFICATION)
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build()
-        val channel = NotificationChannel(CAPTAIN_CHANNEL, "طلبات الحجز", NotificationManager.IMPORTANCE_HIGH).apply {
-            description = "نغمة وإشعار لما يوصلك حجز أو إلغاء"
-            setSound(sound, attrs)
-            enableVibration(true)
-            vibrationPattern = longArrayOf(0, 300, 150, 300, 150, 500)
-        }
-        ctx.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        val nm = ctx.getSystemService(NotificationManager::class.java)
+        fun mk(id: String, name: String, raw: Int) = nm.createNotificationChannel(
+            NotificationChannel(id, name, NotificationManager.IMPORTANCE_HIGH).apply {
+                description = name
+                setSound(Uri.parse("android.resource://${ctx.packageName}/$raw"), attrs)
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 300, 150, 300, 150, 500)
+            }
+        )
+        mk(CH_NEW, "رحلة جديدة", R.raw.snd_new_trip)
+        mk(CH_CANCEL, "إلغاء رحلة", R.raw.snd_trip_cancel)
+        mk(CH_MSG, "رسالة من العميل", R.raw.snd_rider_msg)
     }
 
     private fun canNotify(ctx: Context) =
         Build.VERSION.SDK_INT < 33 ||
             ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
-    private fun show(ctx: Context, id: Int, title: String, text: String) {
+    private fun show(ctx: Context, channel: String, id: Int, title: String, text: String) {
         if (!canNotify(ctx)) return
         val open = PendingIntent.getActivity(
             ctx, 0,
             Intent(ctx, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-        val n = NotificationCompat.Builder(ctx, CAPTAIN_CHANNEL)
+        val n = NotificationCompat.Builder(ctx, channel)
             .setSmallIcon(R.drawable.ic_stat_pin)
             .setContentTitle(title)
             .setContentText(text)
@@ -90,12 +96,16 @@ object Alerts {
         fresh.forEach { b ->
             when (b.status) {
                 BK_PENDING -> show(
-                    ctx, b.id.hashCode(), "📥 طلب حجز جديد",
+                    ctx, CH_NEW, b.id.hashCode(), "📥 طلب حجز جديد",
                     "${b.passengerName} بدو ${seatsText(b.seats)} • ${b.tripSummary}" +
                         if (b.dropoff.isNotBlank()) " • النزول: ${b.dropoff}" else ""
                 )
+                BK_ACCEPTED -> if (b.reason == Repo.CANCEL_REQ) show(
+                    ctx, CH_MSG, b.id.hashCode() + 2, "✉️ العميل يطلب إلغاء حجزه",
+                    "${b.passengerName} • ${b.tripSummary}"
+                )
                 BK_CANCELLED_PASSENGER -> show(
-                    ctx, b.id.hashCode() + 1, "❌ راكب ألغى حجزه",
+                    ctx, CH_CANCEL, b.id.hashCode() + 1, "❌ راكب ألغى حجزه",
                     "${b.passengerName} ألغى ${seatsText(b.seats)} • ${b.tripSummary}"
                 )
             }

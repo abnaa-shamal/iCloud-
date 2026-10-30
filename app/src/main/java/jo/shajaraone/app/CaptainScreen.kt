@@ -111,6 +111,12 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
         val r = if (uid != null) Repo.listenMyTripRequests(uid) { myReqs = it } else null
         onDispose { r?.remove() }
     }
+    var prevPending by remember { mutableIntStateOf(-1) }
+    LaunchedEffect(myReqs) {
+        val p = myReqs.count { it.status == "pending" }
+        if (prevPending >= 0 && p < prevPending) AppFeedback.system(ctx)
+        prevPending = p
+    }
     var cancelBooking by remember { mutableStateOf<Booking?>(null) }
     var finishTrip by remember { mutableStateOf<Trip?>(null) }
     var open by rememberSaveable { mutableStateOf("") }

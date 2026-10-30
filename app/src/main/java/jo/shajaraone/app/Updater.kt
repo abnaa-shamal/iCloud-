@@ -56,6 +56,7 @@ fun UpdateCheck() {
         } catch (_: Exception) { }
     }
     val u = info
+    LaunchedEffect(u != null) { if (u != null) AppFeedback.system(ctx) }
     if (u != null && !dismissed) {
         AlertDialog(
             onDismissRequest = { dismissed = true },
