@@ -63,7 +63,7 @@ fun CaptainHome(me: UserProfile) {
         ) { t ->
             CompositionLocalProvider(LocalContentColor provides CapInk) {
                 Box(Modifier.fillMaxSize()) {
-                    if (t == 0) CapPublish(me, online, onPublished = { tab = 1 })
+                    if (t == 0) CapPublish(me, online, trips ?: emptyList(), onTrips = { tab = 1 }, onPublished = { tab = 1 })
                     else CapDashboard(me.name.trim().substringBefore(" "), trips, bookings)
                 }
             }
@@ -306,7 +306,7 @@ fun CapTripHistory(trips: List<Trip>?, bookings: List<Booking>, onBack: () -> Un
 // ===== Publish: direction, place, village, day, time, seats =====
 
 @Composable
-internal fun CapPublishPreview() = CapPublish(UserProfile(name = "أحمد", phone = "0790000000"), false, onPublished = {})
+internal fun CapPublishPreview() = CapPublish(UserProfile(name = "أحمد", phone = "0790000000"), false, emptyList(), onTrips = {}, onPublished = {})
 
 @Composable
 internal fun CapBigChoice(title: String, sub: String, index: Int, onClick: () -> Unit) {
@@ -388,9 +388,31 @@ internal fun CapBackBar(title: String, onBack: () -> Unit) {
     }
 }
 
+/** One car = one open trip at a time. After «بدء الرحلة» the next trip can only start from where the running one ends. */
+@Composable
+private fun CapPublish(me: UserProfile, online: Boolean, trips: List<Trip>, onTrips: () -> Unit, onPublished: () -> Unit) {
+    val ctx = LocalContext.current
+    LaunchedEffect(Unit) { CapTripState.load(ctx) }
+    val now = System.currentTimeMillis()
+    val live = trips.filter { it.status != TRIP_CANCELLED && it.departAt > now - 4 * 3_600_000L }
+    val waiting = live.filter { CapTripState.of(it.id) == "" }.minByOrNull { it.departAt }
+    val running = live.filter { CapTripState.of(it.id) == "started" }.maxByOrNull { it.departAt }
+    if (waiting != null) {
+        Column(Modifier.fillMaxSize().padding(horizontal = 18.dp).padding(top = 44.dp, bottom = 170.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Text("عندك رحلة منشورة", Modifier.padding(top = 6.dp), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = CapInk)
+            Column(Modifier.fillMaxWidth().capCard().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("${waiting.from}  ←  ${waiting.to}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = CapInk)
+                Text("${dayName(waiting.departAt)} • ${tripTimeLabel(waiting.note, waiting.departAt)}", fontSize = 13.sp, color = CapMute)
+            }
+            Text("ابدأ رحلتك أو ألغها من «رحلاتي»، وبعدها بتقدر تنشر الرحلة اللي بعدها.", fontSize = 14.sp, color = CapMute, lineHeight = 22.sp)
+            CapBtn("افتح رحلاتي", Modifier.fillMaxWidth()) { onTrips() }
+        }
+    } else CapPublishFlow(me, online, running?.to, onPublished)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CapPublish(me: UserProfile, online: Boolean, onPublished: () -> Unit) {
+private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, onPublished: () -> Unit) {
     val ctx = LocalContext.current
     var step by rememberSaveable { mutableIntStateOf(0) }      // 0 = direction, 1 = places, 2 = time and publish
     var group by rememberSaveable { mutableStateOf("") }       // من الشمال / من الجنوب / داخل الشمال
@@ -414,8 +436,11 @@ private fun CapPublish(me: UserProfile, online: Boolean, onPublished: () -> Unit
     fun clearLast(): Boolean = when {
         road.isNotBlank() -> { road = ""; true }
         dest.isNotBlank() -> { dest = ""; true }
-        origin.isNotBlank() -> { origin = ""; true }
+        origin.isNotBlank() && lockFrom == null -> { origin = ""; true }
         else -> false
+    }
+    LaunchedEffect(step, group) {
+        if (lockFrom != null && (lockFrom == AMMAN || lockFrom == ZARQA) && group.isBlank()) { group = G_SOUTH_C; priceStr = ""; step = 1 }
     }
     fun goBack() {
         when (step) {
@@ -432,17 +457,24 @@ private fun CapPublish(me: UserProfile, online: Boolean, onPublished: () -> Unit
                 Box(Modifier.size(10.dp).clip(androidx.compose.foundation.shape.CircleShape).background(if (online) Color(0xFF34C759) else CapMute))
                 Text(if (online) "أونلاين: عندك رحلة منشورة" else "أوفلاين: ما عندك رحلة منشورة", fontSize = 13.sp, color = if (online) Color(0xFF34C759) else CapMute)
             }
-            Text("وجهة انطلاقك؟", Modifier.padding(top = 6.dp, bottom = 4.dp), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk)
-            CapBigChoice(G_NORTH_C, "إلى عمّان والزرقاء", 0) { group = G_NORTH_C; priceStr = ""; step = 1 }
-            CapBigChoice(G_SOUTH_C, "إلى إربد والرمثا", 1) { group = G_SOUTH_C; priceStr = ""; step = 1 }
-            CapBigChoice(G_INNER_C, "بين مدن الشمال وقراه", 2) { group = G_INNER_C; priceStr = ""; step = 1 }
+            if (lockFrom != null) {
+                Text("انطلاقك من $lockFrom", Modifier.padding(top = 6.dp, bottom = 4.dp), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk)
+                Text("وصلت إلى $lockFrom، وين رايح بعدها؟", fontSize = 14.sp, color = CapMute)
+                CapBigChoice(G_NORTH_C, "إلى عمّان والزرقاء", 0) { group = G_NORTH_C; origin = lockFrom; priceStr = ""; step = 1 }
+                if (lockFrom != "المفرق") CapBigChoice(G_INNER_C, "بين مدن الشمال وقراه", 1) { group = G_INNER_C; origin = lockFrom; priceStr = ""; step = 1 }
+            } else {
+                Text("وجهة انطلاقك؟", Modifier.padding(top = 6.dp, bottom = 4.dp), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk)
+                CapBigChoice(G_NORTH_C, "إلى عمّان والزرقاء", 0) { group = G_NORTH_C; priceStr = ""; step = 1 }
+                CapBigChoice(G_SOUTH_C, "إلى إربد والرمثا", 1) { group = G_SOUTH_C; priceStr = ""; step = 1 }
+                CapBigChoice(G_INNER_C, "بين مدن الشمال وقراه", 2) { group = G_INNER_C; priceStr = ""; step = 1 }
+            }
         }
         1 -> Column(colMod, verticalArrangement = Arrangement.spacedBy(14.dp)) {
             CapBackBar(if (origin.isNotBlank() && dest.isBlank()) origin else group) { goBack() }
             when {
                 // من الشمال: from which place, to Amman / Zarqa / Mafraq, then the road
                 fromNorth && origin.isBlank() -> CapSection("وين بالشمال؟") { CapGrid(northPlaces.filter { it != "المفرق" }, origin, 2, big = true) { origin = it } }
-                fromNorth && dest.isBlank() -> CapSection("إلى أين؟") { CapGrid(northToDests, dest, 2, big = true) { dest = it } }
+                fromNorth && dest.isBlank() -> CapSection("إلى أين؟") { CapGrid(northToDests.filter { it != origin }, dest, 2, big = true) { dest = it } }
                 // من الجنوب: to which place in the north, then the road
                 group == G_SOUTH_C && dest.isBlank() -> CapSection("وين رايح بالشمال؟") { CapGrid(southToDests, dest, 2, big = true) { dest = it } }
                 // داخل الشمال: from, then to, both grouped
