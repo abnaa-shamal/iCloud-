@@ -114,7 +114,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
     val running = all.filter { it.status != TRIP_CANCELLED && st(it) == "started" }.sortedBy { it.departAt }
     val upcoming = all.filter { it.status != TRIP_CANCELLED && st(it) == "" && it.departAt > now - 4 * 3_600_000L }.sortedBy { it.departAt }
     val done = all.filter { it.status == TRIP_CANCELLED || st(it) == "finished" || (st(it) == "" && it.departAt <= now - 4 * 3_600_000L) }.sortedByDescending { it.departAt }
-    val list = if (home) (running + upcoming) else when (seg) { 0 -> upcoming; 1 -> running; else -> done }
+    val list = if (home) (if (running.isNotEmpty()) running else upcoming) else when (seg) { 0 -> upcoming; 1 -> running; else -> done }
 
     Box(Modifier.fillMaxSize()) {
         androidx.compose.foundation.lazy.LazyColumn(
@@ -210,7 +210,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
                         if (reqs.isEmpty()) Text("ما في ركاب لسا", fontSize = 13.sp, color = CapMute)
                         reqs.forEach { b -> RiderCard(b, canCancel = sg == 0) { cancelBooking = b } }
                         if (sg < 2) {
-                            LiveShareControl(t)
+                            if (sg == 1) LiveShareControl(t)
                             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 CapBtn("مشاركة الرحلة", Modifier.weight(1f), filled = false, color = CapAccent, height = 42.dp) {
                                     try {
