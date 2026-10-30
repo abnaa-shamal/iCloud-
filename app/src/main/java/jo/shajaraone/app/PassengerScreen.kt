@@ -147,7 +147,11 @@ private fun TripsTab(me: UserProfile, myBookings: List<Booking>, flow: RiderFlow
     }
 
     booking?.let { t ->
-        val mfq = if (flow.cur == MAFRAQ || flow.dest == MAFRAQ) listOf("راكب المفرق", flow.road.takeIf { flow.dest == MAFRAQ && it.isNotBlank() }).filterNotNull().joinToString(" • ") else ""
+        val mfq = when {
+            flow.dest == MAFRAQ -> listOf("راكب إلى المفرق", flow.road.takeIf { it.isNotBlank() }).filterNotNull().joinToString(" • ")
+            flow.cur == MAFRAQ -> "راكب من المفرق"
+            else -> ""
+        }
         BookingDialog(t, me, mfq, flow.who == 2, onClose = { booking = null }, onBooked = { booking = null })
     }
 }
