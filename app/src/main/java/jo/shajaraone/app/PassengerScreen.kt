@@ -88,6 +88,7 @@ private fun TripsTab(me: UserProfile, myBookings: List<Booking>, flow: RiderFlow
     var booking by remember { mutableStateOf<Trip?>(null) }
     var tracking by remember { mutableStateOf<Trip?>(null) }
     var needVerify by remember { mutableStateOf(false) }
+    var rideDialog by remember { mutableStateOf(false) }
 
     DisposableEffect(Unit) {
         val r = Repo.listenTrips(
@@ -105,7 +106,7 @@ private fun TripsTab(me: UserProfile, myBookings: List<Booking>, flow: RiderFlow
     // One confirmed trip at a time: after a captain accepts, the rider can't book another until that trip is over (or he cancels it).
     val lockedBy = myBookings.firstOrNull { it.isActive && it.departAt > now }
 
-    RiderFlow(me.name.trim().substringBefore(" "), flow, shown, failed) { t ->
+    RiderFlow(me.name.trim().substringBefore(" "), flow, shown, failed, onRequestRide = { if (me.verified) rideDialog = true else needVerify = true }) { t ->
         val mine = myBookings.firstOrNull { it.tripId == t.id && it.isActive }
         when {
             mine?.status == BK_ACCEPTED -> {
@@ -123,6 +124,7 @@ private fun TripsTab(me: UserProfile, myBookings: List<Booking>, flow: RiderFlow
     }
 
     tracking?.let { t -> LiveTrackDialog(t.id, t.captainName, t.captainPhone) { tracking = null } }
+    if (rideDialog) RideRequestDialog(me, flow) { rideDialog = false }
 
     if (needVerify) {
         AlertDialog(
@@ -230,6 +232,7 @@ private fun MyBookings(list: List<Booking>) {
         verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.fillMaxSize()
     ) {
         item { Text("حجوزاتي", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = Color.White) }
+        item { RiderRideRequests() }
         if (sorted.isEmpty()) item { EmptyState("🎫", "ما عندك حجوزات لسا.") }
         items(sorted.size) { i ->
             val b = sorted[i]

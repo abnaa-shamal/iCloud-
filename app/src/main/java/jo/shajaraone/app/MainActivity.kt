@@ -45,6 +45,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         Alerts.createChannels(this)
+        try { UpdateCheckWorker.schedule(this) } catch (_: Throwable) { }
         if (IS_CAPTAIN_APP) jo.shajaraone.app.hasbat.initHasbat(this) else jo.shajaraone.app.hasbat.AssistantBrain.riderMode = true
         setContent {
             ShajaraTheme {

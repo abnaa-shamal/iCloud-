@@ -354,5 +354,33 @@ service cloud.firestore {
 
       allow delete: if isAdmin() || (signedIn() && resource.data.captainUid == me());
     }
+    match /rideRequests/{reqId} {
+      allow read: if signedIn() && (isAdmin() || resource.data.passengerUid == me() || resource.data.takenByUid == me()
+        || (isApprovedCaptain() && resource.data.status == 'open'));
+      allow create: if canBook()
+        && request.resource.data.keys().hasOnly(['passengerUid', 'passengerName', 'passengerPhone', 'from', 'to', 'road',
+             'departAt', 'seats', 'note', 'status', 'createdAt', 'updatedAt'])
+        && request.resource.data.passengerUid == me()
+        && request.resource.data.passengerName == myProfile().name
+        && request.resource.data.passengerPhone == myProfile().phone
+        && request.resource.data.status == 'open'
+        && shortText(request.resource.data.from, 40) && shortText(request.resource.data.to, 40) && shortText(request.resource.data.road, 60)
+        && shortText(request.resource.data.note, 120)
+        && request.resource.data.departAt is int
+        && request.resource.data.seats is int && request.resource.data.seats >= 1 && request.resource.data.seats <= 7
+        && request.resource.data.createdAt is int && request.resource.data.updatedAt is int;
+      allow update: if signedIn() && (
+          (isApprovedCaptain() && resource.data.status == 'open' && resource.data.passengerUid != me()
+            && onlyChanges(['status', 'takenByUid', 'takenByName', 'takenByPhone', 'takenByCar', 'updatedAt'])
+            && request.resource.data.status == 'taken'
+            && request.resource.data.takenByUid == me()
+            && request.resource.data.takenByName == myProfile().name
+            && request.resource.data.takenByPhone == myProfile().phone
+            && shortText(request.resource.data.takenByCar, 80))
+        || ((resource.data.passengerUid == me() || isAdmin()) && resource.data.status in ['open', 'taken']
+            && onlyChanges(['status', 'updatedAt']) && request.resource.data.status == 'cancelled')
+      );
+      allow delete: if isAdmin() || (signedIn() && resource.data.passengerUid == me() && resource.data.status != 'taken');
+    }
   }
 }

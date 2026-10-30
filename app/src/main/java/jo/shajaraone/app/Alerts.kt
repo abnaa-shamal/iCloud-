@@ -114,6 +114,20 @@ object Alerts {
         prefs.lastAlertAt = newest
     }
 
+    /** Captain: a new open pre-booking request (from a rider) while the app is closed. */
+    fun processRideRequests(ctx: Context, myUid: String, rows: List<Repo.RideReq>) {
+        val sp = ctx.getSharedPreferences("upd", Context.MODE_PRIVATE)
+        val since = sp.getLong("lastReq", 0L)
+        val now = System.currentTimeMillis()
+        if (since == 0L) { sp.edit().putLong("lastReq", now).apply(); return }
+        val fresh = rows.filter { it.status == "open" && it.passengerUid != myUid && it.createdAt > since && it.departAt > now }
+        fresh.take(3).forEach { r ->
+            show(ctx, CH_NEW, r.id.hashCode(), "🕓 طلب حجز مسبق جديد",
+                "${r.from} ← ${r.to} • ${dayName(r.departAt)} ${clockText(r.departAt)} • ${seatsText(r.seats)}")
+        }
+        if (fresh.isNotEmpty()) sp.edit().putLong("lastReq", fresh.maxOf { it.createdAt }).apply()
+    }
+
     /** Free background check every 15 minutes (Android's minimum) for when the app is closed. */
     fun scheduleBackgroundCheck(ctx: Context) {
         val req = PeriodicWorkRequestBuilder<BookingCheckWorker>(15, TimeUnit.MINUTES)
@@ -137,6 +151,14 @@ class BookingCheckWorker(ctx: Context, params: WorkerParameters) : Worker(ctx, p
                 30, TimeUnit.SECONDS
             )
             Alerts.processCaptainBookings(applicationContext, snap.documents.map { it.toBooking() })
+            try {
+                val rr = Tasks.await(FirebaseFirestore.getInstance().collection("rideRequests").whereEqualTo("status", "open").get(), 30, TimeUnit.SECONDS)
+                Alerts.processRideRequests(applicationContext, uid, rr.documents.map {
+                    Repo.RideReq(it.id, it.getString("passengerUid") ?: "", it.getString("passengerName") ?: "", "", it.getString("from") ?: "",
+                        it.getString("to") ?: "", "", it.getLong("departAt") ?: 0L, it.getLong("seats") ?: 1L, "", "open", "", "", "", "",
+                        it.getLong("createdAt") ?: 0L, it.getLong("updatedAt") ?: 0L)
+                })
+            } catch (_: Exception) { }
             Result.success()
         } catch (e: Exception) {
             Result.retry()

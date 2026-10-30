@@ -144,6 +144,7 @@ private fun BackBar(title: String, onBack: () -> Unit) {
 @Composable
 fun RiderFlow(
     name: String, fs: RiderFlowState, shown: List<Trip>?, failed: Boolean,
+    onRequestRide: () -> Unit = {},
     actions: @Composable ColumnScope.(Trip) -> Unit
 ) {
     BackHandler(enabled = fs.step > 0 || fs.who != 0) { if (fs.step > 0) fs.back() else { fs.who = 0; fs.other = ""; fs.share = false } }
@@ -247,6 +248,7 @@ fun RiderFlow(
                         items(shown.size) { i -> TripCard(shown[i], Modifier, index = i, nearest = i == 0, actions = { actions(shown[i]) }) }
                     }
                 }
+                item { RideRequestEntry(onRequestRide) }
             }
             if (pickDate) {
                 val todayUtc = pickerMillisOfOffset(0)

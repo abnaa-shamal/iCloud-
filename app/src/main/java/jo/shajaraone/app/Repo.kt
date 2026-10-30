@@ -214,6 +214,72 @@ object Repo {
         db.collection("tripRequests").add(data).addOnSuccessListener { onDone(true) }.addOnFailureListener { onDone(false) }
     }
 
+    // ===== Rider ride requests («حجز مسبق»): the rider asks for a ride at a day and time, the first captain who accepts wins =====
+
+    data class RideReq(
+        val id: String, val passengerUid: String, val passengerName: String, val passengerPhone: String,
+        val from: String, val to: String, val road: String, val departAt: Long, val seats: Long, val note: String,
+        val status: String, val takenByUid: String, val takenByName: String, val takenByPhone: String, val takenByCar: String,
+        val createdAt: Long, val updatedAt: Long
+    )
+
+    private fun com.google.firebase.firestore.DocumentSnapshot.toRideReq() = RideReq(
+        id, getString("passengerUid") ?: "", getString("passengerName") ?: "", getString("passengerPhone") ?: "",
+        getString("from") ?: "", getString("to") ?: "", getString("road") ?: "", getLong("departAt") ?: 0L, getLong("seats") ?: 1L,
+        getString("note") ?: "", getString("status") ?: "open", getString("takenByUid") ?: "", getString("takenByName") ?: "",
+        getString("takenByPhone") ?: "", getString("takenByCar") ?: "", getLong("createdAt") ?: 0L, getLong("updatedAt") ?: 0L
+    )
+
+    fun createRideRequest(me: UserProfile, from: String, to: String, road: String, departAt: Long, seats: Long, note: String, onDone: (Boolean) -> Unit) {
+        val uid = auth.currentUser?.uid ?: return onDone(false)
+        val data = hashMapOf<String, Any>(
+            "passengerUid" to uid, "passengerName" to me.name, "passengerPhone" to me.phone,
+            "from" to from, "to" to to, "road" to road, "departAt" to departAt, "seats" to seats, "note" to note.take(120),
+            "status" to "open", "createdAt" to now(), "updatedAt" to now()
+        )
+        db.collection("rideRequests").add(data).addOnSuccessListener { onDone(true) }.addOnFailureListener { onDone(false) }
+    }
+
+    /** Captain: every open request (the newest first). */
+    fun listenOpenRideRequests(onChange: (List<RideReq>) -> Unit): ListenerRegistration =
+        db.collection("rideRequests").whereEqualTo("status", "open").addSnapshotListener { snap, _ ->
+            if (snap != null) onChange(snap.documents.map { it.toRideReq() }
+                .filter { it.departAt > now() - 30 * 60_000L }.sortedBy { it.departAt })
+        }
+
+    /** Captain: the requests he accepted. */
+    fun listenTakenRideRequests(uid: String, onChange: (List<RideReq>) -> Unit): ListenerRegistration =
+        db.collection("rideRequests").whereEqualTo("takenByUid", uid).addSnapshotListener { snap, _ ->
+            if (snap != null) onChange(snap.documents.map { it.toRideReq() }.filter { it.status == "taken" }.sortedBy { it.departAt })
+        }
+
+    /** Rider: his own requests. */
+    fun listenMyRideRequests(uid: String, onChange: (List<RideReq>) -> Unit): ListenerRegistration =
+        db.collection("rideRequests").whereEqualTo("passengerUid", uid).addSnapshotListener { snap, _ ->
+            if (snap != null) onChange(snap.documents.map { it.toRideReq() }.sortedByDescending { it.createdAt })
+        }
+
+    /** First captain wins: a transaction that only succeeds while the request is still open. */
+    fun acceptRideRequest(r: RideReq, me: UserProfile, car: String, onDone: (Boolean, String) -> Unit) {
+        val uid = auth.currentUser?.uid ?: return onDone(false, "سجّل دخول")
+        val ref = db.collection("rideRequests").document(r.id)
+        db.runTransaction { tx ->
+            val cur = tx.get(ref)
+            if (cur.getString("status") != "open") throw IllegalStateException("taken")
+            tx.update(ref, mapOf(
+                "status" to "taken", "takenByUid" to uid, "takenByName" to me.name, "takenByPhone" to me.phone,
+                "takenByCar" to car.take(80), "updatedAt" to now()
+            ))
+            true
+        }.addOnSuccessListener { onDone(true, "") }
+            .addOnFailureListener { onDone(false, if (it.message?.contains("taken") == true) "سبقك كابتن ثاني" else "ما قدرت، جرّب كمان مرة") }
+    }
+
+    fun cancelRideRequest(r: RideReq, onDone: (Boolean) -> Unit) {
+        db.collection("rideRequests").document(r.id).update(mapOf("status" to "cancelled", "updatedAt" to now()))
+            .addOnSuccessListener { onDone(true) }.addOnFailureListener { onDone(false) }
+    }
+
     fun listenMyTripRequests(uid: String, onChange: (List<TripReq>) -> Unit): ListenerRegistration =
         db.collection("tripRequests").whereEqualTo("captainUid", uid).addSnapshotListener { snap, _ ->
             if (snap != null) onChange(snap.documents.map {

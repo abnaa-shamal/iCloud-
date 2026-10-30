@@ -168,6 +168,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
                         fontSize = 28.sp, fontWeight = FontWeight.Bold, color = CapInk)
                 }
             }
+            if (home && me != null) item { CaptainRideRequests(me) }
             items(pend.size, key = { pend[it].id }) { i ->
                 val b = pend[i]
                 Column(Modifier.entrance(i).fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(CapPeach).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
