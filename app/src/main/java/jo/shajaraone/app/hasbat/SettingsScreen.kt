@@ -105,7 +105,7 @@ fun CleanSettingsScreen(storage: AppDataManager, theme: AppTheme, isEnglish: Boo
                         modifier = Modifier
                             .fillMaxWidth()
                             .bounceClick { SoundEffectsHelper.playClick(view, storage.soundEnabled); if (item.first == 11) onSeatHistory?.invoke() else selectedSection = item.first }
-                            .padding(horizontal = 12.dp, vertical = 14.dp),
+                            .padding(horizontal = 12.dp, vertical = 7.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
