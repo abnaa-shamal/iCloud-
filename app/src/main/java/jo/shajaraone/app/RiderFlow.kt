@@ -190,6 +190,9 @@ fun RiderFlow(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             BackBar("أنت في ${fs.cur}") { fs.back() }
+            Box(Modifier.clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.10f)).clickable { fs.back() }.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                Text(if (fs.who == 2) "تغيير موقع الشخص" else "تغيير موقعي", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Amber)
+            }
             Text("لوين بدك تروح؟", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
             if (fs.curNorth) {
                 GlassSection("داخل الشمال") {
