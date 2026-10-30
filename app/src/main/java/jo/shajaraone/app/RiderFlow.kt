@@ -91,9 +91,12 @@ fun flowMatches(t: Trip, fs: RiderFlowState): Boolean {
 // ---------- small glass building blocks (rider look) ----------
 
 @Composable
-internal fun GlassSection(title: String, content: @Composable ColumnScope.() -> Unit) {
+internal fun GlassSection(title: String, sub: String = "", content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.fillMaxWidth().darkGlass(24.dp).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Dim)
+        if (sub.isNotBlank()) Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(sub, fontSize = 13.sp, color = Amber)
+        } else Text(title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Dim)
         content()
     }
 }
@@ -181,7 +184,7 @@ fun RiderFlow(
                     Text(if (fs.who == 2) "وين موقع الشخص الآخر؟" else "وين أنت حالياً؟", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
                     if (fs.who == 1) Text("اختر مكانك بإيدك", fontSize = 13.sp, color = Dim)
                 }
-                GlassSection("مناطق الشمال") { GlassGrid(northPlaces - MAFRAQ, fs.cur) { fs.cur = it; fs.step = 1 } }
+                GlassSection("قرى الشمال", "الرمثا • إربد • باقي القرى") { GlassGrid(northPlaces - MAFRAQ, fs.cur) { fs.cur = it; fs.step = 1 } }
                 GlassSection("عمّان والزرقاء والمفرق") { GlassGrid(listOf(AMMAN, ZARQA, MAFRAQ), fs.cur) { fs.cur = it; fs.step = 1 } }
             }
         }
@@ -190,19 +193,19 @@ fun RiderFlow(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             BackBar("أنت في ${fs.cur}") { fs.back() }
-            Box(Modifier.clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.10f)).clickable { fs.back() }.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                Text(if (fs.who == 2) "تغيير موقع الشخص" else "تغيير موقعي", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Amber)
+            Box(Modifier.clip(RoundedCornerShape(14.dp)).background(Amber.copy(alpha = 0.14f)).border(1.dp, Amber, RoundedCornerShape(14.dp)).clickable { fs.back() }.padding(horizontal = 16.dp, vertical = 11.dp)) {
+                Text("📍 " + (if (fs.who == 2) "تغيير موقع الشخص يدوياً" else "تغيير موقعي يدوياً"), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Amber)
             }
             Text("لوين بدك تروح؟", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
             if (fs.curNorth) {
-                GlassSection("داخل الشمال") {
+                GlassSection("قرى الشمال", "الرمثا • إربد • باقي القرى") {
                     GlassGrid((northPlaces - MAFRAQ).filter { it != fs.cur }, "") { fs.dest = it; fs.road = NORTH_INNER; fs.step = 3 }
                 }
                 GlassSection("عمّان / الزرقاء / المفرق") {
                     GlassGrid(listOf("إلى $AMMAN", "إلى $ZARQA", "إلى $MAFRAQ"), "") { fs.dest = it.removePrefix("إلى "); fs.road = ""; fs.step = 2 }
                 }
             } else {
-                GlassSection("إلى الشمال") {
+                GlassSection("قرى الشمال", "الرمثا • إربد • باقي القرى") {
                     GlassGrid(northPlaces, "") { fs.dest = it; fs.road = ""; fs.step = if (it == MAFRAQ) 2 else 3 }
                 }
             }

@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -581,18 +582,18 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
             }
             val lf = lockFrom ?: gpsHere?.takeIf { !manualStart && it in northPlaces }
             if (lf != null) {
-                if (lockFrom == null) Box(Modifier.clip(RoundedCornerShape(12.dp)).background(CapInk.copy(alpha = 0.08f)).clickable { manualStart = true }.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                    Text("تغيير نقطة الانطلاق", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CapAccent)
+                if (lockFrom == null) Box(Modifier.clip(RoundedCornerShape(14.dp)).background(CapAccent.copy(alpha = 0.14f)).border(1.dp, CapAccent, RoundedCornerShape(14.dp)).clickable { manualStart = true }.padding(horizontal = 16.dp, vertical = 11.dp)) {
+                    Text("📍 تغيير نقطة الانطلاق يدوياً", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = CapInk)
                 }
                 Text("انطلاقك من $lf", Modifier.padding(top = 6.dp, bottom = 4.dp), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk)
                 Text(if (lockFrom != null) "وصلت إلى $lf، وين رايح بعدها؟" else "حسب موقعك الحالي، وين رايح؟", fontSize = 14.sp, color = CapMute)
                 CapBigChoice(G_NORTH_C, "من الشمال", 0) { group = G_NORTH_C; origin = lf; priceStr = ""; step = 1 }
-                if (lf != "المفرق") CapBigChoice(G_INNER_C, "بين قرى الشمال", 1) { group = G_INNER_C; origin = lf; priceStr = ""; step = 1 }
+                if (lf != "المفرق") CapBigChoice(G_INNER_C, "الرمثا • إربد • باقي القرى", 1) { group = G_INNER_C; origin = lf; priceStr = ""; step = 1 }
             } else {
                 Text("وجهة انطلاقك؟", Modifier.padding(top = 6.dp, bottom = 4.dp), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk)
                 CapBigChoice(G_NORTH_C, "من الشمال", 0) { group = G_NORTH_C; priceStr = ""; step = 1 }
-                CapBigChoice(G_SOUTH_C, "إلى قرى الشمال", 1) { group = G_SOUTH_C; priceStr = ""; step = 1 }
-                CapBigChoice(G_INNER_C, "بين قرى الشمال", 2) { group = G_INNER_C; priceStr = ""; step = 1 }
+                CapBigChoice(G_SOUTH_C, "إلى قرى الشمال: الرمثا • إربد • باقي القرى", 1) { group = G_SOUTH_C; priceStr = ""; step = 1 }
+                CapBigChoice(G_INNER_C, "الرمثا • إربد • باقي القرى", 2) { group = G_INNER_C; priceStr = ""; step = 1 }
             }
         }
         1 -> Column(colMod, verticalArrangement = Arrangement.spacedBy(14.dp)) {
