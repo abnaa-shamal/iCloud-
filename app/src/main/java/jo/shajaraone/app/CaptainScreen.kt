@@ -484,10 +484,15 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
     var pick by remember { mutableIntStateOf(0) }   // 0 = closed, 1 = from, 2 = to
     var sending by remember { mutableStateOf(false) }
     var openRoad by remember { mutableStateOf("") }
-    var gpsFrom by rememberSaveable { mutableStateOf<String?>(null) }
+    var manualStart by rememberSaveable { mutableStateOf(false) }   // true = the captain chose to pick his starting point by hand
     var gpsHere by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(lockFrom) {
         if (lockFrom == null && hasLocationPermission(ctx)) fetchLocation(ctx) { l -> if (l != null) gpsHere = nearestPlace(l.latitude, l.longitude) }
+    }
+    // In Amman / Zarqa by GPS: go straight to «وين رايح بالشمال؟»
+    LaunchedEffect(gpsHere, manualStart) {
+        val h = gpsHere
+        if (lockFrom == null && !manualStart && step == 0 && group.isBlank() && (h == AMMAN || h == ZARQA)) { group = G_SOUTH_C; origin = h; priceStr = ""; step = 1 }
     }
     var carryMafraq by rememberSaveable { mutableStateOf(false) }
 
@@ -499,7 +504,7 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
     fun clearLast(): Boolean = when {
         road.isNotBlank() -> { road = ""; true }
         dest.isNotBlank() -> { dest = ""; true }
-        origin.isNotBlank() && lockFrom == null -> { origin = ""; true }
+        origin.isNotBlank() && lockFrom == null && (manualStart || gpsHere == null || gpsHere !in northPlaces) -> { origin = ""; true }
         else -> false
     }
     LaunchedEffect(step, group) {
@@ -508,7 +513,7 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
     fun goBack() {
         when (step) {
             2 -> { step = 1; clearLast() }
-            1 -> if (!clearLast()) { step = 0; group = ""; openRoad = "" }
+            1 -> if (!clearLast()) { step = 0; group = ""; openRoad = ""; if (gpsHere == AMMAN || gpsHere == ZARQA) manualStart = true }
         }
     }
     BackHandler(enabled = step > 0) { goBack() }
@@ -520,21 +525,16 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
                 Box(Modifier.size(10.dp).clip(androidx.compose.foundation.shape.CircleShape).background(if (online) Color(0xFF34C759) else CapMute))
                 Text(if (online) "أونلاين: عندك رحلة منشورة" else "أوفلاين: ما عندك رحلة منشورة", fontSize = 13.sp, color = if (online) Color(0xFF34C759) else CapMute)
             }
-            val lf = lockFrom ?: gpsFrom
+            val lf = lockFrom ?: gpsHere?.takeIf { !manualStart && it in northPlaces }
             if (lf != null) {
+                if (lockFrom == null) Box(Modifier.clip(RoundedCornerShape(12.dp)).background(CapInk.copy(alpha = 0.08f)).clickable { manualStart = true }.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                    Text("تغيير نقطة الانطلاق", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CapAccent)
+                }
                 Text("انطلاقك من $lf", Modifier.padding(top = 6.dp, bottom = 4.dp), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk)
                 Text(if (lockFrom != null) "وصلت إلى $lf، وين رايح بعدها؟" else "حسب موقعك الحالي، وين رايح؟", fontSize = 14.sp, color = CapMute)
                 CapBigChoice(G_NORTH_C, "إلى عمّان والزرقاء", 0) { group = G_NORTH_C; origin = lf; priceStr = ""; step = 1 }
                 if (lf != "المفرق") CapBigChoice(G_INNER_C, "بين مدن الشمال وقراه", 1) { group = G_INNER_C; origin = lf; priceStr = ""; step = 1 }
-                if (lockFrom == null) androidx.compose.material3.TextButton(onClick = { gpsFrom = null }) { Text("مو هيك؟ اختر بإيدك", color = CapMute) }
             } else {
-                // No running trip: the GPS suggests where the captain is; he can still choose by hand below
-                val here = gpsHere
-                if (here != null) {
-                    CapBigChoice("موقعك الحالي: $here ✓", "اضغط للانطلاق منه", 0) {
-                        if (here == AMMAN || here == ZARQA) { group = G_SOUTH_C; origin = here; priceStr = ""; step = 1 } else gpsFrom = here
-                    }
-                }
                 Text("وجهة انطلاقك؟", Modifier.padding(top = 6.dp, bottom = 4.dp), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk)
                 CapBigChoice(G_NORTH_C, "إلى عمّان والزرقاء", 0) { group = G_NORTH_C; priceStr = ""; step = 1 }
                 CapBigChoice(G_SOUTH_C, "إلى إربد والرمثا", 1) { group = G_SOUTH_C; priceStr = ""; step = 1 }
