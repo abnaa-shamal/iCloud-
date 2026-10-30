@@ -157,6 +157,20 @@ object Repo {
         )
     }
 
+    // ===== Rider location for the captain (after acceptance) =====
+
+    fun pushRiderLoc(b: Booking, lat: Double, lng: Double, accuracy: Double, onDone: (Boolean) -> Unit) {
+        val uid = auth.currentUser?.uid ?: return onDone(false)
+        db.collection("riderLocations").document(b.id).set(
+            mapOf("captainUid" to b.captainUid, "passengerUid" to uid, "lat" to lat, "lng" to lng, "accuracy" to accuracy, "updatedAt" to now())
+        ).addOnCompleteListener { onDone(it.isSuccessful) }
+    }
+
+    fun listenRiderLoc(bookingId: String, onChange: (Pair<Double, Double>?) -> Unit): ListenerRegistration =
+        db.collection("riderLocations").document(bookingId).addSnapshotListener { snap, _ ->
+            onChange(if (snap != null && snap.exists()) (snap.getDouble("lat") ?: 0.0) to (snap.getDouble("lng") ?: 0.0) else null)
+        }
+
     fun stopLive(tripId: String) {
         db.collection("liveLocations").document(tripId).delete()
     }

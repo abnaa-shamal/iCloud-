@@ -232,6 +232,7 @@ private fun MyBookings(list: List<Booking>) {
                 if (b.reason.isNotBlank()) Text("السبب: ${b.reason}", fontSize = 12.sp, color = Color(0xFFFF8A80))
                 if (b.status == BK_ACCEPTED && upcoming) {
                     AmberBtn("تتبّع الكابتن") { tracking = b }
+                    ShareMyLocationButton(b)
                     MiniContact(b.captainPhone, "مرحبا كابتن ${b.captainName}، بخصوص حجزي برحلة ${b.tripSummary}")
                 }
                 if (b.isActive && upcoming) GhostBtn("إلغاء الحجز", Modifier.fillMaxWidth(), Color(0xFFFF8A80)) { toCancel = b }

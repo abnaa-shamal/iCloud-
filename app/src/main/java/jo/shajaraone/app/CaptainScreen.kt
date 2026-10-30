@@ -220,6 +220,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
                                     if (sg == 0) CapBtn("إلغاء", filled = false, color = CapRed, height = 38.dp) { cancelBooking = b }
                                 }
                             }
+                            if (sg < 2) RiderDirectionsButton(b)
                         }
                         if (sg < 2) {
                             LiveShareControl(t)

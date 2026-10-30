@@ -286,5 +286,27 @@ service cloud.firestore {
 
       allow delete: if signedIn() && (isAdmin() || resource.data.captainUid == me());
     }
+
+    // ===== Rider's own location for the captain (optional, only after the captain ACCEPTED the booking) =====
+    // One document per booking. Only that booking's passenger writes it (one tap on "شارك موقعي"), and only the
+    // booking's captain, the passenger and the admin can read it, so the captain can open directions to the rider.
+    match /riderLocations/{bookingId} {
+      allow read: if signedIn()
+        && (resource == null || isAdmin() || resource.data.captainUid == me() || resource.data.passengerUid == me());
+
+      allow create, update: if signedIn()
+        && exists(/databases/$(database)/documents/bookings/$(bookingId))
+        && get(/databases/$(database)/documents/bookings/$(bookingId)).data.passengerUid == me()
+        && get(/databases/$(database)/documents/bookings/$(bookingId)).data.status == 'accepted'
+        && request.resource.data.keys().hasOnly(['captainUid', 'passengerUid', 'lat', 'lng', 'accuracy', 'updatedAt'])
+        && request.resource.data.passengerUid == me()
+        && request.resource.data.captainUid == get(/databases/$(database)/documents/bookings/$(bookingId)).data.captainUid
+        && request.resource.data.lat is number && request.resource.data.lat >= -90 && request.resource.data.lat <= 90
+        && request.resource.data.lng is number && request.resource.data.lng >= -180 && request.resource.data.lng <= 180
+        && request.resource.data.accuracy is number
+        && request.resource.data.updatedAt is int;
+
+      allow delete: if signedIn() && (isAdmin() || resource.data.passengerUid == me());
+    }
   }
 }
