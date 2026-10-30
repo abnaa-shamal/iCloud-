@@ -173,10 +173,18 @@ service cloud.firestore {
             && shortText(request.resource.data.cancelReason, 300))
         || acceptingBooking()
         || returningSeats()
-        // The admin can only cancel a trip (used when suspending a captain).
+        // The admin can cancel a trip (used when suspending a captain)...
         || (isAdmin() && onlyChanges(['status', 'cancelReason'])
             && request.resource.data.status == 'cancelled'
-            && resource.data.status in ['open', 'full']);
+            && resource.data.status in ['open', 'full'])
+        // ...and apply a captain's APPROVED change request: new time / price (edit, postpone) or close the booking ('full').
+        || (isAdmin() && onlyChanges(['departAt', 'price', 'note'])
+            && resource.data.status in ['open', 'full']
+            && request.resource.data.departAt is int
+            && (request.resource.data.price == null || request.resource.data.price is number)
+            && shortText(request.resource.data.note, 300))
+        || (isAdmin() && onlyChanges(['status'])
+            && resource.data.status == 'open' && request.resource.data.status == 'full');
 
       allow delete: if isAdmin() || (signedIn() && resource.data.captainUid == me());
     }
@@ -307,6 +315,38 @@ service cloud.firestore {
         && request.resource.data.updatedAt is int;
 
       allow delete: if signedIn() && (isAdmin() || resource.data.passengerUid == me());
+    }
+
+    // ===== Captain's change requests (edit / postpone / close booking) — the admin approves or rejects =====
+    // A captain never changes a published trip himself: he sends a request, the admin approves (and applies it to the
+    // trip with the trip rules above) or rejects it.
+    match /tripRequests/{reqId} {
+      allow read: if signedIn() && (isAdmin() || resource.data.captainUid == me());
+
+      allow create: if isApprovedCaptain()
+        && request.resource.data.keys().hasOnly(['tripId', 'captainUid', 'captainName', 'tripSummary', 'type', 'detail',
+             'newDepartAt', 'newPrice', 'newNote', 'status', 'createdAt', 'updatedAt'])
+        && request.resource.data.captainUid == me()
+        && request.resource.data.captainName == myProfile().name
+        && request.resource.data.type in ['edit', 'postpone', 'close']
+        && request.resource.data.status == 'pending'
+        && request.resource.data.tripId is string
+        && exists(/databases/$(database)/documents/trips/$(request.resource.data.tripId))
+        && tripOf(request.resource.data.tripId).captainUid == me()
+        && tripOf(request.resource.data.tripId).status in ['open', 'full']
+        && shortText(request.resource.data.detail, 200)
+        && shortText(request.resource.data.tripSummary, 120)
+        && shortText(request.resource.data.newNote, 300)
+        && request.resource.data.newDepartAt is int
+        && (request.resource.data.newPrice == null || request.resource.data.newPrice is number)
+        && request.resource.data.createdAt is int;
+
+      // Only the admin decides, and only once.
+      allow update: if isAdmin() && onlyChanges(['status', 'updatedAt'])
+        && resource.data.status == 'pending'
+        && request.resource.data.status in ['approved', 'rejected'];
+
+      allow delete: if isAdmin() || (signedIn() && resource.data.captainUid == me());
     }
   }
 }

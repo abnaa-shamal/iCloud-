@@ -10,6 +10,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
+import com.google.android.gms.tasks.Task
 
 fun initFirebase(ctx: Context) {
     if (FirebaseApp.getApps(ctx).isEmpty()) {
@@ -29,6 +30,7 @@ class AdminData {
     var users by mutableStateOf(listOf<AUser>())
     var trips by mutableStateOf(listOf<ATrip>())
     var bookings by mutableStateOf(listOf<ABooking>())
+    var requests by mutableStateOf(listOf<ARequest>())
     var places by mutableStateOf(mapOf<String, List<String>>())
     var loaded by mutableStateOf(false)
     var error by mutableStateOf<String?>(null)
@@ -45,6 +47,8 @@ class AdminData {
             .addSnapshotListener { s, e -> if (e != null) fail(e) else if (s != null) trips = s.documents.map { it.toATrip() } }
         regs += db.collection("bookings").orderBy("createdAt", Query.Direction.DESCENDING).limit(150)
             .addSnapshotListener { s, e -> if (e != null) fail(e) else if (s != null) bookings = s.documents.map { it.toABooking() } }
+        regs += db.collection("tripRequests").orderBy("createdAt", Query.Direction.DESCENDING).limit(100)
+            .addSnapshotListener { s, e -> if (e != null) fail(e) else if (s != null) requests = s.documents.map { it.toARequest() } }
         regs += db.collection("config").document("places").addSnapshotListener { s, e ->
             if (e == null && s != null) {
                 val raw = s.get("subAreas") as? Map<*, *> ?: emptyMap<Any, Any>()
@@ -77,6 +81,32 @@ class AdminActions(private val report: (String) -> Unit) {
         "تم إلغاء الحجز",
         db.collection("bookings").document(id)
             .update(mapOf("status" to "cancelled_by_captain", "reason" to "ألغته الإدارة", "updatedAt" to System.currentTimeMillis()))
+    )
+
+    /** Approve a captain's request: apply it to the trip first, then mark the request approved. */
+    fun approve(r: ARequest) {
+        val trip = db.collection("trips").document(r.tripId)
+        val change: Task<Void> = when (r.type) {
+            "close" -> trip.update(mapOf("status" to "full"))
+            "postpone" -> trip.update(mapOf("departAt" to r.newDepartAt, "note" to r.newNote))
+            else -> {
+                val m = buildMap<String, Any> {
+                    if (r.newPrice != null) put("price", r.newPrice)
+                    if (r.newDepartAt > 0) { put("departAt", r.newDepartAt); put("note", r.newNote) }
+                }
+                if (m.isEmpty()) com.google.android.gms.tasks.Tasks.forResult<Void>(null) else trip.update(m)
+            }
+        }
+        change.addOnSuccessListener {
+            db.collection("tripRequests").document(r.id).update(mapOf("status" to "approved", "updatedAt" to System.currentTimeMillis()))
+                .addOnSuccessListener { report("تمت الموافقة وتم تطبيقها على الرحلة") }
+                .addOnFailureListener { report("طُبّقت على الرحلة لكن تعذّر تحديث الطلب") }
+        }.addOnFailureListener { report("ما تم: ${it.message?.take(120) ?: "خطأ"}") }
+    }
+
+    fun reject(r: ARequest) = run(
+        "تم رفض الطلب",
+        db.collection("tripRequests").document(r.id).update(mapOf("status" to "rejected", "updatedAt" to System.currentTimeMillis()))
     )
 
     fun savePlaces(map: Map<String, List<String>>) = run(

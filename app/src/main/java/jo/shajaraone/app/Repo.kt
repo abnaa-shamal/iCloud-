@@ -200,6 +200,27 @@ object Repo {
             if (snap != null && snap.exists() && snap.getString("status") == TRIP_CANCELLED) onCancelled()
         }
 
+    // ===== Captain's change requests (the admin approves / rejects them) =====
+
+    data class TripReq(val id: String, val tripId: String, val type: String, val status: String, val createdAt: Long)
+
+    fun sendTripRequest(t: Trip, me: UserProfile, type: String, detail: String, newDepartAt: Long, newPrice: Double?, newNote: String, onDone: (Boolean) -> Unit) {
+        val uid = auth.currentUser?.uid ?: return onDone(false)
+        val data = hashMapOf<String, Any?>(
+            "tripId" to t.id, "captainUid" to uid, "captainName" to me.name, "tripSummary" to "${t.from} ← ${t.to}",
+            "type" to type, "detail" to detail.take(200), "newDepartAt" to newDepartAt, "newPrice" to newPrice, "newNote" to newNote,
+            "status" to "pending", "createdAt" to now(), "updatedAt" to now()
+        )
+        db.collection("tripRequests").add(data).addOnSuccessListener { onDone(true) }.addOnFailureListener { onDone(false) }
+    }
+
+    fun listenMyTripRequests(uid: String, onChange: (List<TripReq>) -> Unit): ListenerRegistration =
+        db.collection("tripRequests").whereEqualTo("captainUid", uid).addSnapshotListener { snap, _ ->
+            if (snap != null) onChange(snap.documents.map {
+                TripReq(it.id, it.getString("tripId") ?: "", it.getString("type") ?: "", it.getString("status") ?: "pending", it.getLong("createdAt") ?: 0L)
+            }.sortedByDescending { it.createdAt })
+        }
+
     fun book(t: Trip, me: UserProfile, seats: Long, dropoff: String, onDone: (Boolean) -> Unit) {
         val uid = auth.currentUser?.uid ?: return onDone(false)
         val data = hashMapOf<String, Any>(

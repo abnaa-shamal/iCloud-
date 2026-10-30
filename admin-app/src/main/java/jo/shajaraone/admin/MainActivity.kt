@@ -76,6 +76,7 @@ fun AdminHome(data: AdminData, actions: AdminActions, onSignOut: () -> Unit) {
                 )
                 1 -> CaptainsScreen(data.users, setUser, askFn)
                 2 -> RidersScreen(data.users, setUser, askFn)
+                5 -> RequestsScreen(data.requests, { actions.approve(it) }, { actions.reject(it) }, askFn)
                 3 -> TripsScreen(data.trips, { actions.cancelTrip(it.id) }, askFn)
                 else -> BookingsScreen(data.bookings, { actions.cancelPendingBooking(it.id) }, askFn)
             }
@@ -85,7 +86,7 @@ fun AdminHome(data: AdminData, actions: AdminActions, onSignOut: () -> Unit) {
 
 @Composable
 fun NavBar(selected: Int, onSelect: (Int) -> Unit) {
-    val items = listOf("👑" to "الرئيسية", "🚗" to "الكباتن", "👥" to "الركاب", "🛣" to "الرحلات", "🎫" to "الحجوزات")
+    val items = listOf("👑" to "الرئيسية", "🚗" to "الكباتن", "👥" to "الركاب", "🛣" to "الرحلات", "🎫" to "الحجوزات", "📨" to "الطلبات")
     NavigationBar(containerColor = Royal.Surface) {
         items.forEachIndexed { i, (icon, label) ->
             NavigationBarItem(

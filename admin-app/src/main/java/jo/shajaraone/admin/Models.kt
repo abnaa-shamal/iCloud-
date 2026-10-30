@@ -28,6 +28,21 @@ data class ABooking(
     val createdAt: Long = 0
 )
 
+data class ARequest(
+    val id: String = "", val tripId: String = "", val captainName: String = "", val tripSummary: String = "",
+    val type: String = "", val detail: String = "", val newDepartAt: Long = 0, val newPrice: Double? = null,
+    val newNote: String = "", val status: String = "pending", val createdAt: Long = 0
+)
+
+fun DocumentSnapshot.toARequest() = ARequest(
+    id = id, tripId = getString("tripId") ?: "", captainName = getString("captainName") ?: "",
+    tripSummary = getString("tripSummary") ?: "", type = getString("type") ?: "", detail = getString("detail") ?: "",
+    newDepartAt = getLong("newDepartAt") ?: 0, newPrice = getDouble("newPrice"), newNote = getString("newNote") ?: "",
+    status = getString("status") ?: "pending", createdAt = getLong("createdAt") ?: 0
+)
+
+fun requestTypeText(t: String) = when (t) { "edit" -> "تعديل الرحلة"; "postpone" -> "تأجيل الرحلة"; "close" -> "إغلاق الحجز"; else -> t }
+
 fun DocumentSnapshot.toAUser() = AUser(
     uid = id, role = getString("role") ?: "passenger", status = getString("status") ?: "active",
     name = getString("name") ?: "", phone = getString("phone") ?: "", carType = getString("carType") ?: "",

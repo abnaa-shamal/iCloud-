@@ -71,11 +71,11 @@ fun CaptainHome(me: UserProfile) {
                         LaunchedEffect(Unit) { CapTripState.load(feedbackCtx) }
                         val current = (trips ?: emptyList()).filter { it.status != TRIP_CANCELLED && CapTripState.of(it.id) != "finished" && (CapTripState.of(it.id) == "started" || it.departAt > nowH - 4 * 3_600_000L) }
                         if (current.isNotEmpty() && !publishNext) {
-                            CapDashboard(me.name.trim().substringBefore(" "), trips, bookings, home = true, onPublishNext = { publishNext = true })
+                            CapDashboard(me.name.trim().substringBefore(" "), trips, bookings, home = true, me = me, onPublishNext = { publishNext = true })
                         } else {
                             CapPublish(me, online, trips ?: emptyList(), onTrips = { tab = 1 }, onPublished = { publishNext = false })
                         }
-                    } else CapDashboard(me.name.trim().substringBefore(" "), trips, bookings)
+                    } else CapDashboard(me.name.trim().substringBefore(" "), trips, bookings, me = me)
                 }
             }
         }
@@ -99,10 +99,17 @@ object CapTripState {
 }
 
 @Composable
-fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home: Boolean = false, onPublishNext: () -> Unit = {}) {
+fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home: Boolean = false, me: UserProfile? = null, onPublishNext: () -> Unit = {}) {
     val ctx = LocalContext.current
     LaunchedEffect(Unit) { CapTripState.load(ctx) }
     var cancelTrip by remember { mutableStateOf<Trip?>(null) }
+    var reqDialog by remember { mutableStateOf<Pair<Trip, String>?>(null) }
+    var myReqs by remember { mutableStateOf<List<Repo.TripReq>>(emptyList()) }
+    DisposableEffect(Unit) {
+        val uid = Repo.auth.currentUser?.uid
+        val r = if (uid != null) Repo.listenMyTripRequests(uid) { myReqs = it } else null
+        onDispose { r?.remove() }
+    }
     var cancelBooking by remember { mutableStateOf<Booking?>(null) }
     var finishTrip by remember { mutableStateOf<Trip?>(null) }
     var open by rememberSaveable { mutableStateOf("") }
@@ -249,6 +256,19 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
                                 }
                                 if (sg == 0) CapBtn("إلغاء الرحلة", Modifier.weight(1f), filled = false, color = CapRed, height = 42.dp) { cancelTrip = t }
                             }
+                            if (sg == 0 && !cancelled) {
+                                Text("تغييرات تحتاج موافقة المشرف", fontSize = 12.sp, color = CapMute)
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    CapBtn("تعديل", Modifier.weight(1f), filled = false, color = CapInk, height = 40.dp) { reqDialog = t to "edit" }
+                                    CapBtn("تأجيل", Modifier.weight(1f), filled = false, color = CapInk, height = 40.dp) { reqDialog = t to "postpone" }
+                                    CapBtn("إغلاق الحجز", Modifier.weight(1.3f), filled = false, color = CapInk, height = 40.dp) { reqDialog = t to "close" }
+                                }
+                            }
+                            myReqs.filter { it.tripId == t.id }.take(2).forEach { q ->
+                                val tn = when (q.type) { "edit" -> "التعديل"; "postpone" -> "التأجيل"; else -> "إغلاق الحجز" }
+                                val st = when (q.status) { "approved" -> "تمت الموافقة ✓"; "rejected" -> "مرفوض"; else -> "بانتظار المشرف" }
+                                Text("طلب $tn: $st", fontSize = 12.sp, color = if (q.status == "rejected") CapRed else CapMute)
+                            }
                         }
                     }
                 }
@@ -263,6 +283,48 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
             text = { Text("بعد الإنهاء تنتقل الرحلة إلى «المكتملة».") },
             confirmButton = { androidx.compose.material3.TextButton(onClick = { CapTripState.set(ctx, t.id, "finished"); finishTrip = null; seg = 2 }) { Text("نعم، أنهِ الرحلة") } },
             dismissButton = { androidx.compose.material3.TextButton(onClick = { finishTrip = null }) { Text("إلغاء") } }
+        )
+    }
+    reqDialog?.let { (t, type) ->
+        val ctxR = LocalContext.current
+        var price by remember { mutableStateOf("") }
+        var text by remember { mutableStateOf("") }
+        var day by remember { mutableIntStateOf(0) }
+        fun send(detail: String, newDepartAt: Long, newPrice: Double?, newNote: String) {
+            val prof = me ?: return
+            Repo.sendTripRequest(t, prof, type, detail, newDepartAt, newPrice, newNote) { ok ->
+                toast(ctxR, if (ok) "انبعت الطلب للمشرف" else "ما قدرت أبعت الطلب، جرّب كمان مرة")
+            }
+            reqDialog = null
+        }
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { reqDialog = null },
+            title = { Text(when (type) { "edit" -> "طلب تعديل الرحلة"; "postpone" -> "طلب تأجيل الرحلة"; else -> "طلب إغلاق الحجز" }) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("${t.from} ← ${t.to}", fontWeight = FontWeight.Bold)
+                    when (type) {
+                        "edit" -> {
+                            androidx.compose.material3.OutlinedTextField(value = price, onValueChange = { price = it.filter { c -> c.isDigit() || c == '.' }.take(5) }, singleLine = true, label = { Text("السعر الجديد (اختياري)") })
+                            androidx.compose.material3.OutlinedTextField(value = text, onValueChange = { text = it.take(120) }, label = { Text("شو بدك تعدّل؟") })
+                        }
+                        "postpone" -> CapDays(pillDays(5), day) { day = it }
+                        else -> Text("بيوقف الحجز على هالرحلة. بعد موافقة المشرف ما بتظهر للعملاء.")
+                    }
+                    Text("الطلب بيروح للمشرف، وما بيتطبق إلا بعد موافقته.", fontSize = 12.sp)
+                }
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    when (type) {
+                        "edit" -> if (price.isBlank() && text.isBlank()) toast(ctxR, "اكتب السعر أو شو بدك تعدّل")
+                            else send(listOf(if (price.isNotBlank()) "السعر الجديد: $price" else "", text).filter { it.isNotBlank() }.joinToString(" • "), 0L, price.toDoubleOrNull(), "")
+                        "postpone" -> send("تأجيل إلى ${dayName(dayStart(day) + 1439 * 60_000L)}", dayStart(day) + 1439 * 60_000L, null, "@T:-1,-1" + if (takesMafraq(t)) " @M" else "")
+                        else -> send("إغلاق الحجز على الرحلة", 0L, null, "")
+                    }
+                }) { Text("أرسل للمشرف") }
+            },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = { reqDialog = null }) { Text("رجوع") } }
         )
     }
     cancelTrip?.let { t ->

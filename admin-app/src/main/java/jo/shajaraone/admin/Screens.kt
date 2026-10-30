@@ -377,3 +377,31 @@ fun PlacesScreen(places: Map<String, List<String>>, onSave: (Map<String, List<St
         }
     }
 }
+
+
+@Composable
+fun RequestsScreen(requests: List<ARequest>, onApprove: (ARequest) -> Unit, onReject: (ARequest) -> Unit, ask: (Ask) -> Unit) {
+    var tab by remember { mutableStateOf("pending") }
+    val list = requests.filter { tab == "all" || it.status == tab }
+    ListScreen {
+        item { ScreenTitle("الطلبات", "تعديل، تأجيل، إغلاق حجز") }
+        item { Chips(listOf("pending" to "بانتظارك", "approved" to "موافق عليها", "rejected" to "مرفوضة", "all" to "الكل"), tab) { tab = it } }
+        if (list.isEmpty()) item { Empty("لا توجد طلبات هنا") }
+        items(list, key = { it.id }) { r ->
+            RoyalCard {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text(requestTypeText(r.type), color = Royal.Ivory, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp)
+                    Badge(when (r.status) { "approved" -> "موافق"; "rejected" -> "مرفوض"; else -> "بانتظارك" },
+                        when (r.status) { "approved" -> Royal.Emerald; "rejected" -> Royal.Ruby; else -> Royal.Amber })
+                }
+                Text("${r.captainName}  •  ${r.tripSummary}", color = Royal.GoldLight)
+                if (r.detail.isNotBlank()) Text(r.detail, color = Royal.Muted, fontSize = 13.sp)
+                Text(fmtTime(r.createdAt), color = Royal.Muted, fontSize = 12.sp)
+                if (r.status == "pending") Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    GoldButton("موافقة", { ask(Ask("موافقة", "${requestTypeText(r.type)} من ${r.captainName}؟ بتتطبق على الرحلة مباشرة.", "موافقة") { onApprove(r) }) }, Modifier.weight(1f))
+                    GhostButton("رفض", { ask(Ask("رفض", "رفض الطلب؟", "رفض") { onReject(r) }) }, Modifier.weight(1f), color = Royal.Ruby)
+                }
+            }
+        }
+    }
+}
