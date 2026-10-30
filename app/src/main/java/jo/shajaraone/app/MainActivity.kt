@@ -40,8 +40,10 @@ class MainActivity : ComponentActivity() {
                         SplashScreen(onDone = { splash = false })
                     } else {
                         Surface(Modifier.fillMaxSize(), color = Color.Transparent) {
-                            Root()
-                            UpdateCheck()
+                            PermissionGate {
+                                Root()
+                                UpdateCheck()
+                            }
                         }
                     }
                 }
