@@ -242,7 +242,9 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
                     if (isOpen) {
                         Text("إدارة الركاب", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = CapMute)
                         if (reqs.isEmpty()) Text("ما في ركاب لسا", fontSize = 13.sp, color = CapMute)
-                        reqs.forEach { b -> RiderCard(b, canCancel = sg == 0) { cancelBooking = b } }
+                        reqs.forEach { b -> RiderCard(b, canCancel = sg == 0,
+                            onApproveReq = { Repo.cancelBooking(b, BK_CANCELLED_CAPTAIN, "بطلب العميل") { ok -> toast(ctx, if (ok) "انلغى الحجز" else "ما قدرت ألغي، جرّب كمان مرة") } },
+                            onRejectReq = { Repo.setCancelReq(b, false) { ok -> toast(ctx, if (ok) "انرفض الطلب" else "ما انرفض، جرّب كمان مرة") } }) { cancelBooking = b } }
                         if (sg < 2) {
                             if (sg == 1) LiveShareControl(t)
                             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

@@ -245,12 +245,12 @@ private fun MyBookings(list: List<Booking>) {
                     }
                 }
                 if (b.status == BK_ACCEPTED && upcoming) CaptainInfoCard(b) else Text("الكابتن ${b.captainName}", fontSize = 13.sp, color = Dim)
-                if (b.reason.isNotBlank()) Text("السبب: ${b.reason}", fontSize = 12.sp, color = Color(0xFFFF8A80))
+                if (b.reason == Repo.CANCEL_REQ) Text("طلب الإلغاء بانتظار موافقة الكابتن", fontSize = 12.sp, color = Amber) else if (b.reason.isNotBlank()) Text("السبب: ${b.reason}", fontSize = 12.sp, color = Color(0xFFFF8A80))
                 if (b.status == BK_ACCEPTED && upcoming) {
                     AmberBtn("تتبّع الكابتن") { tracking = b }
                     MiniContact(b.captainPhone, "مرحبا كابتن ${b.captainName}، بخصوص حجزي برحلة ${b.tripSummary}")
                 }
-                if (b.isActive && upcoming) GhostBtn("إلغاء الحجز", Modifier.fillMaxWidth(), Color(0xFFFF8A80)) { toCancel = b }
+                if (b.isActive && upcoming && b.reason != Repo.CANCEL_REQ) GhostBtn(if (b.status == BK_ACCEPTED) "طلب إلغاء الحجز" else "إلغاء الحجز", Modifier.fillMaxWidth(), Color(0xFFFF8A80)) { toCancel = b }
             }
         }
     }
@@ -260,15 +260,16 @@ private fun MyBookings(list: List<Booking>) {
     toCancel?.let { b ->
         AlertDialog(
             onDismissRequest = { toCancel = null },
-            title = { Text("إلغاء الحجز؟") },
-            text = { Text("${b.tripSummary} • ${timeText(b.departAt)}\nالمقعد بيرجع متاح لغيرك.") },
+            title = { Text(if (b.status == BK_ACCEPTED) "طلب إلغاء الحجز؟" else "إلغاء الحجز؟") },
+            text = { Text("${b.tripSummary} • ${timeText(b.departAt)}\n" + if (b.status == BK_ACCEPTED) "بينرسل للكابتن، وما بينلغي إلا بعد موافقته." else "المقعد بيرجع متاح لغيرك.") },
             confirmButton = {
                 TextButton(onClick = {
-                    Repo.cancelBooking(b, BK_CANCELLED_PASSENGER, "") { ok ->
+                    if (b.status == BK_ACCEPTED) Repo.setCancelReq(b, true) { ok -> toast(ctx, if (ok) "انبعت الطلب للكابتن" else "ما انبعت، جرّب كمان مرة") }
+                    else Repo.cancelBooking(b, BK_CANCELLED_PASSENGER, "") { ok ->
                         toast(ctx, if (ok) "انلغى الحجز" else "ما قدرت ألغي، جرّب كمان مرة")
                     }
                     toCancel = null
-                }) { Text("ألغِ الحجز", color = MaterialTheme.colorScheme.error) }
+                }) { Text(if (b.status == BK_ACCEPTED) "أرسل الطلب" else "ألغِ الحجز", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = { TextButton(onClick = { toCancel = null }) { Text("رجوع") } }
         )

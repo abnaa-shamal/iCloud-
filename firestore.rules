@@ -243,8 +243,14 @@ service cloud.firestore {
       allow update: if signedIn() && onlyChanges(['status', 'reason', 'updatedAt']) && (
           (resource.data.passengerUid == me()
             && request.resource.data.status == 'cancelled_by_passenger'
-            && resource.data.status in ['pending', 'accepted']
+            && resource.data.status == 'pending'
             && cancellable())
+        || (resource.data.passengerUid == me()
+            && resource.data.status == 'accepted' && request.resource.data.status == 'accepted'
+            && request.resource.data.reason == 'طلب إلغاء من العميل')
+        || (isApprovedCaptain() && resource.data.captainUid == me()
+            && resource.data.status == 'accepted' && request.resource.data.status == 'accepted'
+            && resource.data.reason == 'طلب إلغاء من العميل' && request.resource.data.reason == '')
         || (isApprovedCaptain() && resource.data.captainUid == me()
             && ((request.resource.data.status == 'rejected' && resource.data.status == 'pending')
              || (request.resource.data.status == 'accepted' && resource.data.status == 'pending'

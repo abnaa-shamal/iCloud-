@@ -121,7 +121,7 @@ private fun RoundAction(label: String, onClick: () -> Unit, enabled: Boolean = t
 
 /** Captain side: one clear card per confirmed rider: name, phone, call / WhatsApp / directions (with the real app icons). */
 @Composable
-fun RiderCard(b: Booking, canCancel: Boolean, onCancel: () -> Unit) {
+fun RiderCard(b: Booking, canCancel: Boolean, onApproveReq: () -> Unit = {}, onRejectReq: () -> Unit = {}, onCancel: () -> Unit) {
     val ctx = LocalContext.current
     var loc by remember(b.id) { mutableStateOf<Pair<Double, Double>?>(null) }
     DisposableEffect(b.id) {
@@ -144,7 +144,15 @@ fun RiderCard(b: Booking, canCancel: Boolean, onCancel: () -> Unit) {
                 if (forOther) Text("حجزه: ${b.passengerName}", fontSize = 11.sp, color = CapMute)
                 Text(seatsText(b.seats) + if (dropShown.isNotBlank()) " • $dropShown" else "", fontSize = 12.sp, color = CapMute)
             }
-            if (canCancel) CapBtn("إلغاء", filled = false, color = CapRed, height = 34.dp) { onCancel() }
+            if (b.reason == Repo.CANCEL_REQ && canCancel) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("العميل يطلب إلغاء الحجز", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CapRed)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        CapBtn("موافقة", color = CapRed, height = 34.dp) { onApproveReq() }
+                        CapBtn("رفض", filled = false, color = CapInk, height = 34.dp) { onRejectReq() }
+                    }
+                }
+            } else if (canCancel) CapBtn("إلغاء", filled = false, color = CapRed, height = 34.dp) { onCancel() }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             RoundAction("اتصال", { callPhone(ctx, phone) }) {

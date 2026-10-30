@@ -277,6 +277,12 @@ object Repo {
      * Cancel a booking (by the passenger or the captain).
      * If it was accepted, its seats go back to the trip and the trip reopens.
      */
+    const val CANCEL_REQ = "طلب إلغاء من العميل"
+    fun setCancelReq(b: Booking, on: Boolean, onDone: (Boolean) -> Unit) {
+        bookings.document(b.id).update(mapOf("reason" to (if (on) CANCEL_REQ else ""), "updatedAt" to now()))
+            .addOnSuccessListener { onDone(true) }.addOnFailureListener { onDone(false) }
+    }
+
     fun cancelBooking(b: Booking, newStatus: String, reason: String, onDone: (Boolean) -> Unit) {
         val tripRef = trips.document(b.tripId)
         val bookingRef = bookings.document(b.id)
