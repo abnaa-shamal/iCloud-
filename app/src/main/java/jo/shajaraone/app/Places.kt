@@ -128,3 +128,23 @@ const val OTHER_PLACE = "مكان آخر"
 
 /** Public support contact shown to users (WhatsApp). It is NOT an identity and grants no permission. */
 const val SUPPORT_PHONE = "0790905298"
+
+
+// Approximate centres of the places, used only to suggest «وين أنت حالياً» from the phone's GPS (the rider confirms or changes it).
+val placeCentres: Map<String, Pair<Double, Double>> = linkedMapOf(
+    "إربد" to (32.5556 to 35.8500), "الرمثا" to (32.5686 to 36.0100), "المفرق" to (32.3400 to 36.2080),
+    "البويضة" to (32.5300 to 35.8200), "الشجرة" to (32.4600 to 35.7500), "الطرة" to (32.6400 to 35.9900),
+    "عمراوة" to (32.4400 to 35.7200), "الذنيبة" to (32.4200 to 35.7000), "المغيّر" to (32.4800 to 35.7700),
+    "عمّان" to (31.9539 to 35.9106), "الزرقاء" to (32.0728 to 36.0876)
+)
+
+/** The nearest known place to a GPS point, or null when it is farther than ~15 km from all of them. */
+fun nearestPlace(lat: Double, lng: Double): String? {
+    var best: String? = null; var bestD = 15_000f
+    val out = FloatArray(1)
+    placeCentres.forEach { (n, c) ->
+        android.location.Location.distanceBetween(lat, lng, c.first, c.second, out)
+        if (out[0] < bestD) { bestD = out[0]; best = n }
+    }
+    return best
+}

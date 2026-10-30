@@ -148,6 +148,19 @@ fun RiderFlow(
                 Text("أهلاً $name", fontSize = 14.sp, color = Dim)
                 Text("وين أنت حالياً؟", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
             }
+            // GPS suggestion: «أنت في إربد؟», one tap confirms it; the grids below stay for choosing by hand
+            val ctxF = androidx.compose.ui.platform.LocalContext.current
+            var guess by remember { mutableStateOf<String?>(null) }
+            fun detect() { fetchLocation(ctxF) { l -> if (l != null) guess = nearestPlace(l.latitude, l.longitude) } }
+            val askLoc = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()) { r -> if (r.values.any { it }) detect() }
+            var asked by rememberSaveable { mutableStateOf(false) }
+            LaunchedEffect(Unit) {
+                if (hasLocationPermission(ctxF)) detect()
+                else if (!asked) { asked = true; askLoc.launch(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)) }
+            }
+            guess?.let { g ->
+                GlassSection("موقعك الحالي") { GlassGrid(listOf("أنت في $g ✓"), "") { fs.cur = g; fs.step = 1 } }
+            }
             GlassSection("مناطق الشمال") { GlassGrid(northPlaces - MAFRAQ, fs.cur) { fs.cur = it; fs.step = 1 } }
             GlassSection("عمّان والزرقاء والمفرق") { GlassGrid(listOf(AMMAN, ZARQA, MAFRAQ), fs.cur) { fs.cur = it; fs.step = 1 } }
         }
