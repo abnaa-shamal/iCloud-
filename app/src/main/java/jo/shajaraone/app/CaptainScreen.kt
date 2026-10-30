@@ -257,19 +257,6 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
                                 }
                                 if (sg == 0) CapBtn("إلغاء الرحلة", Modifier.weight(1f), filled = false, color = CapRed, height = 42.dp) { cancelTrip = t }
                             }
-                            if (sg == 0 && !cancelled && t.status != "full") {
-                                Text("تغييرات تحتاج موافقة المشرف", fontSize = 12.sp, color = CapMute)
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    CapBtn("تعديل", Modifier.weight(1f), filled = false, color = CapInk, height = 40.dp) { reqDialog = t to "edit" }
-                                    CapBtn("تأجيل", Modifier.weight(1f), filled = false, color = CapInk, height = 40.dp) { reqDialog = t to "postpone" }
-                                    CapBtn("إغلاق الحجز", Modifier.weight(1.3f), filled = false, color = CapInk, height = 40.dp) { reqDialog = t to "close" }
-                                }
-                            }
-                            myReqs.filter { it.tripId == t.id }.take(2).forEach { q ->
-                                val tn = when (q.type) { "edit" -> "التعديل"; "postpone" -> "التأجيل"; else -> "إغلاق الحجز" }
-                                val st = when (q.status) { "approved" -> "تمت الموافقة ✓"; "rejected" -> "مرفوض"; else -> "بانتظار المشرف" }
-                                Text("طلب $tn: $st", fontSize = 12.sp, color = if (q.status == "rejected") CapRed else CapMute)
-                            }
                         }
                     }
                 }
