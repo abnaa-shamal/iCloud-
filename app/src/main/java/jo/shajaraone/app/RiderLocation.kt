@@ -15,6 +15,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -22,7 +28,7 @@ import com.google.firebase.firestore.ListenerRegistration
 
 /** One GPS fix (best effort: last known first, then a single fresh update). */
 @SuppressLint("MissingPermission")
-private fun oneFix(ctx: Context, onFix: (Location?) -> Unit) {
+internal fun oneFix(ctx: Context, onFix: (Location?) -> Unit) {
     val lm = ctx.getSystemService(Context.LOCATION_SERVICE) as LocationManager
     val providers = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER).filter { runCatching { lm.isProviderEnabled(it) }.getOrDefault(false) }
     if (providers.isEmpty()) return onFix(null)
@@ -44,30 +50,40 @@ private fun oneFix(ctx: Context, onFix: (Location?) -> Unit) {
     }, 12_000L)
 }
 
-/** Rider side: one tap sends the rider's exact place to the captain who accepted his booking. */
+/** Rider side: as soon as a captain confirms a booking, the rider's place is sent to that captain automatically (permission asked once). */
 @Composable
-fun ShareMyLocationButton(b: Booking) {
+fun AutoShareLocation(bookings: List<Booking>) {
     val ctx = LocalContext.current
-    var state by remember { mutableIntStateOf(0) }   // 0 idle, 1 sending, 2 sent
-    fun send() {
-        state = 1
+    val sent = remember { mutableStateListOf<String>() }
+    val todo = bookings.filter { it.status == BK_ACCEPTED && it.departAt > System.currentTimeMillis() && it.id !in sent }
+    fun send(list: List<Booking>) {
+        if (list.isEmpty()) return
+        sent += list.map { it.id }
         oneFix(ctx) { l ->
-            if (l == null) { state = 0; toast(ctx, "ما قدرت أحدد موقعك، فعّل الـ GPS وجرّب كمان مرة"); return@oneFix }
-            Repo.pushRiderLoc(b, l.latitude, l.longitude, l.accuracy.toDouble()) { ok ->
-                state = if (ok) 2 else 0
-                toast(ctx, if (ok) "وصل موقعك للكابتن ✅" else "ما قدرت أرسل، جرّب كمان مرة")
-            }
+            if (l == null) { sent.removeAll(list.map { it.id }.toSet()); return@oneFix }
+            list.forEach { Repo.pushRiderLoc(it, l.latitude, l.longitude, l.accuracy.toDouble()) { } }
         }
     }
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { r ->
-        if (r.values.any { it }) send() else toast(ctx, "لازم توافق على الموقع عشان يوصلك الكابتن")
+        if (r.values.any { it }) send(todo)
     }
-    GhostBtn(
-        when (state) { 1 -> "جاري تحديد موقعك..."; 2 -> "تم إرسال موقعك • حدّثه"; else -> "شارك موقعي مع الكابتن" },
-        Modifier.fillMaxWidth(), Amber
-    ) {
-        if (state == 1) return@GhostBtn
-        if (hasLocationPermission(ctx)) send() else ask.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+    var asked by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(todo.map { it.id }) {
+        if (todo.isEmpty()) return@LaunchedEffect
+        if (hasLocationPermission(ctx)) send(todo)
+        else if (!asked) { asked = true; ask.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)) }
+    }
+}
+
+/** Rider side: the full captain card of a confirmed booking: name, phone, car. */
+@Composable
+fun CaptainInfoCard(b: Booking) {
+    var car by remember(b.tripId) { mutableStateOf("") }
+    LaunchedEffect(b.tripId) { Repo.tripCar(b.tripId) { car = it } }
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFF2B2B2E)).padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text("الكابتن ${b.captainName}", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        Text("📞 ${b.captainPhone}", fontSize = 13.sp, color = Amber)
+        if (car.isNotBlank()) Text("🚗 $car", fontSize = 13.sp, color = Dim)
     }
 }
 
@@ -81,8 +97,9 @@ fun RiderDirectionsButton(b: Booking) {
         onDispose { r.remove() }
     }
     val l = loc
+    Text("📞 ${b.passengerPhone}", fontSize = 12.sp, color = CapMute, modifier = Modifier.padding(start = 46.dp))
     if (l == null) {
-        Text("العميل لسا ما شارك موقعه", fontSize = 11.sp, color = CapMute, modifier = Modifier.padding(start = 46.dp))
+        Text("موقع العميل لسا ما وصل", fontSize = 11.sp, color = CapMute, modifier = Modifier.padding(start = 46.dp))
     } else {
         CapBtn("اتجاهات للعميل", Modifier.fillMaxWidth(), height = 40.dp) {
             val nav = Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=${l.first},${l.second}")).setPackage("com.google.android.apps.maps")

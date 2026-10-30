@@ -157,6 +157,10 @@ object Repo {
         )
     }
 
+    fun tripCar(tripId: String, onDone: (String) -> Unit) {
+        trips.document(tripId).get().addOnSuccessListener { onDone(it.getString("carText") ?: "") }
+    }
+
     // ===== Rider location for the captain (after acceptance) =====
 
     fun pushRiderLoc(b: Booking, lat: Double, lng: Double, accuracy: Double, onDone: (Boolean) -> Unit) {

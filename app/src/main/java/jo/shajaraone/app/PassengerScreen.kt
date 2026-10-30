@@ -46,6 +46,7 @@ fun PassengerHome(me: UserProfile) {
         onDispose { r.remove() }
     }
 
+    AutoShareLocation(myBookings)
     val upcoming = myBookings.count { it.isActive && it.departAt > System.currentTimeMillis() }
     val ctxP = LocalContext.current
     Box(Modifier.fillMaxSize()) {
@@ -228,11 +229,10 @@ private fun MyBookings(list: List<Booking>) {
                         Text(bookingStatusText(b.status), fontSize = 12.sp, color = if (b.status == BK_ACCEPTED) Amber else Color(0xFFD7D7DB))
                     }
                 }
-                Text("الكابتن ${b.captainName}", fontSize = 13.sp, color = Dim)
+                if (b.status == BK_ACCEPTED && upcoming) CaptainInfoCard(b) else Text("الكابتن ${b.captainName}", fontSize = 13.sp, color = Dim)
                 if (b.reason.isNotBlank()) Text("السبب: ${b.reason}", fontSize = 12.sp, color = Color(0xFFFF8A80))
                 if (b.status == BK_ACCEPTED && upcoming) {
                     AmberBtn("تتبّع الكابتن") { tracking = b }
-                    ShareMyLocationButton(b)
                     MiniContact(b.captainPhone, "مرحبا كابتن ${b.captainName}، بخصوص حجزي برحلة ${b.tripSummary}")
                 }
                 if (b.isActive && upcoming) GhostBtn("إلغاء الحجز", Modifier.fillMaxWidth(), Color(0xFFFF8A80)) { toCancel = b }
