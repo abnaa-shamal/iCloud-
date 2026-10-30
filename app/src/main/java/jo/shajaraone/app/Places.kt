@@ -38,8 +38,34 @@ val southRoads: Map<String, List<String>> = linkedMapOf(
     )
 )
 
+// Inside the north, two roads lead to the villages (stops in order, starting from Irbid). A trip covers the stops between
+// its from and to, so a rider going to a stop on the way (e.g. المغيّر) sees captains who drive past it (e.g. to الشجرة).
+const val ROAD_WADI = "طريق وادي الشجرة"
+const val ROAD_HILAN = "طريق الحلان"
+val innerRoadStops: Map<String, List<String>> = linkedMapOf(
+    ROAD_WADI to listOf("إربد", "بشرى", "سال", "المغيّر", "الشجرة", "عمراوة", "الذنيبة"),
+    ROAD_HILAN to listOf("إربد", "بشرى", "الطرة", "الشجرة", "عمراوة", "الذنيبة")
+)
+private val innerChain = setOf("الطرة", "المغيّر", "الشجرة", "عمراوة", "الذنيبة")
+
+/** Does a trip between Irbid and this village need a road choice? (the other inner places have no road) */
+fun innerNeedsRoad(a: String, b: String) = (a == "إربد" && b in innerChain) || (b == "إربد" && a in innerChain)
+fun innerRoadsFor(a: String, b: String): List<String> {
+    val p = if (a == "إربد") b else a
+    return innerRoadStops.filter { p in it.value }.keys.toList()
+}
+
+/** Does this inside-north trip pass the rider's stops in the rider's direction? */
+fun innerTripCovers(t: Trip, cur: String, dest: String): Boolean {
+    val s = innerRoadStops[t.road]
+    if (s == null) return t.from == cur && t.to == dest
+    val a = s.indexOf(t.from); val b = s.indexOf(t.to); val i = s.indexOf(cur); val j = s.indexOf(dest)
+    if (a < 0 || b < 0 || i < 0 || j < 0) return t.from == cur && t.to == dest
+    return if (a < b) i < j && a <= i && j <= b else i > j && a >= i && j >= b
+}
+
 fun kindOf(t: Trip): String = when {
-    t.road == NORTH_INNER -> KIND_NN
+    t.road == NORTH_INNER || t.road in innerRoadStops -> KIND_NN
     t.from in northPlaces -> KIND_NS
     t.to in northPlaces -> KIND_SN
     else -> ""

@@ -370,7 +370,7 @@ private fun CapRoadCard(title: String, places: List<String>, open: Boolean, inde
         Row(Modifier.fillMaxWidth().squeeze(onToggle), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(title, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = CapInk)
-                Text("عمّان", fontSize = 13.sp, color = CapMute)
+                Text(if (title in innerRoadStops) "داخل الشمال" else "عمّان", fontSize = 13.sp, color = CapMute)
             }
             Box(Modifier.size(40.dp).clip(RoundedCornerShape(20.dp)).background(CapInk.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
                 Text(if (open) "−" else "+", fontSize = 22.sp, color = CapAccent, fontWeight = FontWeight.Bold)
@@ -493,8 +493,14 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
                 group == G_SOUTH_C && dest.isBlank() -> CapSection("وين رايح بالشمال؟") { CapGrid(southToDests, dest, 2, big = true) { dest = it } }
                 // داخل الشمال: from, then to, both grouped
                 inner && origin.isBlank() -> InnerPicker("من أين؟", null) { origin = it }
-                inner && dest.isBlank() -> InnerPicker("إلى أين؟", origin) { dest = it; step = 2 }
+                inner && dest.isBlank() -> InnerPicker("إلى أين؟", origin) { dest = it; if (!innerNeedsRoad(origin, it)) step = 2 }
                 fromNorth && dest == "المفرق" -> CapSection("وين بالمفرق؟") { CapGrid(listOf("دوار الدبابة", "داخل المفرق"), road, 2, big = true) { road = it; step = 2 } }
+                inner -> {
+                    Text("من أي طريق؟", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = CapInk)
+                    innerRoadsFor(origin, dest).forEachIndexed { i, r ->
+                        CapRoadCard(r, innerRoadStops[r] ?: emptyList(), openRoad == r, i, onToggle = { openRoad = if (openRoad == r) "" else r }) { road = r; step = 2 }
+                    }
+                }
                 else -> {
                     Text("اختر الطريق", fontSize = 15.sp, color = CapMute)
                     southRoads.entries.forEachIndexed { i, (r, places) ->
@@ -506,7 +512,7 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
         else -> Column(colMod, verticalArrangement = Arrangement.spacedBy(14.dp)) {
             val sPlace = if (road == "طريق الزرقاء") ZARQA else AMMAN
             val tFrom = if (group == G_SOUTH_C) sPlace else origin
-            CapBackBar(tFrom + " ← " + dest + if (inner) "" else " • " + roadLabel(road)) { goBack() }
+            CapBackBar(tFrom + " ← " + dest + if (road.isBlank()) "" else " • " + roadLabel(road)) { goBack() }
             CapSection("اليوم والوقت (اختياري)") {
                 CapDays(pillDays(5), day) { day = it }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -551,7 +557,7 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
                         val (from, to, roadField) = when (group) {
                             G_SOUTH_C -> Triple(sPlace, dest, road)
                             G_NORTH_C -> Triple(origin, dest, road)
-                            else -> Triple(origin, dest, NORTH_INNER)
+                            else -> Triple(origin, dest, road.ifBlank { NORTH_INNER })
                         }
                         sending = true
                         Repo.publishTrip(

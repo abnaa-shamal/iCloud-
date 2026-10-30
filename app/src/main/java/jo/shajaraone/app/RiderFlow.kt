@@ -68,6 +68,7 @@ fun rememberRiderFlow(): RiderFlowState = rememberSaveable(saver = RiderFlowStat
 fun flowMatches(t: Trip, fs: RiderFlowState): Boolean {
     val ok = when {
         fs.cur.isBlank() || fs.dest.isBlank() -> true
+        fs.cur in northPlaces && fs.dest in northPlaces -> kindOf(t) == KIND_NN && innerTripCovers(t, fs.cur, fs.dest)
         else -> t.from == fs.cur && t.to == fs.dest && (fs.road.isBlank() || fs.road == NORTH_INNER || t.road == fs.road)
     }
     return ok && (fs.day < 0 || dayOffsetOf(t.departAt) == fs.day)
