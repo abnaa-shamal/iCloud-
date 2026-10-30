@@ -381,9 +381,9 @@ internal fun CapBigChoice(title: String, sub: String, index: Int, onClick: () ->
     }
 }
 
-private const val G_NORTH_C = "من الشمال"
-private const val G_SOUTH_C = "من الجنوب"
-private const val G_INNER_C = "داخل الشمال"
+private const val G_NORTH_C = "إلى عمّان / الزرقاء"
+private const val G_SOUTH_C = "من عمّان / الزرقاء"
+private const val G_INNER_C = "قرى الشمال"
 
 /** Destinations for «من الشمال» and «من الجنوب» (kept here, in one place, to edit later). */
 private val northToDests = listOf("عمّان", "الزرقاء", "المفرق")
@@ -404,7 +404,7 @@ private fun InnerPicker(title: String, except: String?, onPick: (String) -> Unit
     }
 }
 
-private fun roadLabel(r: String) = if (r == "طريق الزرقاء") "الطريق الصحراوي" else r
+private fun roadLabel(r: String) = r
 
 /** A road card: tap to unfold a small, tidy map of the places it passes, then «اختر هالطريق». Places are information only for the captain. */
 @Composable
@@ -532,13 +532,13 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
                 }
                 Text("انطلاقك من $lf", Modifier.padding(top = 6.dp, bottom = 4.dp), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk)
                 Text(if (lockFrom != null) "وصلت إلى $lf، وين رايح بعدها؟" else "حسب موقعك الحالي، وين رايح؟", fontSize = 14.sp, color = CapMute)
-                CapBigChoice(G_NORTH_C, "إلى عمّان والزرقاء", 0) { group = G_NORTH_C; origin = lf; priceStr = ""; step = 1 }
-                if (lf != "المفرق") CapBigChoice(G_INNER_C, "بين مدن الشمال وقراه", 1) { group = G_INNER_C; origin = lf; priceStr = ""; step = 1 }
+                CapBigChoice(G_NORTH_C, "من الشمال", 0) { group = G_NORTH_C; origin = lf; priceStr = ""; step = 1 }
+                if (lf != "المفرق") CapBigChoice(G_INNER_C, "بين قرى الشمال", 1) { group = G_INNER_C; origin = lf; priceStr = ""; step = 1 }
             } else {
                 Text("وجهة انطلاقك؟", Modifier.padding(top = 6.dp, bottom = 4.dp), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk)
-                CapBigChoice(G_NORTH_C, "إلى عمّان والزرقاء", 0) { group = G_NORTH_C; priceStr = ""; step = 1 }
-                CapBigChoice(G_SOUTH_C, "إلى إربد والرمثا", 1) { group = G_SOUTH_C; priceStr = ""; step = 1 }
-                CapBigChoice(G_INNER_C, "بين مدن الشمال وقراه", 2) { group = G_INNER_C; priceStr = ""; step = 1 }
+                CapBigChoice(G_NORTH_C, "من الشمال", 0) { group = G_NORTH_C; priceStr = ""; step = 1 }
+                CapBigChoice(G_SOUTH_C, "إلى قرى الشمال", 1) { group = G_SOUTH_C; priceStr = ""; step = 1 }
+                CapBigChoice(G_INNER_C, "بين قرى الشمال", 2) { group = G_INNER_C; priceStr = ""; step = 1 }
             }
         }
         1 -> Column(colMod, verticalArrangement = Arrangement.spacedBy(14.dp)) {

@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.sp
 const val MAFRAQ = "المفرق"
 private val currentChoices = northPlaces + listOf(AMMAN, ZARQA)
 
-fun roadTitle(r: String) = if (r == "طريق الزرقاء") "الطريق الصحراوي" else r
+fun roadTitle(r: String) = r
 
 @Stable
 class RiderFlowState(step: Int = 0, cur: String = "", dest: String = "", road: String = "", day: Int = -1, who: Int = 0, other: String = "", share: Boolean = false) {
@@ -198,7 +198,7 @@ fun RiderFlow(
                 GlassSection("داخل الشمال") {
                     GlassGrid((northPlaces - MAFRAQ).filter { it != fs.cur }, "") { fs.dest = it; fs.road = NORTH_INNER; fs.step = 3 }
                 }
-                GlassSection("الجنوب") {
+                GlassSection("عمّان / الزرقاء / المفرق") {
                     GlassGrid(listOf("إلى $AMMAN", "إلى $ZARQA", "إلى $MAFRAQ"), "") { fs.dest = it.removePrefix("إلى "); fs.road = ""; fs.step = 2 }
                 }
             } else {
@@ -217,7 +217,7 @@ fun RiderFlow(
             } else {
                 Text("من أي طريق بدك؟", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
                 southRoads.entries.forEachIndexed { i, (road, stops) ->
-                    BigChoice(roadTitle(road), (if (road == "طريق الزرقاء") listOf("الصحراوي") + stops.take(3) else stops.take(4)).joinToString(" • "), i) { fs.road = road; fs.step = 3 }
+                    BigChoice(roadTitle(road), stops.take(4).joinToString(" • "), i) { fs.road = road; fs.step = 3 }
                 }
             }
         }
