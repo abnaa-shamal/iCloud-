@@ -141,7 +141,7 @@ fun HasbatShell(
                 }
                 CaptainDock(tab, theme, isEnglish, isTripActive, requestsBadge, onTab,
                     Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp))
-                if (tab >= 2) {
+                if (tab == 0) {
                     Box(Modifier.fillMaxSize().systemBarsPadding()) {
                         AssistantBubble(storage, theme, isEnglish, visible = !isTripActive)
                     }

@@ -98,6 +98,7 @@ fun CleanSettingsScreen(storage: AppDataManager, theme: AppTheme, isEnglish: Boo
 
         if (current == null) {
             // قائمة عمودية مثل إعدادات الهاتف
+            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
             GlassCard(theme = theme, modifier = Modifier.fillMaxWidth(), corner = 22.dp, contentPadding = 6.dp) {
                 sections.forEachIndexed { index, item ->
                     Row(
@@ -122,6 +123,7 @@ fun CleanSettingsScreen(storage: AppDataManager, theme: AppTheme, isEnglish: Boo
                     }
                     if (index < sections.lastIndex) ThinDivider(theme)
                 }
+            }
             }
         } else {
             Column(
