@@ -25,40 +25,38 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// The rider's journey is a small tree: where to (south / north / inside the north) -> which place -> when (optional) -> trips.
+// The rider's journey: where are you now? -> where to? -> (which road / where in Mafraq) -> trips.
 
-const val G_SOUTH = "S"
-const val G_NORTH = "N"
-const val G_INNER = "I"
+private const val MAFRAQ = "المفرق"
+private val currentChoices = northPlaces + listOf(AMMAN, ZARQA)
+
+fun roadTitle(r: String) = if (r == "طريق الزرقاء") "الطريق الصحراوي" else r
 
 @Stable
-class RiderFlowState(step: Int = 0, group: String = "", road: String = "", place: String = "", spot: String = "", day: Int = -1, origin: String = "") {
-    var step by mutableIntStateOf(step)   // 0 = pick group, 1 = pick place, 2 = trips
-    var group by mutableStateOf(group)
+class RiderFlowState(step: Int = 0, cur: String = "", dest: String = "", road: String = "", day: Int = -1) {
+    var step by mutableIntStateOf(step)   // 0 = where are you, 1 = where to, 2 = road, 3 = trips
+    var cur by mutableStateOf(cur)
+    var dest by mutableStateOf(dest)
     var road by mutableStateOf(road)
-    var place by mutableStateOf(place)
-    var spot by mutableStateOf(spot)
     var day by mutableIntStateOf(day)     // -1 = any day
-    var origin by mutableStateOf(origin)  // optional northern town the rider leaves from / returns to
+
+    val curNorth get() = cur in northPlaces
+    val needsRoad get() = curNorth && (dest == AMMAN || dest == ZARQA || dest == MAFRAQ)
 
     fun back() {
         when (step) {
-            2 -> { step = 1; day = -1 }
-            1 -> if (group == G_SOUTH && road.isNotBlank()) { road = ""; place = "" }
-                 else { step = 0; group = ""; road = ""; place = ""; spot = ""; origin = "" }
+            3 -> { day = -1; if (needsRoad) { road = ""; step = 2 } else { dest = ""; step = 1 } }
+            2 -> { dest = ""; road = ""; step = 1 }
+            1 -> { cur = ""; step = 0 }
         }
     }
 
-    fun summary(): String = when (group) {
-        G_SOUTH -> listOf(origin, "الجنوب", road, place).filter { it.isNotBlank() }.joinToString(" • ")
-        G_NORTH -> listOf("الشمال", place).filter { it.isNotBlank() }.joinToString(" • ")
-        else -> listOf("داخل الشمال", place, spot).filter { it.isNotBlank() }.joinToString(" • ")
-    }
+    fun summary(): String = listOf(cur, dest).filter { it.isNotBlank() }.joinToString(" ← ") + if (road.isNotBlank() && road != NORTH_INNER) " • " + roadTitle(road) else ""
 
     companion object {
         val Saver: Saver<RiderFlowState, Any> = listSaver(
-            save = { listOf(it.step.toString(), it.group, it.road, it.place, it.spot, it.day.toString(), it.origin) },
-            restore = { RiderFlowState(it[0].toInt(), it[1], it[2], it[3], it[4], it[5].toInt(), it[6]) }
+            save = { listOf(it.step.toString(), it.cur, it.dest, it.road, it.day.toString()) },
+            restore = { RiderFlowState(it[0].toInt(), it[1], it[2], it[3], it[4].toInt()) }
         )
     }
 }
@@ -66,18 +64,11 @@ class RiderFlowState(step: Int = 0, group: String = "", road: String = "", place
 @Composable
 fun rememberRiderFlow(): RiderFlowState = rememberSaveable(saver = RiderFlowState.Saver) { RiderFlowState() }
 
-private val allSouthStops = southRoads.values.flatten().toSet()
-
-/** Every choice is optional: blank = any. A trip that names no specific stop (e.g. just «عمّان») matches any stop. */
+/** Trips that go from where the rider is to where he wants to go (and on the road he picked). */
 fun flowMatches(t: Trip, fs: RiderFlowState): Boolean {
-    val kind = kindOf(t)
-    val ok = when (fs.group) {
-        G_SOUTH -> kind == KIND_NS && (fs.origin.isBlank() || t.from == fs.origin) && (fs.road.isBlank() || t.road == fs.road) &&
-            (fs.place.isBlank() || t.to == fs.place || t.to !in allSouthStops)
-        G_NORTH -> kind == KIND_SN && (fs.place.isBlank() || t.to == fs.place)
-        G_INNER -> kind == KIND_NN && (fs.place.isBlank() || t.from == fs.place || t.to == fs.place) &&
-            (fs.spot.isBlank() || fs.spot == IRBID_OTHER || t.to == fs.spot || t.from == fs.spot || t.to == "إربد" || t.from == "إربد")
-        else -> true
+    val ok = when {
+        fs.cur.isBlank() || fs.dest.isBlank() -> true
+        else -> t.from == fs.cur && t.to == fs.dest && (fs.road.isBlank() || fs.road == NORTH_INNER || t.road == fs.road)
     }
     return ok && (fs.day < 0 || dayOffsetOf(t.departAt) == fs.day)
 }
@@ -137,62 +128,55 @@ fun RiderFlow(
     name: String, fs: RiderFlowState, shown: List<Trip>?, failed: Boolean,
     actions: @Composable ColumnScope.(Trip) -> Unit
 ) {
-    // One list with every captain's trip and destination: the rider picks the one that matches where he is going.
-    @Suppress("UNUSED_EXPRESSION") when (2) {
+    BackHandler(enabled = fs.step > 0) { fs.back() }
+    when (fs.step) {
         0 -> Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 44.dp, bottom = 120.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Column(Modifier.padding(bottom = 10.dp)) {
+            Column(Modifier.padding(bottom = 6.dp)) {
                 Text("أهلاً $name", fontSize = 14.sp, color = Dim)
-                Text("لوين رايح؟", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("وين أنت حالياً؟", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
             }
-            BigChoice("الجنوب", "عمّان والزرقاء", 0) { fs.group = G_SOUTH; fs.step = 1 }
-            BigChoice("الشمال", northPlaces.joinToString(" • "), 1) { fs.group = G_NORTH; fs.step = 1 }
-            BigChoice("داخل الشمال", (northVillages + "إربد").joinToString(" • "), 2) { fs.group = G_INNER; fs.step = 1 }
+            GlassSection("اختر مكانك") { GlassGrid(currentChoices, fs.cur) { fs.cur = it; fs.step = 1 } }
         }
         1 -> Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(bottom = 120.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            BackBar(when (fs.group) { G_SOUTH -> fs.road.ifBlank { "الجنوب" }; G_NORTH -> "الشمال"; else -> "داخل الشمال" }) { fs.back() }
-            when (fs.group) {
-                G_SOUTH -> if (fs.road.isBlank()) {
-                    southRoads.entries.forEachIndexed { i, (road, stops) ->
-                        BigChoice(road, (if (road == "طريق الزرقاء") listOf("الصحراوي") + stops.take(3) else stops.take(4)).joinToString(" • "), i) { fs.road = road }
-                    }
-                } else {
-                    GlassSection("وين وجهتك؟ (اختياري)") {
-                        GlassGrid(listOf("كل المناطق") + (southRoads[fs.road] ?: emptyList()), "") { p ->
-                            fs.place = if (p == "كل المناطق") "" else p; fs.step = 2
-                        }
-                    }
+            BackBar("أنت في ${fs.cur}") { fs.back() }
+            Text("لوين بدك تروح؟", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
+            if (fs.curNorth) {
+                GlassSection("داخل الشمال") {
+                    GlassGrid((northPlaces - MAFRAQ).filter { it != fs.cur }, "") { fs.dest = it; fs.road = NORTH_INNER; fs.step = 3 }
                 }
-                G_NORTH -> GlassSection("وين بالشمال؟") {
-                    GlassGrid(listOf("كل المناطق") + northPlaces, "") { p -> fs.place = if (p == "كل المناطق") "" else p; fs.step = 2 }
+                GlassSection("الجنوب") {
+                    GlassGrid(listOf("إلى $AMMAN", "إلى $ZARQA", "إلى $MAFRAQ"), "") { fs.dest = it.removePrefix("إلى "); fs.road = ""; fs.step = 2 }
                 }
-                else -> {
-                    GlassSection("من أي بلد؟") { GlassGrid(northVillages, fs.place) { fs.place = it } }
-                    if (fs.place.isNotBlank()) GlassSection("وين بإربد؟") {
-                        GlassGrid(irbidSpots, fs.spot, 1) { fs.spot = it; fs.step = 2 }
-                    }
+            } else {
+                GlassSection("إلى الشمال") {
+                    GlassGrid(northPlaces - MAFRAQ, "") { fs.dest = it; fs.road = ""; fs.step = 3 }
+                }
+            }
+        }
+        2 -> Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(bottom = 120.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            BackBar("${fs.cur} ← ${fs.dest}") { fs.back() }
+            if (fs.dest == MAFRAQ) {
+                GlassSection("وين بالمفرق؟") { GlassGrid(listOf("دوار الدبابة", "داخل المفرق"), "") { fs.road = it; fs.step = 3 } }
+            } else {
+                Text("من أي طريق بدك؟", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
+                southRoads.entries.forEachIndexed { i, (road, stops) ->
+                    BigChoice(roadTitle(road), (if (road == "طريق الزرقاء") listOf("الصحراوي") + stops.take(3) else stops.take(4)).joinToString(" • "), i) { fs.road = road; fs.step = 3 }
                 }
             }
         }
         else -> {
             var pickDate by remember { mutableStateOf(false) }
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 18.dp, end = 18.dp, bottom = 120.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                item {
-                    Column(Modifier.padding(top = 44.dp, bottom = 4.dp)) {
-                        Text("أهلاً $name", fontSize = 14.sp, color = Dim)
-                        Text("رحلات الكباتن", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
-                    }
-                }
-                if (fs.group == G_SOUTH) item {
-                    GlassSection("من أي بلد بالشمال؟ (اختياري)") {
-                        GlassGrid(listOf("أي بلد") + northPlaces, if (fs.origin.isBlank()) "أي بلد" else fs.origin, 3) { fs.origin = if (it == "أي بلد") "" else it }
-                    }
-                }
+                item { BackBar(fs.summary()) { fs.back() } }
                 item {
                     GlassSection("بتحب تحجز موعد؟") {
                         DayPills(pillDays(5), if (fs.day in 0..4) fs.day else -1) { fs.day = if (fs.day == it) -1 else it }
