@@ -159,9 +159,12 @@ fun pickerMillisOfOffset(offset: Int): Long {
 // No new Firestore fields are needed. departAt then holds the END of the window (or the end of the day), so the trip expires by itself.
 fun tripWindow(note: String): Pair<Int, Int>? {
     if (!note.startsWith("@T:")) return null
-    val p = note.removePrefix("@T:").split(",")
+    val p = note.removePrefix("@T:").substringBefore(" ").split(",")
     return (p.getOrNull(0)?.toIntOrNull() ?: -1) to (p.getOrNull(1)?.toIntOrNull() ?: -1)
 }
+
+/** The captain chose to carry Mafraq riders on this trip (flag «@M» stored after the window in the note). */
+fun takesMafraq(t: Trip) = t.note.contains("@M")
 
 private fun minText(m: Int) = clockText(dayStart(0) + m * 60_000L)
 

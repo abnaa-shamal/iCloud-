@@ -140,14 +140,15 @@ private fun TripsTab(me: UserProfile, myBookings: List<Booking>, flow: RiderFlow
     }
 
     booking?.let { t ->
-        BookingDialog(t, me, onClose = { booking = null }, onBooked = { booking = null })
+        val mfq = if (flow.cur == MAFRAQ || flow.dest == MAFRAQ) listOf("راكب المفرق", flow.road.takeIf { flow.dest == MAFRAQ && it.isNotBlank() }).filterNotNull().joinToString(" • ") else ""
+        BookingDialog(t, me, mfq, onClose = { booking = null }, onBooked = { booking = null })
     }
 }
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun BookingDialog(t: Trip, me: UserProfile, onClose: () -> Unit, onBooked: () -> Unit) {
+private fun BookingDialog(t: Trip, me: UserProfile, mafraqNote: String, onClose: () -> Unit, onBooked: () -> Unit) {
     val ctx = LocalContext.current
     val total = t.seatsTotal.toInt().coerceIn(1, 8)
     val free = t.seatsFree.toInt().coerceIn(1, total)
@@ -170,11 +171,12 @@ private fun BookingDialog(t: Trip, me: UserProfile, onClose: () -> Unit, onBooke
         ) {
             val dropoff = if (areas != null && point.isNotBlank() && point != OTHER_PLACE) point
                 else if (areas != null && point.isBlank()) ANY_PLACE else other.trim()
+            val drop = if (mafraqNote.isNotBlank() && t.to != MAFRAQ && t.from != MAFRAQ) mafraqNote else dropoff
             when {
-                dropoff.isBlank() && t.to == IRBID_OTHER -> toast(ctx, "اكتب نقطة النزول")
+                drop.isBlank() && t.to == IRBID_OTHER -> toast(ctx, "اكتب نقطة النزول")
                 else -> {
                     sending = true
-                    Repo.book(t, me, picked.size.toLong(), dropoff.ifBlank { ANY_PLACE }) { ok ->
+                    Repo.book(t, me, picked.size.toLong(), drop.ifBlank { ANY_PLACE }) { ok ->
                         sending = false
                         if (ok) {
                             AppFeedback.success(ctx)

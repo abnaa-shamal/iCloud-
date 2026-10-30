@@ -441,6 +441,7 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
     var pick by remember { mutableIntStateOf(0) }   // 0 = closed, 1 = from, 2 = to
     var sending by remember { mutableStateOf(false) }
     var openRoad by remember { mutableStateOf("") }
+    var carryMafraq by rememberSaveable { mutableStateOf(false) }
 
     val inner = group == G_INNER_C
     val fromNorth = group == G_NORTH_C
@@ -490,11 +491,12 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
                 fromNorth && origin.isBlank() -> CapSection("وين بالشمال؟") { CapGrid(northPlaces.filter { it != "المفرق" }, origin, 2, big = true) { origin = it } }
                 fromNorth && dest.isBlank() -> CapSection("إلى أين؟") { CapGrid(northToDests.filter { it != origin }, dest, 2, big = true) { dest = it } }
                 // من الجنوب: to which place in the north, then the road
-                group == G_SOUTH_C && dest.isBlank() -> CapSection("وين رايح بالشمال؟") { CapGrid(southToDests, dest, 2, big = true) { dest = it } }
+                group == G_SOUTH_C && lockFrom == null && origin.isBlank() -> CapSection("من وين؟") { CapGrid(listOf(AMMAN, ZARQA), origin, 2, big = true) { origin = it } }
+                group == G_SOUTH_C && dest.isBlank() -> CapSection("وين رايح بالشمال؟") { CapGrid(southToDests + "المفرق", dest, 2, big = true) { dest = it; if (it != "المفرق") step = 2 } }
                 // داخل الشمال: from, then to, both grouped
                 inner && origin.isBlank() -> InnerPicker("من أين؟", null) { origin = it }
                 inner && dest.isBlank() -> InnerPicker("إلى أين؟", origin) { dest = it; if (!innerNeedsRoad(origin, it)) step = 2 }
-                fromNorth && dest == "المفرق" -> CapSection("وين بالمفرق؟") { CapGrid(listOf("دوار الدبابة", "داخل المفرق"), road, 2, big = true) { road = it; step = 2 } }
+                !inner && dest == "المفرق" -> CapSection("وين بالمفرق؟") { CapGrid(listOf("دوار الدبابة", "داخل المفرق"), road, 2, big = true) { road = it; step = 2 } }
                 inner -> {
                     Text("من أي طريق؟", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = CapInk)
                     innerRoadsFor(origin, dest).forEachIndexed { i, r ->
@@ -510,7 +512,7 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
             }
         }
         else -> Column(colMod, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            val sPlace = if (road == "طريق الزرقاء") ZARQA else AMMAN
+            val sPlace = lockFrom?.takeIf { it == AMMAN || it == ZARQA } ?: origin.ifBlank { AMMAN }
             val tFrom = if (group == G_SOUTH_C) sPlace else origin
             CapBackBar(tFrom + " ← " + dest + if (road.isBlank()) "" else " • " + roadLabel(road)) { goBack() }
             CapSection("اليوم والوقت (اختياري)") {
@@ -527,6 +529,10 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
                     if (fromMin >= 0 || toMin >= 0) Box(Modifier.size(44.dp).clickable { fromMin = -1; toMin = -1 }, contentAlignment = Alignment.Center) { Text("✕", fontSize = 18.sp, color = CapRed) }
                 }
                 Text(if (fromMin >= 0 || toMin >= 0) "متواجد بهالفترة، أو لحد ما يكتمل العدد" else "بدون وقت: متاح لحد ما يكتمل العدد", fontSize = 12.sp, color = CapMute)
+            }
+            if (dest != "المفرق" && (group == G_SOUTH_C || (group == G_NORTH_C && road == "طريق الزرقاء"))) CapSection("تحمل ركاب المفرق؟") {
+                CapGrid(listOf("لا", "نعم"), if (carryMafraq) "نعم" else "لا", 2) { carryMafraq = it == "نعم" }
+                Text("إذا نعم، رحلتك بتظهر كمان لعملاء المفرق، وطلباتهم بتوصلك بعلامة «راكب المفرق»", fontSize = 12.sp, color = CapMute)
             }
             CapSection("المقاعد") {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
@@ -549,7 +555,7 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
                     group.isBlank() -> toast(ctx, "اختر وجهة انطلاقك")
                     group != G_SOUTH_C && origin.isBlank() -> toast(ctx, "اختر مكان انطلاقك")
                     dest.isBlank() -> toast(ctx, "اختر وجهة الوصول")
-                    !inner && road.isBlank() -> toast(ctx, "اختر الطريق")
+                    !inner && road.isBlank() && (group != G_SOUTH_C || dest == "المفرق") -> toast(ctx, "اختر الطريق")
                     fromMin >= 0 && toMin >= 0 && toMin <= fromMin -> toast(ctx, "وقت النهاية لازم يكون بعد البداية")
                     departAt < System.currentTimeMillis() -> toast(ctx, "هالوقت فات، اختر وقت جاي")
                     sending -> {}
@@ -565,7 +571,7 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
                                 captainName = me.name, captainPhone = me.phone, carText = me.carText,
                                 from = from, to = to, road = roadField,
                                 departAt = departAt, seatsTotal = seats.toLong(), price = priceStr.toDoubleOrNull(),
-                                acceptsParcels = false, note = "@T:$fromMin,$toMin"
+                                acceptsParcels = false, note = "@T:$fromMin,$toMin" + if (carryMafraq && dest != "المفرق" && (group == G_SOUTH_C || road == "طريق الزرقاء")) " @M" else ""
                             )
                         ) { ok ->
                             sending = false

@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.sp
 
 // The rider's journey: where are you now? -> where to? -> (which road / where in Mafraq) -> trips.
 
-private const val MAFRAQ = "المفرق"
+const val MAFRAQ = "المفرق"
 private val currentChoices = northPlaces + listOf(AMMAN, ZARQA)
 
 fun roadTitle(r: String) = if (r == "طريق الزرقاء") "الطريق الصحراوي" else r
@@ -41,7 +41,7 @@ class RiderFlowState(step: Int = 0, cur: String = "", dest: String = "", road: S
     var day by mutableIntStateOf(day)     // -1 = any day
 
     val curNorth get() = cur in northPlaces
-    val needsRoad get() = curNorth && (dest == AMMAN || dest == ZARQA || dest == MAFRAQ)
+    val needsRoad get() = dest == MAFRAQ || (curNorth && (dest == AMMAN || dest == ZARQA))
 
     fun back() {
         when (step) {
@@ -68,6 +68,15 @@ fun rememberRiderFlow(): RiderFlowState = rememberSaveable(saver = RiderFlowStat
 fun flowMatches(t: Trip, fs: RiderFlowState): Boolean {
     val ok = when {
         fs.cur.isBlank() || fs.dest.isBlank() -> true
+        // Mafraq riders also see captains who chose to carry them (they pass through Mafraq on the desert road)
+        fs.dest == MAFRAQ && fs.cur != MAFRAQ ->
+            (t.from == fs.cur && t.to == MAFRAQ && (fs.road.isBlank() || t.road == fs.road)) ||
+                (takesMafraq(t) && t.from == fs.cur)
+        fs.cur == MAFRAQ && (fs.dest == AMMAN || fs.dest == ZARQA) ->
+            (t.from == MAFRAQ && t.to == fs.dest && (fs.road.isBlank() || t.road == fs.road)) ||
+                (takesMafraq(t) && t.from in northPlaces && t.to == fs.dest && (fs.road.isBlank() || t.road == fs.road))
+        fs.cur == MAFRAQ && fs.dest in northPlaces -> kindOf(t) == KIND_NN && innerTripCovers(t, fs.cur, fs.dest) ||
+            (takesMafraq(t) && (t.from == AMMAN || t.from == ZARQA) && t.to == fs.dest)
         fs.cur in northPlaces && fs.dest in northPlaces -> kindOf(t) == KIND_NN && innerTripCovers(t, fs.cur, fs.dest)
         else -> t.from == fs.cur && t.to == fs.dest && (fs.road.isBlank() || fs.road == NORTH_INNER || t.road == fs.road)
     }
@@ -156,7 +165,7 @@ fun RiderFlow(
                 }
             } else {
                 GlassSection("إلى الشمال") {
-                    GlassGrid(northPlaces - MAFRAQ, "") { fs.dest = it; fs.road = ""; fs.step = 3 }
+                    GlassGrid(northPlaces, "") { fs.dest = it; fs.road = ""; fs.step = if (it == MAFRAQ) 2 else 3 }
                 }
             }
         }
