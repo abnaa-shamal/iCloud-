@@ -34,6 +34,7 @@ fun roadTitle(r: String) = if (r == "طريق الزرقاء") "الطريق ا�
 
 @Stable
 class RiderFlowState(step: Int = 0, cur: String = "", dest: String = "", road: String = "", day: Int = -1, who: Int = 0, other: String = "", share: Boolean = false) {
+    var manual by mutableStateOf(false)         // true = choose the current place by hand (GPS not used / failed / rider went back)
     var who by mutableIntStateOf(who)           // 0 = not asked, 1 = for me, 2 = for someone else
     var other by mutableStateOf(other)          // the other person's phone
     var share by mutableStateOf(share)          // optional: the booker is with him, send the booker's location
@@ -51,7 +52,7 @@ class RiderFlowState(step: Int = 0, cur: String = "", dest: String = "", road: S
         when (step) {
             3 -> { day = -1; if (needsRoad) { road = ""; step = 2 } else { dest = ""; step = 1 } }
             2 -> { dest = ""; road = ""; step = 1 }
-            1 -> { cur = ""; step = 0 }
+            1 -> { cur = ""; step = 0; manual = true }
         }
     }
 
@@ -147,8 +148,8 @@ fun RiderFlow(
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 44.dp, bottom = 120.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text("أهلاً $name", fontSize = 14.sp, color = Dim)
             Text("لمين بدك تحجز؟", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
-            BigChoice("لنفسي", "أنا اللي براكب", 0) { fs.who = 1 }
-            BigChoice("لشخص آخر", "بتحدد مكانه ووجهته", 1) { fs.who = 2 }
+            BigChoice("لنفسي", "بنأكد موقعك تلقائياً", 0) { fs.who = 1; fs.manual = false }
+            BigChoice("لشخص آخر", "بتحدد مكانه ووجهته", 1) { fs.who = 2; fs.manual = true }
         }
         return
     }
@@ -157,25 +158,32 @@ fun RiderFlow(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 44.dp, bottom = 120.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Column(Modifier.padding(bottom = 6.dp)) {
-                Text("أهلاً $name", fontSize = 14.sp, color = Dim)
-                Text(if (fs.who == 2) "وين موقع الشخص الآخر؟" else "وين أنت حالياً؟", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
-            }
-            // GPS suggestion: «أنت في إربد؟», one tap confirms it; the grids below stay for choosing by hand
             val ctxF = androidx.compose.ui.platform.LocalContext.current
-            var guess by remember { mutableStateOf<String?>(null) }
-            fun detect() { fetchLocation(ctxF) { l -> if (l != null) guess = nearestPlace(l.latitude, l.longitude) } }
-            val askLoc = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()) { r -> if (r.values.any { it }) detect() }
-            var asked by rememberSaveable { mutableStateOf(false) }
-            LaunchedEffect(Unit) {
-                if (hasLocationPermission(ctxF)) detect()
-                else if (!asked) { asked = true; askLoc.launch(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)) }
+            val auto = fs.who == 1 && !fs.manual
+            // For himself: the place is confirmed from the GPS by itself, and the rider goes straight to «لوين رايح؟»
+            LaunchedEffect(auto) {
+                if (!auto) return@LaunchedEffect
+                if (!hasLocationPermission(ctxF)) { fs.manual = true; return@LaunchedEffect }
+                fetchLocation(ctxF) { l ->
+                    val g = if (l != null) nearestPlace(l.latitude, l.longitude) else null
+                    if (g != null) { fs.cur = g; fs.step = 1 } else fs.manual = true
+                }
             }
-            if (fs.who == 1) guess?.let { g ->
-                GlassSection("موقعك الحالي") { GlassGrid(listOf("أنت في $g ✓"), "") { fs.cur = g; fs.step = 1 } }
+            if (auto) {
+                Column(Modifier.fillMaxWidth().padding(top = 80.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    androidx.compose.material3.CircularProgressIndicator(color = Amber)
+                    Text("جاري تأكيد موقعك الحالي...", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
+                    Text("حسب الـGPS", fontSize = 13.sp, color = Dim)
+                }
+            } else {
+                Column(Modifier.padding(bottom = 6.dp)) {
+                    Text("أهلاً $name", fontSize = 14.sp, color = Dim)
+                    Text(if (fs.who == 2) "وين موقع الشخص الآخر؟" else "وين أنت حالياً؟", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
+                    if (fs.who == 1) Text("اختر مكانك بإيدك", fontSize = 13.sp, color = Dim)
+                }
+                GlassSection("مناطق الشمال") { GlassGrid(northPlaces - MAFRAQ, fs.cur) { fs.cur = it; fs.step = 1 } }
+                GlassSection("عمّان والزرقاء والمفرق") { GlassGrid(listOf(AMMAN, ZARQA, MAFRAQ), fs.cur) { fs.cur = it; fs.step = 1 } }
             }
-            GlassSection("مناطق الشمال") { GlassGrid(northPlaces - MAFRAQ, fs.cur) { fs.cur = it; fs.step = 1 } }
-            GlassSection("عمّان والزرقاء والمفرق") { GlassGrid(listOf(AMMAN, ZARQA, MAFRAQ), fs.cur) { fs.cur = it; fs.step = 1 } }
         }
         1 -> Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(bottom = 120.dp),
