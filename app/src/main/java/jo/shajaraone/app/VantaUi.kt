@@ -236,7 +236,7 @@ fun TripCard(t: Trip, modifier: Modifier = Modifier, index: Int = 0, nearest: Bo
 @Composable
 fun VantaNav(items: List<Pair<Int, String>>, selected: Int, onPick: (Int) -> Unit = {}) {
     Row(
-        Modifier.padding(bottom = 14.dp).darkGlass(40.dp).padding(6.dp).animateContentSize(),
+        Modifier.navigationBarsPadding().padding(bottom = 14.dp).darkGlass(40.dp).padding(6.dp).animateContentSize(),
         horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically
     ) {
         items.forEachIndexed { i, (g, name) ->

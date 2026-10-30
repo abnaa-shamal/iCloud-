@@ -64,12 +64,7 @@ fun PassengerHome(me: UserProfile) {
                 else -> SoonScreen()
             }
         }
-        if (tab == 0) {
-            val hs = remember { jo.shajaraone.app.hasbat.AppDataManager.get(ctxP) }
-            Box(Modifier.fillMaxSize().systemBarsPadding()) {
-                jo.shajaraone.app.hasbat.AssistantBubble(hs, jo.shajaraone.app.hasbat.rememberHasbatTheme(hs), false, visible = true)
-            }
-        }
+        if (tab == 0) jo.shajaraone.app.hasbat.AssistantLauncher(Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 6.dp, end = 14.dp))
         Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth(), contentAlignment = Alignment.Center) {
             VantaNav(listOf(1 to "الرحلات", 2 to (if (upcoming > 0) "حجوزاتي ($upcoming)" else "حجوزاتي"), 7 to "اشتراكات", 5 to "الإعدادات"), tab, { tab = it })
         }

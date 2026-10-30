@@ -131,11 +131,7 @@ fun HasbatShell(
                 }
                 CaptainDock(tab, theme, isEnglish, isTripActive, requestsBadge, onTab,
                     Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = 12.dp, vertical = 10.dp))
-                if (tab == 0) {
-                    Box(Modifier.fillMaxSize().systemBarsPadding()) {
-                        AssistantBubble(storage, theme, isEnglish, visible = !isTripActive)
-                    }
-                }
+                if (tab == 0) AssistantLauncher(Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 6.dp, end = 14.dp))
             }
         }
     }
@@ -220,4 +216,25 @@ fun rememberHasbatTheme(storage: AppDataManager): AppTheme {
     }
     val idx = if (storage.autoDayNight && isDaytime) storage.dayThemeIndex else storage.themeIndex
     return themes[idx.coerceIn(0, themes.size - 1)]
+}
+
+/** Small «المساعد» button: opens the assistant chat (it replaced the flying fairies). */
+@Composable
+fun AssistantLauncher(modifier: Modifier = Modifier) {
+    val ctx = LocalContext.current
+    val storage = remember { AppDataManager.get(ctx) }
+    val theme = rememberHasbatTheme(storage)
+    var show by remember { mutableStateOf(false) }
+    if (show) AssistantCornerDialog(storage, theme, storage.isEnglish) { show = false }
+    Row(
+        modifier.clip(RoundedCornerShape(20.dp))
+            .background(theme.accentColor.copy(alpha = 0.22f))
+            .border(1.dp, theme.accentColor.copy(alpha = 0.6f), RoundedCornerShape(20.dp))
+            .bounceClick { show = true }
+            .padding(horizontal = 12.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text("🤖", fontSize = 15.sp)
+        Text(if (storage.isEnglish) "Assistant" else "المساعد", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = textColorFor(theme))
+    }
 }

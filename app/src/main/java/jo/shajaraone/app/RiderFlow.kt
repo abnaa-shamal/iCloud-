@@ -103,16 +103,7 @@ internal fun GlassChip(text: String, on: Boolean, modifier: Modifier = Modifier,
 }
 
 @Composable
-internal fun GlassGrid(items: List<String>, selected: String, cols: Int = 3, onPick: (String) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        items.chunked(cols).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { n -> GlassChip(n, n == selected, Modifier.weight(1f)) { onPick(n) } }
-                repeat(cols - row.size) { Spacer(Modifier.weight(1f)) }
-            }
-        }
-    }
-}
+internal fun GlassGrid(items: List<String>, selected: String, cols: Int = 3, onPick: (String) -> Unit) = CapGrid(items, selected, 2, big = true, onPick = onPick)
 
 @Composable
 private fun BigChoice(title: String, sub: String, index: Int, onClick: () -> Unit) {

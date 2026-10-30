@@ -289,11 +289,6 @@ fun MainDashboardScreen(storage: AppDataManager, theme: AppTheme, isEnglish: Boo
                     SoundEffectsHelper.playClick(view, sound); showSupport = true
                 }
                 Spacer(modifier = Modifier.width(6.dp))
-                // زر الكابتن المساعد في الزاوية
-                HeaderLabeledButton("🤖", if (isEnglish) "Assistant" else "المساعد", theme, subTextColor) {
-                    SoundEffectsHelper.playClick(view, sound); showAssistant = true
-                }
-                Spacer(modifier = Modifier.width(6.dp))
             }
             HeaderLabeledButton("🗺️", if (isEnglish) "Map" else "الخريطة", theme, subTextColor) {
                 SoundEffectsHelper.playClick(view, sound)
