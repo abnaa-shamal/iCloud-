@@ -73,7 +73,6 @@ fun CleanSettingsScreen(storage: AppDataManager, theme: AppTheme, isEnglish: Boo
         Triple(4, "🎨", if (isEnglish) "Themes" else "الثيمات"),
         Triple(5, "🔊", if (isEnglish) "Sounds" else "الأصوات"),
         Triple(8, "📅", if (isEnglish) "License & insurance" else "الترخيص والتأمين"),
-        Triple(9, "🤖", if (isEnglish) "Assistant (how to use)" else "المساعد (شرح التطبيق)"),
         Triple(10, "🫧", if (isEnglish) "Floating bubble" else "الفقاعة العائمة")
         // الدعم الفني انتقل إلى زر 🎧 في الشاشة الرئيسية (2.9.2)
     )
@@ -136,7 +135,6 @@ fun CleanSettingsScreen(storage: AppDataManager, theme: AppTheme, isEnglish: Boo
                     selectedSection == 4 -> ThemeSelectorSection(storage, theme, isEnglish)
                     selectedSection == 5 -> SoundSettingsSection(storage, theme, isEnglish)
                     selectedSection == 8 -> VehicleReminderSection(storage, theme, isEnglish)
-                    selectedSection == 9 -> AssistantSection(storage, theme, isEnglish)
                     selectedSection == 10 -> FloatingBubbleSection(storage, theme, isEnglish)
                     else -> SupportAboTalaSection(storage, theme, isEnglish)
                 }
