@@ -51,7 +51,9 @@ fun CaptainHome(me: UserProfile) {
         if (trips != null) { if (online) CapReceiveService.start(feedbackCtx) else CapReceiveService.stop(feedbackCtx) }
     }
     var showHistory by remember { mutableStateOf(false) }
+    var publishNext by rememberSaveable { mutableStateOf(false) }
     androidx.activity.compose.BackHandler(enabled = showHistory) { showHistory = false }
+    androidx.activity.compose.BackHandler(enabled = publishNext && tab == 0 && !showHistory) { publishNext = false }
     if (showHistory) {
         CompositionLocalProvider(LocalContentColor provides CapInk) {
             Box(Modifier.fillMaxSize().background(CapBg)) { CapTripHistory(trips, bookings) { showHistory = false } }
@@ -63,8 +65,16 @@ fun CaptainHome(me: UserProfile) {
         ) { t ->
             CompositionLocalProvider(LocalContentColor provides CapInk) {
                 Box(Modifier.fillMaxSize()) {
-                    if (t == 0) CapPublish(me, online, trips ?: emptyList(), onTrips = { tab = 1 }, onPublished = { tab = 1 })
-                    else CapDashboard(me.name.trim().substringBefore(" "), trips, bookings)
+                    if (t == 0) {
+                        val nowH = System.currentTimeMillis()
+                        LaunchedEffect(Unit) { CapTripState.load(feedbackCtx) }
+                        val current = (trips ?: emptyList()).filter { it.status != TRIP_CANCELLED && CapTripState.of(it.id) != "finished" && (CapTripState.of(it.id) == "started" || it.departAt > nowH - 4 * 3_600_000L) }
+                        if (current.isNotEmpty() && !publishNext) {
+                            CapDashboard(me.name.trim().substringBefore(" "), trips, bookings, home = true, onPublishNext = { publishNext = true })
+                        } else {
+                            CapPublish(me, online, trips ?: emptyList(), onTrips = { tab = 1 }, onPublished = { publishNext = false })
+                        }
+                    } else CapDashboard(me.name.trim().substringBefore(" "), trips, bookings)
                 }
             }
         }
@@ -88,7 +98,7 @@ object CapTripState {
 }
 
 @Composable
-fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
+fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home: Boolean = false, onPublishNext: () -> Unit = {}) {
     val ctx = LocalContext.current
     LaunchedEffect(Unit) { CapTripState.load(ctx) }
     var cancelTrip by remember { mutableStateOf<Trip?>(null) }
@@ -103,7 +113,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
     val running = all.filter { it.status != TRIP_CANCELLED && st(it) == "started" }.sortedBy { it.departAt }
     val upcoming = all.filter { it.status != TRIP_CANCELLED && st(it) == "" && it.departAt > now - 4 * 3_600_000L }.sortedBy { it.departAt }
     val done = all.filter { it.status == TRIP_CANCELLED || st(it) == "finished" || (st(it) == "" && it.departAt <= now - 4 * 3_600_000L) }.sortedByDescending { it.departAt }
-    val list = when (seg) { 0 -> upcoming; 1 -> running; else -> done }
+    val list = if (home) (running + upcoming) else when (seg) { 0 -> upcoming; 1 -> running; else -> done }
 
     Box(Modifier.fillMaxSize()) {
         androidx.compose.foundation.lazy.LazyColumn(
@@ -113,7 +123,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
             item {
                 Column {
                     Text("رحلاتي • أهلاً كابتن $name", fontSize = 14.sp, color = CapMute)
-                    Text(if (pend.isEmpty()) "متابعة رحلتي" else if (pend.size == 1) "طلب واحد بانتظارك" else "${pend.size} طلبات بانتظارك",
+                    Text(if (pend.isEmpty()) (if (home) "رحلتي الحالية" else "متابعة رحلتي") else if (pend.size == 1) "طلب واحد بانتظارك" else "${pend.size} طلبات بانتظارك",
                         fontSize = 28.sp, fontWeight = FontWeight.Bold, color = CapInk)
                 }
             }
@@ -141,12 +151,15 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
                     }
                 }
             }
-            item {
+            if (!home) item {
                 Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("القادمة" to upcoming.size, "الجارية" to running.size, "المكتملة" to done.size).forEachIndexed { i, (n, c) ->
                         CapChip(if (i < 2 && c > 0) "$n ($c)" else n, seg == i, Modifier.weight(1f)) { seg = i }
                     }
                 }
+            }
+            if (home && running.isNotEmpty() && upcoming.isEmpty()) item {
+                CapBtn("انشر رحلة من ${running.last().to}", Modifier.fillMaxWidth(), height = 54.dp) { onPublishNext() }
             }
             if (trips == null) item { LoadingBox() }
             else if (list.isEmpty()) item {
@@ -154,16 +167,17 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
                     Text(when (seg) { 0 -> "ما عندك رحلات قادمة"; 1 -> "ما في رحلة جارية"; else -> "ما في رحلات مكتملة" }, color = CapMute)
                 }
             }
-            items(list.size, key = { "s$seg" + list[it].id }) { i ->
+            items(list.size, key = { "s${if (home) 9 else seg}" + list[it].id }) { i ->
                 val t = list[i]
+                val sg = if (home) (if (CapTripState.of(t.id) == "started") 1 else 0) else seg
                 val reqs = bookings.filter { it.tripId == t.id && it.isActive && it.status == BK_ACCEPTED }
                 val booked = (t.seatsTotal - t.seatsFree).coerceAtLeast(0)
-                val isOpen = open == t.id
+                val isOpen = home || open == t.id
                 val cancelled = t.status == TRIP_CANCELLED
                 val label = when {
                     cancelled -> "ملغية"
-                    seg == 2 -> "اكتملت"
-                    seg == 1 -> "الرحلة قيد التنفيذ"
+                    sg == 2 -> "اكتملت"
+                    sg == 1 -> "الرحلة قيد التنفيذ"
                     t.seatsFree <= 0L -> "مكتملة المقاعد"
                     booked > 0 -> "$booked حجوزات مؤكدة"
                     else -> "بانتظار الركاب"
@@ -182,10 +196,10 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
                             Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (cancelled) CapRed else CapAccent)
                         }
                     }
-                    if (seg == 0 && reqs.isNotEmpty()) CapBtn("بدء الرحلة", Modifier.fillMaxWidth(), color = Color(0xFF22A559), height = 48.dp) {
+                    if (sg == 0 && reqs.isNotEmpty()) CapBtn("بدء الرحلة", Modifier.fillMaxWidth(), color = Color(0xFF22A559), height = 48.dp) {
                         CapTripState.set(ctx, t.id, "started"); seg = 1
                     }
-                    if (seg == 1) CapBtn("إنهاء الرحلة", Modifier.fillMaxWidth(), color = CapRed, height = 48.dp) { finishTrip = t }
+                    if (sg == 1) CapBtn("إنهاء الرحلة", Modifier.fillMaxWidth(), color = CapRed, height = 48.dp) { finishTrip = t }
                     if (isOpen) {
                         Text("إدارة الركاب", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = CapMute)
                         if (reqs.isEmpty()) Text("ما في ركاب لسا", fontSize = 13.sp, color = CapMute)
@@ -196,13 +210,13 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
                                     Text(b.passengerName, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = CapInk)
                                     Text(seatsText(b.seats) + if (b.dropoff.isNotBlank()) " • ${b.dropoff}" else "", fontSize = 11.sp, color = CapMute)
                                 }
-                                if (seg < 2) {
+                                if (sg < 2) {
                                     CapBtn("اتصال", filled = false, color = CapInk, height = 38.dp) { callPhone(ctx, b.passengerPhone) }
-                                    if (seg == 0) CapBtn("إلغاء", filled = false, color = CapRed, height = 38.dp) { cancelBooking = b }
+                                    if (sg == 0) CapBtn("إلغاء", filled = false, color = CapRed, height = 38.dp) { cancelBooking = b }
                                 }
                             }
                         }
-                        if (seg < 2) {
+                        if (sg < 2) {
                             LiveShareControl(t)
                             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 CapBtn("مشاركة الرحلة", Modifier.weight(1f), filled = false, color = CapAccent, height = 42.dp) {
@@ -214,7 +228,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
                                         ctx.startActivity(android.content.Intent.createChooser(send, "مشاركة الرحلة"))
                                     } catch (_: Throwable) {}
                                 }
-                                if (seg == 0) CapBtn("إلغاء الرحلة", Modifier.weight(1f), filled = false, color = CapRed, height = 42.dp) { cancelTrip = t }
+                                if (sg == 0) CapBtn("إلغاء الرحلة", Modifier.weight(1f), filled = false, color = CapRed, height = 42.dp) { cancelTrip = t }
                             }
                         }
                     }
@@ -396,7 +410,7 @@ private fun CapPublish(me: UserProfile, online: Boolean, trips: List<Trip>, onTr
     val now = System.currentTimeMillis()
     val live = trips.filter { it.status != TRIP_CANCELLED && it.departAt > now - 4 * 3_600_000L }
     val waiting = live.filter { CapTripState.of(it.id) == "" }.minByOrNull { it.departAt }
-    val running = live.filter { CapTripState.of(it.id) == "started" }.maxByOrNull { it.departAt }
+    val running = trips.filter { it.status != TRIP_CANCELLED && CapTripState.of(it.id) == "started" }.maxByOrNull { it.departAt }
     if (waiting != null) {
         Column(Modifier.fillMaxSize().padding(horizontal = 18.dp).padding(top = 44.dp, bottom = 170.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text("عندك رحلة منشورة", Modifier.padding(top = 6.dp), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = CapInk)
