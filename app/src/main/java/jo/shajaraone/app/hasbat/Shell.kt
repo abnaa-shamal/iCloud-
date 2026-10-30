@@ -158,7 +158,7 @@ private fun CaptainDock(
 ) {
     val items = listOf(
         Triple(0, if (isEnglish) "Home" else "الرئيسية", "🏠"),
-        Triple(1, if (isEnglish) "Requests" else "طلبات", "🔔"),
+        Triple(1, if (isEnglish) "My trips" else "رحلاتي", "🚗"),
         Triple(2, if (isEnglish) "Meter" else "العداد", "🚕"),
         Triple(3, if (isEnglish) "Finance" else "المالية", "💸"),
         Triple(4, if (isEnglish) "Calculator" else "الحاسبة", "🧮"),
