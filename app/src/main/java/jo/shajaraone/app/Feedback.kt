@@ -26,10 +26,6 @@ object AppFeedback {
     val SOUNDS_ENABLED = true
 
     // Sound file names (without extension) expected in res/raw.
-    private const val SND_TAP = "fb_tap"
-    private const val SND_SUCCESS = "fb_success"
-    private const val SND_ERROR = "fb_error"
-    private const val SND_REQUEST = "fb_request"
     private const val SND_OPEN = "fb_open"
 
     /** The app just opened: one soft chime, no vibration. */
@@ -53,13 +49,13 @@ object AppFeedback {
     fun riderMsg(ctx: Context) = fire(ctx, "snd_rider_msg", millis = 40, amplitude = 140)
 
     /** Something worked, e.g. a booking request was sent. */
-    fun success(ctx: Context) = fire(ctx, SND_SUCCESS, millis = 40, amplitude = 160)
+    fun success(ctx: Context) = fire(ctx, "snd_system", millis = 40, amplitude = 160)
 
     /** Something failed. */
-    fun error(ctx: Context) = fire(ctx, SND_ERROR, millis = 90, amplitude = 200)
+    fun error(ctx: Context) = fire(ctx, "snd_trip_cancel", millis = 90, amplitude = 200)
 
     /** Captain only: a new booking request arrived. */
-    fun newRequest(ctx: Context) = fire(ctx, SND_REQUEST, millis = 70, amplitude = 180)
+    fun newRequest(ctx: Context) = fire(ctx, "snd_new_trip", millis = 70, amplitude = 180)
 
     private fun fire(ctx: Context, sound: String, millis: Long, amplitude: Int) {
         try {

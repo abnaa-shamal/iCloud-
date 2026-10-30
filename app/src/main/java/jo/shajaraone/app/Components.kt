@@ -477,7 +477,7 @@ fun LoadingBox() {
 fun BigButton(text: String, enabled: Boolean = true, onClick: () -> Unit) {
     val ctx = LocalContext.current
     Surface(
-        onClick = { AppFeedback.tap(ctx); onClick() }, enabled = enabled,
+        onClick = { onClick() }, enabled = enabled,
         shape = RoundedCornerShape(28.dp),
         color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
         contentColor = MaterialTheme.colorScheme.onPrimary,

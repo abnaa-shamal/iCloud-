@@ -26,6 +26,21 @@ import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
+    private var tdx = 0f; private var tdy = 0f; private var tdt = 0L
+    /** صوت لمس واحد لكل نقرة بكل التطبيق (مش سحب). */
+    override fun dispatchTouchEvent(ev: android.view.MotionEvent): Boolean {
+        try {
+            when (ev.actionMasked) {
+                android.view.MotionEvent.ACTION_DOWN -> { tdx = ev.x; tdy = ev.y; tdt = ev.eventTime }
+                android.view.MotionEvent.ACTION_UP -> {
+                    val lim = 24 * resources.displayMetrics.density
+                    if (kotlin.math.hypot(ev.x - tdx, ev.y - tdy) < lim && ev.eventTime - tdt < 350) AppFeedback.tap(this)
+                }
+            }
+        } catch (_: Throwable) { }
+        return super.dispatchTouchEvent(ev)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)

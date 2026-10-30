@@ -80,103 +80,21 @@ object LocationAddressHelper {
 // صوت واهتزاز النقر
 // ======================================================================
 object SoundEffectsHelper {
-    private const val SAMPLE_RATE = 44100
-    private val tracks = HashMap<String, android.media.AudioTrack>()
-
-    /** نغمة جرس ناعمة: تردد أساسي مع توافقية خفيفة وتلاشٍ تدريجي. */
-    private fun bell(out: DoubleArray, startSec: Double, freq: Double, durSec: Double, gain: Double, decay: Double) {
-        val start = (startSec * SAMPLE_RATE).toInt()
-        val n = (durSec * SAMPLE_RATE).toInt()
-        val attack = (0.008 * SAMPLE_RATE).toInt().coerceAtLeast(1)
-        for (i in 0 until n) {
-            val idx = start + i
-            if (idx >= out.size) break
-            val t = i.toDouble() / SAMPLE_RATE
-            val fadeIn = if (i < attack) i.toDouble() / attack else 1.0
-            val fadeOut = if (i > n - attack * 3) ((n - i).toDouble() / (attack * 3)).coerceIn(0.0, 1.0) else 1.0
-            val env = fadeIn * fadeOut * exp(-t * decay)
-            val v = sin(2.0 * Math.PI * freq * t) + 0.28 * sin(2.0 * Math.PI * freq * 2.0 * t) * exp(-t * decay * 1.6)
-            out[idx] += v * env * gain
-        }
-    }
-
-    private fun buildTrack(key: String): android.media.AudioTrack? {
-        return try {
-            val totalSec = when (key) { "click" -> 0.045; "start" -> 0.42; "finish" -> 0.55; else -> 0.95 }
-            val buf = DoubleArray((totalSec * SAMPLE_RATE).toInt())
-            when (key) {
-                // نقرة خفيفة ناعمة
-                "click" -> bell(buf, 0.0, 1200.0, 0.045, 0.22, 95.0)
-                // بدء الرحلة: نغمتان صاعدتان
-                "start" -> { bell(buf, 0.0, 659.25, 0.30, 0.22, 9.0); bell(buf, 0.12, 987.77, 0.30, 0.20, 8.0) }
-                // إنهاء الرحلة: ثلاث نغمات هابطة
-                "finish" -> { bell(buf, 0.0, 987.77, 0.30, 0.19, 9.0); bell(buf, 0.12, 783.99, 0.30, 0.19, 9.0); bell(buf, 0.24, 659.25, 0.31, 0.21, 7.0) }
-                // افتتاح التطبيق: جرس ثلاثي ناعم
-                else -> { bell(buf, 0.0, 523.25, 0.60, 0.15, 4.5); bell(buf, 0.16, 659.25, 0.60, 0.15, 4.5); bell(buf, 0.32, 783.99, 0.62, 0.17, 4.0) }
-            }
-            val samples = ShortArray(buf.size) { (buf[it].coerceIn(-1.0, 1.0) * Short.MAX_VALUE).toInt().toShort() }
-            val track = android.media.AudioTrack.Builder()
-                .setAudioAttributes(
-                    android.media.AudioAttributes.Builder()
-                        .setUsage(android.media.AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
-                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build()
-                )
-                .setAudioFormat(
-                    android.media.AudioFormat.Builder()
-                        .setEncoding(android.media.AudioFormat.ENCODING_PCM_16BIT)
-                        .setSampleRate(SAMPLE_RATE)
-                        .setChannelMask(android.media.AudioFormat.CHANNEL_OUT_MONO)
-                        .build()
-                )
-                .setBufferSizeInBytes(samples.size * 2)
-                .setTransferMode(android.media.AudioTrack.MODE_STATIC)
-                .build()
-            track.write(samples, 0, samples.size)
-            track
-        } catch (_: Throwable) { null }
-    }
-
-    @Synchronized
-    private fun play(key: String): Boolean {
-        return try {
-            val track = tracks[key] ?: buildTrack(key)?.also { tracks[key] = it } ?: return false
-            track.stop()
-            track.reloadStaticData()
-            track.play()
-            true
-        } catch (_: Throwable) {
-            tracks.remove(key)
-            false
-        }
-    }
-
-    /** الاهتزاز والصوت معاً يخضعان لإعداد "أصوات النقر". */
-    fun playClick(view: View, soundEnabled: Boolean) {
-        if (!soundEnabled) return
-        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-        if (!play("click")) view.playSoundEffect(SoundEffectConstants.CLICK)
-    }
+    /** كل الأصوات صارت من AppFeedback (النغمات الجديدة فقط). صوت اللمس يُشغَّل مرة وحدة لكل لمسة من MainActivity. */
+    fun playClick(view: View, soundEnabled: Boolean) { /* اللمس مغطّى عالمياً */ }
 
     /** صوت زر «بدء رحلة». */
     fun playTripStart(view: View, soundEnabled: Boolean) {
-        if (!soundEnabled) return
-        view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
-        play("start")
+        if (soundEnabled) jo.shajaraone.app.AppFeedback.newTrip(view.context)
     }
 
     /** صوت إنهاء الرحلة. */
     fun playTripFinish(view: View, soundEnabled: Boolean) {
-        if (!soundEnabled) return
-        view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
-        play("finish")
+        if (soundEnabled) jo.shajaraone.app.AppFeedback.system(view.context)
     }
 
     /** نغمة افتتاح التطبيق. */
-    fun playStartup(soundEnabled: Boolean) {
-        if (!soundEnabled) return
-        play("startup")
-    }
+    fun playStartup(soundEnabled: Boolean) { /* الترحيب من AppFeedback.open */ }
 }
 
 // ======================================================================
