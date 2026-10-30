@@ -44,11 +44,26 @@ fun PermissionGate(content: @Composable () -> Unit) {
     val gps = tick >= 0 && gpsOn(ctx)
     val notif = tick >= 0 && (Build.VERSION.SDK_INT < 33 || granted(ctx, Manifest.permission.POST_NOTIFICATIONS))
     val bg = tick >= 0 && (Build.VERSION.SDK_INT < 29 || granted(ctx, Manifest.permission.ACCESS_BACKGROUND_LOCATION))
-    if (loc && gps && notif && bg) { content(); return }
+    val askBg = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { tick++ }
+    fun askBg0() = askBg.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+    val gp = remember { ctx.getSharedPreferences("perm_gate", Context.MODE_PRIVATE) }
+    var skipped by remember { mutableStateOf(gp.getBoolean("bg_skipped", false)) }
+    if (loc && gps && notif && (bg || skipped)) { content(); return }
+    if (loc && gps && notif) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(top = 80.dp, bottom = 40.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text("خطوة أخيرة (يُفضّل)", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = CapInk)
+            Text("عشان الموقع يضل شغال حتى لو طلعت من التطبيق، فعّل «السماح طول الوقت»:", fontSize = 15.sp, color = CapMute, lineHeight = 24.sp)
+            Column(Modifier.fillMaxWidth().capCard(20.dp).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("1. اضغط «فتح الإعدادات» تحت", "2. اختر «الأذونات» ثم «الموقع»", "3. اختر «السماح طول الوقت»", "4. ارجع للتطبيق").forEach { Text(it, fontSize = 15.sp, color = CapInk) }
+            }
+            CapBtn("فتح الإعدادات", Modifier.fillMaxWidth(), height = 56.dp) { if (Build.VERSION.SDK_INT == 29) askBg0() else openAppSettings(ctx) }
+            CapBtn("تخطي", Modifier.fillMaxWidth(), filled = false, height = 50.dp) { gp.edit().putBoolean("bg_skipped", true).apply(); skipped = true }
+        }
+        return
+    }
 
     val askLoc = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { tick++ }
     val askNotif = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { tick++ }
-    val askBg = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { tick++ }
     var triedLoc by remember { mutableStateOf(false) }
     var triedNotif by remember { mutableStateOf(false) }
 
@@ -58,8 +73,7 @@ fun PermissionGate(content: @Composable () -> Unit) {
         listOf(
             Triple("الموقع", "عشان نعرف مكانك ونوصّل الكابتن والعميل لبعض", loc),
             Triple("تشغيل الـGPS", "لازم يكون الموقع شغّال من إعدادات الجوال", gps),
-            Triple("الإشعارات", "عشان توصلك الطلبات والردود فوراً", notif),
-            Triple("الموقع بالخلفية", "عشان يضل شغال حتى لو طلعت من التطبيق (اختر «السماح طول الوقت»)", bg)
+            Triple("الإشعارات", "عشان توصلك الطلبات والردود فوراً", notif)
         ).forEach { (t, d, ok) ->
             Row(Modifier.fillMaxWidth().capCard(20.dp).padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(if (ok) "✅" else "⭕", fontSize = 22.sp)
@@ -73,14 +87,14 @@ fun PermissionGate(content: @Composable () -> Unit) {
             !loc -> "السماح بالموقع"
             !gps -> "فتح إعدادات الموقع"
             !notif -> "السماح بالإشعارات"
-            else -> "السماح بالموقع طول الوقت"
+            else -> "تابع"
         }
         CapBtn(label, Modifier.fillMaxWidth(), height = 56.dp) {
             when {
                 !loc -> if (!triedLoc) { triedLoc = true; askLoc.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)) } else openAppSettings(ctx)
                 !gps -> ctx.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 !notif -> if (!triedNotif && Build.VERSION.SDK_INT >= 33) { triedNotif = true; askNotif.launch(Manifest.permission.POST_NOTIFICATIONS) } else openAppSettings(ctx)
-                else -> if (Build.VERSION.SDK_INT == 29) askBg.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION) else openAppSettings(ctx)
+                else -> {}
             }
         }
         Text("لو الزر ما ظهر له نافذة، بيفتحلك إعدادات التطبيق عشان تفعّلها من هناك.", fontSize = 12.sp, color = CapMute, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())

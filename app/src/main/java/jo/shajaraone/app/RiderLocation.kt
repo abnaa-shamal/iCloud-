@@ -64,7 +64,7 @@ internal fun oneFix(ctx: Context, onFix: (Location?) -> Unit) {
 fun AutoShareLocation(bookings: List<Booking>) {
     val ctx = LocalContext.current
     val sent = remember { mutableStateListOf<String>() }
-    val todo = bookings.filter { it.status == BK_ACCEPTED && it.departAt > System.currentTimeMillis() && it.id !in sent && (!it.dropoff.startsWith("لـ:") || it.dropoff.contains("📍")) }
+    val todo = bookings.filter { it.status == BK_ACCEPTED && it.departAt > System.currentTimeMillis() && it.id !in sent && !it.dropoff.startsWith("لـ:") }
     fun send(list: List<Booking>) {
         if (list.isEmpty()) return
         sent += list.map { it.id }

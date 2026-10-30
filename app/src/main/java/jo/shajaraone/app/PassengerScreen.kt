@@ -103,7 +103,7 @@ private fun TripsTab(me: UserProfile, myBookings: List<Booking>, flow: RiderFlow
     }
 
     // One confirmed trip at a time: after a captain accepts, the rider can't book another until that trip is over (or he cancels it).
-    val lockedBy = myBookings.firstOrNull { it.status == BK_ACCEPTED && it.departAt > now }
+    val lockedBy = myBookings.firstOrNull { it.isActive && it.departAt > now }
 
     RiderFlow(me.name.trim().substringBefore(" "), flow, shown, failed) { t ->
         val mine = myBookings.firstOrNull { it.tripId == t.id && it.isActive }
@@ -116,7 +116,7 @@ private fun TripsTab(me: UserProfile, myBookings: List<Booking>, flow: RiderFlow
                 Text("${seatsText(mine.seats)} • ${bookingStatusText(mine.status)}", fontSize = 14.sp, color = Amber, fontWeight = FontWeight.SemiBold)
             }
             lockedBy != null -> Box(Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(23.dp)).background(Color(0xFF2B2B2E)), contentAlignment = Alignment.Center) {
-                Text("عندك رحلة مؤكدة، ما بتحجز غيرها قبل ما تخلص", fontSize = 13.sp, color = Dim, fontWeight = FontWeight.SemiBold)
+                Text("عندك حجز قائم، لحجز ثاني راجع المشرف", fontSize = 13.sp, color = Dim, fontWeight = FontWeight.SemiBold)
             }
             t.isBookable -> AmberBtn("احجز") { if (me.verified) booking = t else needVerify = true }
         }
@@ -148,14 +148,14 @@ private fun TripsTab(me: UserProfile, myBookings: List<Booking>, flow: RiderFlow
 
     booking?.let { t ->
         val mfq = if (flow.cur == MAFRAQ || flow.dest == MAFRAQ) listOf("راكب المفرق", flow.road.takeIf { flow.dest == MAFRAQ && it.isNotBlank() }).filterNotNull().joinToString(" • ") else ""
-        BookingDialog(t, me, mfq, if (flow.who == 2) "لـ:" + flow.other + (if (flow.share) "📍" else "") else "", onClose = { booking = null }, onBooked = { booking = null })
+        BookingDialog(t, me, mfq, flow.who == 2, onClose = { booking = null }, onBooked = { booking = null })
     }
 }
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun BookingDialog(t: Trip, me: UserProfile, mafraqNote: String, otherNote: String, onClose: () -> Unit, onBooked: () -> Unit) {
+private fun BookingDialog(t: Trip, me: UserProfile, mafraqNote: String, forOther: Boolean, onClose: () -> Unit, onBooked: () -> Unit) {
     val ctx = LocalContext.current
     val total = t.seatsTotal.toInt().coerceIn(1, 8)
     val free = t.seatsFree.toInt().coerceIn(1, total)
@@ -163,10 +163,19 @@ private fun BookingDialog(t: Trip, me: UserProfile, mafraqNote: String, otherNot
     var point by remember { mutableStateOf("") }
     var other by remember { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
+    var otherPhone by remember { mutableStateOf("") }
     val areas = subAreasFor(t.to, t.road)
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(onDismissRequest = onClose, sheetState = sheet, containerColor = Color(0xFF0B0B0D)) {
+        if (forOther) Column(Modifier.padding(horizontal = 18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("رقم الشخص الآخر", fontSize = 14.sp, color = Dim)
+            OutlinedTextField(
+                value = otherPhone, onValueChange = { otherPhone = it.filter { c -> c.isDigit() }.take(12) }, singleLine = true,
+                placeholder = { Text("07xxxxxxxx") }, modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone)
+            )
+        }
         BookingBody(
             t, total, free, picked,
             onToggle = { i ->
@@ -179,8 +188,9 @@ private fun BookingDialog(t: Trip, me: UserProfile, mafraqNote: String, otherNot
             val dropoff = if (areas != null && point.isNotBlank() && point != OTHER_PLACE) point
                 else if (areas != null && point.isBlank()) ANY_PLACE else other.trim()
             val drop0 = if (mafraqNote.isNotBlank() && t.to != MAFRAQ && t.from != MAFRAQ) mafraqNote else dropoff
-            val drop = if (otherNote.isNotBlank()) listOf(otherNote, drop0).filter { it.isNotBlank() }.joinToString(" • ") else drop0
+            val drop = if (forOther) listOf("لـ:$otherPhone", drop0).filter { it.isNotBlank() }.joinToString(" • ") else drop0
             when {
+                forOther && otherPhone.length < 9 -> toast(ctx, "اكتب رقم الشخص الآخر")
                 drop.isBlank() && t.to == IRBID_OTHER -> toast(ctx, "اكتب نقطة النزول")
                 else -> {
                     sending = true

@@ -143,27 +143,12 @@ fun RiderFlow(
     actions: @Composable ColumnScope.(Trip) -> Unit
 ) {
     BackHandler(enabled = fs.step > 0 || fs.who != 0) { if (fs.step > 0) fs.back() else { fs.who = 0; fs.other = ""; fs.share = false } }
-    if (fs.who == 0 || (fs.who == 2 && !fs.otherOk)) {
+    if (fs.who == 0) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(top = 44.dp, bottom = 120.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            if (fs.who == 0) {
-                Text("أهلاً $name", fontSize = 14.sp, color = Dim)
-                Text("بدك تحجز إلك ولا لشخص ثاني؟", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
-                BigChoice("إلي", "أنا اللي براكب", 0) { fs.who = 1 }
-                BigChoice("لشخص ثاني", "بس بنطلب رقمه", 1) { fs.who = 2 }
-            } else {
-                BackBar("حجز لشخص ثاني") { fs.who = 0; fs.other = ""; fs.share = false }
-                Text("رقم الشخص", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
-                androidx.compose.material3.OutlinedTextField(
-                    value = fs.other, onValueChange = { fs.other = it.filter { c -> c.isDigit() }.take(12) }, singleLine = true,
-                    placeholder = { Text("07xxxxxxxx") }, modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone)
-                )
-                GlassSection("موقع الشخص (اختياري)") {
-                    GlassGrid(listOf(if (fs.share) "أنا معه، أرسل موقعي ✓" else "أنا معه، أرسل موقعي"), "") { fs.share = !fs.share }
-                    Text("إذا ما اخترت، الكابتن بيتواصل مع الشخص على رقمه.", fontSize = 12.sp, color = Dim)
-                }
-                Text("اكتب رقم صحيح (9 أرقام على الأقل) لتكمل.", fontSize = 12.sp, color = Dim)
-            }
+            Text("أهلاً $name", fontSize = 14.sp, color = Dim)
+            Text("لمين بدك تحجز؟", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
+            BigChoice("لنفسي", "أنا اللي براكب", 0) { fs.who = 1 }
+            BigChoice("لشخص آخر", "بتحدد مكانه ووجهته", 1) { fs.who = 2 }
         }
         return
     }
@@ -174,7 +159,7 @@ fun RiderFlow(
         ) {
             Column(Modifier.padding(bottom = 6.dp)) {
                 Text("أهلاً $name", fontSize = 14.sp, color = Dim)
-                Text("وين أنت حالياً؟", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
+                Text(if (fs.who == 2) "وين موقع الشخص الآخر؟" else "وين أنت حالياً؟", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
             }
             // GPS suggestion: «أنت في إربد؟», one tap confirms it; the grids below stay for choosing by hand
             val ctxF = androidx.compose.ui.platform.LocalContext.current
