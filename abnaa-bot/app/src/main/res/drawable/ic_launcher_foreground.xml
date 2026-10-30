@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- back peak (ochre) -->
+    <path android:fillColor="#FFC857"
+        android:pathData="M49.5,76.4 L65.2,42.8 L80.9,76.4 Z" />
+    <!-- front peak (parchment) -->
+    <path android:fillColor="#F5EFEB"
+        android:pathData="M27.1,76.4 L45,37.2 L63,76.4 Z" />
+    <!-- road -->
+    <path android:strokeColor="#2D4436" android:strokeWidth="4.8" android:strokeLineCap="round"
+        android:pathData="M42.8,76.4 C60.7,70.8 36.1,59.6 48.4,50.6" />
+</vector>
