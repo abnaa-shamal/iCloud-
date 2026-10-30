@@ -109,10 +109,11 @@ fun HasbatShell(
             background = theme.bgGradient.first(), onSurface = Color(0xFF0F172A), onBackground = Color(0xFF0F172A))
     }
 
+    if (jo.shajaraone.app.CapTheme.t != theme) jo.shajaraone.app.CapTheme.t = theme
     MaterialTheme(colorScheme = colorScheme) {
         CompositionLocalProvider(LocalLayoutDirection provides (if (isEnglish) LayoutDirection.Ltr else LayoutDirection.Rtl)) {
             Box(Modifier.fillMaxSize().background(Brush.verticalGradient(theme.bgGradient))) {
-                if (tab >= 2) CyberBackdrop(theme)
+                CyberBackdrop(theme)
                 if (tab < 2) {
                     captainContent(tab)
                 } else {

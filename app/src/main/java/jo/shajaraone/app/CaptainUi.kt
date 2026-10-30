@@ -19,18 +19,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 // Captain app: graphite surfaces, electric-blue accent, warm peach request tiles, docked bottom bar.
-val CapBg = androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFF26272B), Color(0xFF141517)))
-val CapInk = Color(0xFFF4F4F6)
-val CapAccent = Color(0xFF3D8BFF)
-val CapMute = Color(0xFF9A9CA3)
-val CapLine = Color(0x26FFFFFF)
+/** Colors follow the Hasbat theme picked in Settings (CapTheme.t is set by HasbatShell). */
+object CapTheme { var t by mutableStateOf<jo.shajaraone.app.hasbat.AppTheme?>(null) }
+private val capT get() = CapTheme.t
+val CapBg: androidx.compose.ui.graphics.Brush get() = androidx.compose.ui.graphics.Brush.verticalGradient(capT?.bgGradient ?: listOf(Color(0xFF26272B), Color(0xFF141517)))
+val CapInk: Color get() = capT?.let { jo.shajaraone.app.hasbat.textColorFor(it) } ?: Color(0xFFF4F4F6)
+val CapAccent: Color get() = capT?.accentColor ?: Color(0xFF3D8BFF)
+val CapMute: Color get() = capT?.let { jo.shajaraone.app.hasbat.subTextColorFor(it) } ?: Color(0xFF9A9CA3)
+val CapLine: Color get() = capT?.accentColor?.copy(alpha = 0.28f) ?: Color(0x26FFFFFF)
 val CapRed = Color(0xFFFF6B6B)
-val CapSurface = Color(0xFF2B2C31)
+val CapSurface: Color get() = capT?.let { if (it.isDark) it.cardBg else Color.White } ?: Color(0xFF2B2C31)
 val CapPeach = Color(0xFFF8E8D2)
 val CapDark = Color(0xFF16171A)
 
 fun Modifier.capCard(r: Dp = 22.dp): Modifier {
-    return this.glassPanel(r, Color(0xFF303136), Color(0xFF1C1D20), Color(0x2E5C9DFF))
+    val t = capT
+    return if (t == null) this.glassPanel(r, Color(0xFF303136), Color(0xFF1C1D20), Color(0x2E5C9DFF))
+    else this.glassPanel(r, if (t.isDark) t.cardBg.copy(alpha = 0.92f) else Color.White, if (t.isDark) t.bgGradient.last().copy(alpha = 0.92f) else t.cardBg, t.accentColor.copy(alpha = 0.18f))
 }
 
 @Composable
@@ -44,13 +49,13 @@ fun CapBtn(text: String, modifier: Modifier = Modifier, filled: Boolean = true, 
 }
 
 @Composable
-fun CapChip(text: String, on: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun CapChip(text: String, on: Boolean, modifier: Modifier = Modifier, big: Boolean = false, onClick: () -> Unit) {
     val s = RoundedCornerShape(14.dp)
     Box(
         modifier.clip(s).background(if (on) CapAccent else CapSurface).border(1.dp, if (on) CapAccent else CapLine, s)
-            .clickable(remember { MutableInteractionSource() }, null) { onClick() }.padding(horizontal = 8.dp, vertical = 12.dp),
+            .clickable(remember { MutableInteractionSource() }, null) { onClick() }.padding(horizontal = 8.dp, vertical = if (big) 22.dp else 12.dp),
         contentAlignment = Alignment.Center
-    ) { Text(text, fontSize = 14.sp, maxLines = 1, fontWeight = FontWeight.SemiBold, color = Color.White) }
+    ) { Text(text, fontSize = if (big) 19.sp else 14.sp, maxLines = 1, fontWeight = FontWeight.SemiBold, color = if (on) Color.White else CapInk) }
 }
 
 /** Day strip in the captain look: light tiles, green when picked. */
@@ -75,7 +80,7 @@ fun CapDays(days: List<Pair<String, String>>, selected: Int, onPick: (Int) -> Un
 
 @Composable
 fun CapAvatar(name: String, size: Dp = 42.dp) {
-    Box(Modifier.size(size).clip(CircleShape).background(Color(0xFF3A3B41)), contentAlignment = Alignment.Center) {
+    Box(Modifier.size(size).clip(CircleShape).background(CapSurface), contentAlignment = Alignment.Center) {
         Text(name.trim().take(1), fontSize = (size.value * .42f).sp, fontWeight = FontWeight.Bold, color = CapAccent)
     }
 }
@@ -119,11 +124,11 @@ fun CapSection(title: String, content: @Composable ColumnScope.() -> Unit) {
 
 /** Equal-width grid (default 3 per row) so choices line up in tidy columns instead of wrapping loosely. */
 @Composable
-fun CapGrid(items: List<String>, selected: String, cols: Int = 3, onPick: (String) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+fun CapGrid(items: List<String>, selected: String, cols: Int = 3, big: Boolean = false, onPick: (String) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(if (big) 12.dp else 8.dp)) {
         items.chunked(cols).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { n -> CapChip(n, n == selected, Modifier.weight(1f)) { onPick(n) } }
+            Row(horizontalArrangement = Arrangement.spacedBy(if (big) 12.dp else 8.dp)) {
+                row.forEach { n -> CapChip(n, n == selected, Modifier.weight(1f), big) { onPick(n) } }
                 repeat(cols - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }

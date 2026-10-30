@@ -62,7 +62,7 @@ fun CaptainHome(me: UserProfile) {
             onSeatHistory = { showHistory = true }
         ) { t ->
             CompositionLocalProvider(LocalContentColor provides CapInk) {
-                Box(Modifier.fillMaxSize().background(CapBg)) {
+                Box(Modifier.fillMaxSize()) {
                     if (t == 0) CapPublish(me, online, onPublished = { tab = 1 })
                     else CapDashboard(me.name.trim().substringBefore(" "), trips, bookings)
                 }
@@ -141,7 +141,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>) {
                             Text("${t.from}  ←  ${t.to}", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = CapInk)
                             Text("${dayName(t.departAt)} • ${tripTimeLabel(t.note, t.departAt)} • ${priceText(t.price)}", fontSize = 12.sp, color = CapMute)
                         }
-                        Box(Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFF3A3B41)).padding(horizontal = 12.dp, vertical = 7.dp)) {
+                        Box(Modifier.clip(RoundedCornerShape(12.dp)).background(CapSurface).padding(horizontal = 12.dp, vertical = 7.dp)) {
                             Text(if (t.seatsFree <= 0L) "مكتملة" else "${t.seatsFree} فاضية", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CapAccent)
                         }
                     }
@@ -254,7 +254,7 @@ internal fun CapBigChoice(title: String, sub: String, index: Int, onClick: () ->
             Text(sub, fontSize = 13.sp, color = CapMute, maxLines = 2, lineHeight = 20.sp)
         }
         Box(Modifier.size(44.dp).clip(RoundedCornerShape(22.dp)).background(CapAccent), contentAlignment = Alignment.Center) {
-            Box(Modifier.rotate(180f)) { Glyph(4, Color.White, 20.dp) }
+            Box(Modifier.rotate(180f)) { Glyph(4, CapInk, 20.dp) }
         }
     }
 }
@@ -278,7 +278,7 @@ private val innerGroups = listOf(
 private fun InnerPicker(title: String, except: String?, onPick: (String) -> Unit) {
     Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = CapInk)
     innerGroups.forEach { (g, list) ->
-        CapSection(g) { CapGrid(list.filter { it != except }, "", 3) { onPick(it) } }
+        CapSection(g) { CapGrid(list.filter { it != except }, "", 2, big = true) { onPick(it) } }
     }
 }
 
@@ -293,7 +293,7 @@ private fun CapRoadCard(title: String, places: List<String>, open: Boolean, inde
                 Text(title, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = CapInk)
                 Text("عمّان", fontSize = 13.sp, color = CapMute)
             }
-            Box(Modifier.size(40.dp).clip(RoundedCornerShape(20.dp)).background(Color(0x1FFFFFFF)), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(40.dp).clip(RoundedCornerShape(20.dp)).background(CapInk.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
                 Text(if (open) "−" else "+", fontSize = 22.sp, color = CapAccent, fontWeight = FontWeight.Bold)
             }
         }
@@ -302,7 +302,7 @@ private fun CapRoadCard(title: String, places: List<String>, open: Boolean, inde
                 places.chunked(4).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         row.forEach { p ->
-                            Box(Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(Color(0x14FFFFFF)).padding(horizontal = 4.dp, vertical = 7.dp), contentAlignment = Alignment.Center) {
+                            Box(Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(CapInk.copy(alpha = 0.08f)).padding(horizontal = 4.dp, vertical = 7.dp), contentAlignment = Alignment.Center) {
                                 Text(p, fontSize = 10.5.sp, maxLines = 1, color = CapMute)
                             }
                         }
@@ -376,10 +376,10 @@ private fun CapPublish(me: UserProfile, online: Boolean, onPublished: () -> Unit
             CapBackBar(if (origin.isNotBlank() && dest.isBlank()) origin else group) { goBack() }
             when {
                 // من الشمال: from which place, to Amman / Zarqa / Mafraq, then the road
-                fromNorth && origin.isBlank() -> CapSection("من أي بلد بالشمال؟") { CapGrid(northPlaces, origin, 3) { origin = it } }
-                fromNorth && dest.isBlank() -> CapSection("إلى أين؟") { CapGrid(northToDests, dest, 3) { dest = it } }
+                fromNorth && origin.isBlank() -> CapSection("وين بالشمال؟") { CapGrid(northPlaces.filter { it != "المفرق" }, origin, 2, big = true) { origin = it } }
+                fromNorth && dest.isBlank() -> CapSection("إلى أين؟") { CapGrid(northToDests, dest, 2, big = true) { dest = it } }
                 // من الجنوب: to which place in the north, then the road
-                group == G_SOUTH_C && dest.isBlank() -> CapSection("إلى أي مكان بالشمال؟") { CapGrid(southToDests, dest, 3) { dest = it } }
+                group == G_SOUTH_C && dest.isBlank() -> CapSection("وين رايح بالشمال؟") { CapGrid(southToDests, dest, 2, big = true) { dest = it } }
                 // داخل الشمال: from, then to, both grouped
                 inner && origin.isBlank() -> InnerPicker("من أين؟", null) { origin = it }
                 inner && dest.isBlank() -> InnerPicker("إلى أين؟", origin) { dest = it; step = 2 }
@@ -399,7 +399,7 @@ private fun CapPublish(me: UserProfile, online: Boolean, onPublished: () -> Unit
                 CapDays(pillDays(5), day) { day = it }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     listOf(1 to fromMin, 2 to toMin).forEach { (which, v) ->
-                        Box(Modifier.weight(1f).height(52.dp).clip(RoundedCornerShape(16.dp)).background(Color(0x14FFFFFF)).clickable { pick = which }, contentAlignment = Alignment.Center) {
+                        Box(Modifier.weight(1f).height(52.dp).clip(RoundedCornerShape(16.dp)).background(CapInk.copy(alpha = 0.08f)).clickable { pick = which }, contentAlignment = Alignment.Center) {
                             Text(
                                 (if (which == 1) "من " else "إلى ") + if (v >= 0) clockText(dayStart(0) + v * 60_000L) else "—",
                                 fontSize = 15.sp, fontWeight = FontWeight.Bold, color = if (v >= 0) CapInk else CapAccent
@@ -412,7 +412,7 @@ private fun CapPublish(me: UserProfile, online: Boolean, onPublished: () -> Unit
             }
             CapSection("المقاعد") {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                    Row(Modifier.clip(RoundedCornerShape(16.dp)).background(Color(0x14FFFFFF)).height(52.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.clip(RoundedCornerShape(16.dp)).background(CapInk.copy(alpha = 0.08f)).height(52.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(44.dp).clickable { if (seats < maxSeats) seats++ }, contentAlignment = Alignment.Center) { Text("+", fontSize = 24.sp, color = CapInk) }
                         Text("$seats مقاعد", Modifier.padding(horizontal = 14.dp), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = CapInk)
                         Box(Modifier.size(44.dp).clickable { if (seats > 1) seats-- }, contentAlignment = Alignment.Center) { Text("−", fontSize = 24.sp, color = CapInk) }
