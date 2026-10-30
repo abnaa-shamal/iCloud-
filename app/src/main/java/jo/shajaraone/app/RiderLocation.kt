@@ -64,7 +64,7 @@ internal fun oneFix(ctx: Context, onFix: (Location?) -> Unit) {
 fun AutoShareLocation(bookings: List<Booking>) {
     val ctx = LocalContext.current
     val sent = remember { mutableStateListOf<String>() }
-    val todo = bookings.filter { it.status == BK_ACCEPTED && it.departAt > System.currentTimeMillis() && it.id !in sent }
+    val todo = bookings.filter { it.status == BK_ACCEPTED && it.departAt > System.currentTimeMillis() && it.id !in sent && (!it.dropoff.startsWith("لـ:") || it.dropoff.contains("📍")) }
     fun send(list: List<Booking>) {
         if (list.isEmpty()) return
         sent += list.map { it.id }
@@ -131,21 +131,26 @@ fun RiderCard(b: Booking, canCancel: Boolean, onCancel: () -> Unit) {
     val wa = remember { appIcon(ctx, "com.whatsapp", "com.whatsapp.w4b") }
     val maps = remember { appIcon(ctx, "com.google.android.apps.maps") }
     val l = loc
+    val forOther = b.dropoff.startsWith("لـ:")
+    val otherPhone = if (forOther) b.dropoff.removePrefix("لـ:").takeWhile { it.isDigit() } else ""
+    val phone = if (forOther && otherPhone.isNotBlank()) otherPhone else b.passengerPhone
+    val dropShown = if (forOther) b.dropoff.substringAfter(" • ", "") else b.dropoff
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CapInk.copy(alpha = 0.05f)).padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             CapAvatar(b.passengerName, 44.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(b.passengerName, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = CapInk)
-                Text(b.passengerPhone, fontSize = 13.sp, color = CapMute)
-                Text(seatsText(b.seats) + if (b.dropoff.isNotBlank()) " • ${b.dropoff}" else "", fontSize = 12.sp, color = CapMute)
+                Text(if (forOther) "حجز لشخص آخر" else b.passengerName, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = CapInk)
+                Text(phone, fontSize = 13.sp, color = CapMute)
+                if (forOther) Text("حجزه: ${b.passengerName}", fontSize = 11.sp, color = CapMute)
+                Text(seatsText(b.seats) + if (dropShown.isNotBlank()) " • $dropShown" else "", fontSize = 12.sp, color = CapMute)
             }
             if (canCancel) CapBtn("إلغاء", filled = false, color = CapRed, height = 34.dp) { onCancel() }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            RoundAction("اتصال", { callPhone(ctx, b.passengerPhone) }) {
+            RoundAction("اتصال", { callPhone(ctx, phone) }) {
                 Icon(Icons.Filled.Phone, null, tint = CapAccent, modifier = Modifier.size(24.dp))
             }
-            RoundAction("واتساب", { openWhatsApp(ctx, b.passengerPhone, "مرحبا ${b.passengerName}، أنا الكابتن بخصوص حجزك") }) {
+            RoundAction("واتساب", { openWhatsApp(ctx, phone, "مرحبا، أنا الكابتن بخصوص حجزك") }) {
                 if (wa != null) Image(wa, null, Modifier.size(30.dp)) else Text("💬", fontSize = 22.sp)
             }
             RoundAction(if (l != null) "اتجاهات" else "الموقع لم يصل", {
