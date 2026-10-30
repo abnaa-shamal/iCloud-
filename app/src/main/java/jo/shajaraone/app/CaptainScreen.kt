@@ -383,6 +383,7 @@ private fun CapPublish(me: UserProfile, online: Boolean, onPublished: () -> Unit
                 // داخل الشمال: from, then to, both grouped
                 inner && origin.isBlank() -> InnerPicker("من أين؟", null) { origin = it }
                 inner && dest.isBlank() -> InnerPicker("إلى أين؟", origin) { dest = it; step = 2 }
+                fromNorth && dest == "المفرق" -> CapSection("وين بالمفرق؟") { CapGrid(listOf("دوار الدبابة", "داخل المفرق"), road, 2, big = true) { road = it; step = 2 } }
                 else -> {
                     Text("اختر الطريق", fontSize = 15.sp, color = CapMute)
                     southRoads.entries.forEachIndexed { i, (r, places) ->
