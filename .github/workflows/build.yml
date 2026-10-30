@@ -86,6 +86,18 @@ jobs:
             echo "::error title=Build errors::${ERR:-no error lines found}"
           fi
 
+      - name: Publish error log to build-log branch
+        if: failure()
+        run: |
+          if [ -f build.log ]; then
+            D=$(mktemp -d)
+            grep -E "^e: |error:|What went wrong|Execution failed|Caused by|Unresolved" build.log | sed 's#file:///home/runner/work/[^/]*/[^/]*/##' | head -n 80 | cut -c1-400 > "$D/errors.txt"
+            echo "run ${{ github.run_number }} sha ${{ github.sha }}" >> "$D/errors.txt"
+            cd "$D" && git init -q && git checkout -q -b build-log && git config user.name ci && git config user.email ci@example.com
+            git add errors.txt && git commit -qm "errors run ${{ github.run_number }}"
+            git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" build-log
+          fi
+
       - name: Verify signature, package names, version
         run: |
           BT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
