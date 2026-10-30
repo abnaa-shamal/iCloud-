@@ -1,7 +1,5 @@
-// Same versions as the Abnaa Al-Shamal project (checked there on 2026-10-22).
+// CodeAssist-style setup (same versions as the Reem project that builds on the phone).
 plugins {
-    id("com.android.application") version "9.4.0" apply false
-    // AGP 9 has Kotlin built in; this only pins the Kotlin version.
-    id("org.jetbrains.kotlin.android") version "2.4.10" apply false
-    id("org.jetbrains.kotlin.plugin.compose") version "2.4.10" apply false
+    id("com.android.application") version "8.5.2" apply false
+    id("org.jetbrains.kotlin.android") version "1.9.24" apply false
 }
