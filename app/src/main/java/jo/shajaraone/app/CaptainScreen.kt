@@ -45,9 +45,14 @@ fun CaptainHome(me: UserProfile) {
     val feedbackCtx = LocalContext.current
     var lastPending by remember { mutableIntStateOf(-1) }
     LaunchedEffect(pending) {
-        if (lastPending >= 0 && pending > lastPending) { AppFeedback.newRequest(feedbackCtx); tab = 1 }
+        if (lastPending >= 0 && pending > lastPending) { AppFeedback.ringRequest(feedbackCtx); tab = 1 }
+        // The captain decided (accepted or declined one) or nothing is pending: stop the ring.
+        if (lastPending >= 0 && pending < lastPending || pending == 0) AppFeedback.ringStop()
         lastPending = pending
     }
+    // Opening the captain screen means he saw the request: stop any ring from the background alert.
+    LaunchedEffect(Unit) { AppFeedback.ringStop() }
+    DisposableEffect(Unit) { onDispose { AppFeedback.ringStop() } }
     val online = trips != null && trips!!.any { it.status != TRIP_CANCELLED && it.departAt > System.currentTimeMillis() - 4 * 3_600_000L }
     LaunchedEffect(online, trips != null) {
         if (trips != null) { if (online) CapReceiveService.start(feedbackCtx) else CapReceiveService.stop(feedbackCtx) }
@@ -154,26 +159,30 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
     }
     val upcoming = all.filter { it.status != TRIP_CANCELLED && st(it) == "" && it.departAt > now - 4 * 3_600_000L }.sortedBy { it.departAt }
     val done = all.filter { it.status == TRIP_CANCELLED || st(it) == "finished" || (st(it) == "" && it.departAt <= now - 4 * 3_600_000L) }.sortedByDescending { it.departAt }
-    val list = if (home) (if (running.isNotEmpty()) running else upcoming) else when (seg) { 0 -> upcoming; 1 -> running; else -> done }
+    val fullList = if (home) (if (running.isNotEmpty()) running else upcoming) else when (seg) { 0 -> upcoming; 1 -> running; else -> done }
+    var showAll by rememberSaveable { mutableStateOf(false) }
+    // One-screen layout: show at most 2 requests and 2 trips until the captain taps «شوف الكل».
+    val list = if (showAll) fullList else fullList.take(2)
+    val pendShown = if (showAll) pend else pend.take(2)
 
     Box(Modifier.fillMaxSize()) {
         androidx.compose.foundation.lazy.LazyColumn(
-            Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 44.dp, bottom = 170.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 30.dp, bottom = 130.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
                 Column {
                     Text("رحلاتي • أهلاً كابتن $name", fontSize = 14.sp, color = CapMute)
                     Text(if (pend.isEmpty()) (if (home) "رحلتي الحالية" else "متابعة رحلتي") else if (pend.size == 1) "طلب واحد بانتظارك" else "${pend.size} طلبات بانتظارك",
-                        fontSize = 28.sp, fontWeight = FontWeight.Bold, color = CapInk)
+                        fontSize = 24.sp, fontWeight = FontWeight.Bold, color = CapInk)
                 }
             }
             if (home && me != null) item { CaptainRideRequests(me) }
-            items(pend.size, key = { pend[it].id }) { i ->
-                val b = pend[i]
-                Column(Modifier.entrance(i).fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(CapPeach).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            items(pendShown.size, key = { pendShown[it].id }) { i ->
+                val b = pendShown[i]
+                Column(Modifier.entrance(i).fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(CapPeach).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Box(Modifier.size(44.dp).clip(androidx.compose.foundation.shape.CircleShape).background(CapDark), contentAlignment = Alignment.Center) {
+                        Box(Modifier.size(36.dp).clip(androidx.compose.foundation.shape.CircleShape).background(CapDark), contentAlignment = Alignment.Center) {
                             Text(b.passengerName.trim().take(1), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
                         Column(Modifier.weight(1f)) {
@@ -184,10 +193,10 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
                         Text(trips?.firstOrNull { it.id == b.tripId }?.let { tripTimeLabel(it.note, it.departAt) } ?: clockText(b.departAt), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = CapDark)
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        CapBtn("قبول", Modifier.weight(1.4f), color = CapDark) {
+                        CapBtn("قبول", Modifier.weight(1.4f), color = CapDark, height = 40.dp) {
                             Repo.accept(b) { ok -> toast(ctx, if (ok) "تم القبول ✅" else "ما في مقاعد كافية أو الطلب تغيّر") }
                         }
-                        CapBtn("رفض", Modifier.weight(1f), filled = false, color = CapDark) {
+                        CapBtn("رفض", Modifier.weight(1f), filled = false, color = CapDark, height = 40.dp) {
                             Repo.reject(b) { ok -> if (!ok) toast(ctx, "ما قدرت أرفض، جرّب كمان مرة") }
                         }
                     }
@@ -225,7 +234,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
                     booked > 0 -> "$booked حجوزات مؤكدة"
                     else -> "بانتظار الركاب"
                 }
-                Column(Modifier.fillMaxWidth().capCard().animateContentSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.fillMaxWidth().capCard().animateContentSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (home && !cancelled && sg < 2) CapLiveStatus(
                         if (sg == 1) "الرحلة جارية الآن" else if (t.status == "full" && t.seatsFree > 0L) "الحجز مغلق" else if (t.seatsFree <= 0L) "المقاعد مكتملة، جاهز للانطلاق" else if (booked > 0) "بانتظار باقي الركاب" else "بانتظار الركاب",
                         booked.toFloat() / t.seatsTotal.coerceAtLeast(1L).toFloat(), sg == 1
@@ -235,7 +244,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text("${t.from}  ←  ${t.to}", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = CapInk)
+                            Text("${t.from}  ←  ${t.to}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = CapInk)
                             Text("${dayName(t.departAt)} • ${tripTimeLabel(t.note, t.departAt)} • ${priceText(t.price)}", fontSize = 12.sp, color = CapMute)
                             Text("المقاعد: $booked من ${t.seatsTotal} محجوزة", fontSize = 12.sp, color = CapMute)
                         }
@@ -269,6 +278,11 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
                             }
                         }
                     }
+                }
+            }
+            if (!showAll && (pend.size > 2 || fullList.size > 2)) item {
+                Box(Modifier.fillMaxWidth().padding(vertical = 2.dp), contentAlignment = Alignment.Center) {
+                    CapChip("شوف الكل", false, Modifier.fillMaxWidth(.5f)) { showAll = true }
                 }
             }
         }
@@ -379,11 +393,13 @@ fun CapTripHistory(trips: List<Trip>?, bookings: List<Booking>, onBack: () -> Un
     var open by rememberSaveable { mutableStateOf("") }
     val now = System.currentTimeMillis()
     val past = (trips ?: emptyList()).filter { t -> !(t.status != TRIP_CANCELLED && t.departAt > now - 4 * 3_600_000L) }.sortedByDescending { it.departAt }
+    // The title stays fixed; only the list itself scrolls.
+    Column(Modifier.fillMaxSize().padding(top = 30.dp, start = 18.dp, end = 18.dp)) {
+    CapBackBar("سجل الرحلات") { onBack() }
     androidx.compose.foundation.lazy.LazyColumn(
-        Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 44.dp, bottom = 170.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(top = 10.dp, bottom = 130.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        item { CapBackBar("سجل الرحلات") { onBack() } }
         if (past.isEmpty()) item {
             Box(Modifier.fillMaxWidth().capCard().padding(24.dp), contentAlignment = Alignment.Center) { Text("ما في رحلات سابقة", color = CapMute) }
         }
@@ -392,7 +408,7 @@ fun CapTripHistory(trips: List<Trip>?, bookings: List<Booking>, onBack: () -> Un
                     val t = past[i]
                     val riders = bookings.filter { it.tripId == t.id && it.status == BK_ACCEPTED }
                     val isOpen = open == "h" + t.id
-                    Column(Modifier.fillMaxWidth().capCard().animateContentSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Column(Modifier.fillMaxWidth().capCard().animateContentSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(
                             Modifier.fillMaxWidth().clickable(remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, null) { open = if (isOpen) "" else "h" + t.id },
                             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -419,6 +435,7 @@ fun CapTripHistory(trips: List<Trip>?, bookings: List<Booking>, onBack: () -> Un
                     }
                 }
             }
+    }
     }
 }
 

@@ -14,8 +14,8 @@ import org.json.JSONArray
 import java.net.HttpURLConnection
 import java.net.URL
 
-/** Checks the public GitHub releases for a newer build of THIS app; shows a dialog with a download link. */
-private const val RELEASES_URL = "https://api.github.com/repos/abnaa-shamal/iCloud-/releases?per_page=5"
+/** Checks the public GitHub releases for a newer build of THIS app; shows a dialog with a download link. Reads the last 30 releases (preview-* ones are skipped by the build- tag filter) so previews cannot push the real build out of the list. */
+private const val RELEASES_URL = "https://api.github.com/repos/abnaa-shamal/iCloud-/releases?per_page=30"
 
 private class UpdateInfo(val build: Long, val url: String)
 
@@ -56,6 +56,15 @@ fun UpdateCheck() {
         } catch (_: Exception) { }
     }
     val u = info
+    // The full update tune (not trimmed) plays once when the update dialog appears.
+    LaunchedEffect(u != null) {
+        if (u != null) {
+            try {
+                val mp = android.media.MediaPlayer.create(ctx, R.raw.snd_update)
+                if (mp != null) { mp.setOnCompletionListener { it.release() }; mp.start() }
+            } catch (_: Exception) { }
+        }
+    }
     if (u != null && !dismissed) {
         AlertDialog(
             onDismissRequest = { dismissed = true },

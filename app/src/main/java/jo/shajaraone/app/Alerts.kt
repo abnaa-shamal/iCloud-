@@ -110,6 +110,8 @@ object Alerts {
                 )
             }
         }
+        // A new request keeps ringing (sound + vibration) for ~15 s, starting right after the notification chime.
+        if (fresh.any { it.status == BK_PENDING }) AppFeedback.ringRequest(ctx, startDelayMs = 2100)
         val newest = fresh.maxOfOrNull { it.updatedAt } ?: return
         prefs.lastAlertAt = newest
     }

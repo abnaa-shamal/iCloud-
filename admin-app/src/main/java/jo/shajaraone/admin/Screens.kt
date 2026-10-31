@@ -110,7 +110,7 @@ fun LoginScreen(busy: Boolean, error: String?, onLogin: (String, String) -> Unit
 @Composable
 fun OverviewScreen(
     users: List<AUser>, trips: List<ATrip>, bookings: List<ABooking>, loaded: Boolean, error: String?,
-    onApprove: (AUser) -> Unit, onVerify: (AUser) -> Unit, onOpenCaptains: () -> Unit, onOpenPlaces: () -> Unit, onSignOut: () -> Unit
+    onApprove: (AUser) -> Unit, onVerify: (AUser) -> Unit, onOpenCaptains: () -> Unit, onOpenPlaces: () -> Unit, onSignOut: () -> Unit, onCleanStuck: () -> Unit = {}
 ) {
     val pending = users.filter { it.isCaptain && it.status == "pending" }
     val unverified = users.filter { !it.verified && it.verifyCode.isNotBlank() }
@@ -161,6 +161,7 @@ fun OverviewScreen(
             }
         }
         item { GhostButton("إدارة الأماكن", onOpenPlaces, Modifier.fillMaxWidth()) }
+        item { GhostButton("تنظيف الحجوزات العالقة", onCleanStuck, Modifier.fillMaxWidth()) }
     }
 }
 

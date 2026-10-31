@@ -46,6 +46,23 @@ object Repo {
 
     fun signOut() = auth.signOut()
 
+    /**
+     * One phone per captain account: this phone writes its own id to deviceSessions/{uid}; when another phone does the
+     * same, this one sees a different id and calls onKicked (the caller signs out). Fails open: if the rules are not
+     * published or the network is down, nothing happens and the captain keeps working.
+     */
+    fun guardSingleDevice(ctx: android.content.Context, uid: String, onKicked: () -> Unit): ListenerRegistration {
+        val sp = ctx.getSharedPreferences("device", android.content.Context.MODE_PRIVATE)
+        val mine = sp.getString("id", null) ?: java.util.UUID.randomUUID().toString().also { sp.edit().putString("id", it).apply() }
+        val ref = db.collection("deviceSessions").document(uid)
+        ref.set(mapOf("deviceId" to mine, "at" to System.currentTimeMillis()))
+        return ref.addSnapshotListener { snap, err ->
+            if (err != null || snap == null || !snap.exists()) return@addSnapshotListener
+            val other = snap.getString("deviceId")
+            if (!other.isNullOrBlank() && other != mine) onKicked()
+        }
+    }
+
     /** New profile: passenger is active at once, captain waits for the admin. */
     fun createProfile(p: UserProfile, onResult: (Boolean) -> Unit) {
         val uid = auth.currentUser?.uid ?: return onResult(false)

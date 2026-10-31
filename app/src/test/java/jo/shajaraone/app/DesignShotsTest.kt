@@ -11,10 +11,12 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,6 +31,17 @@ import java.io.File
 @Config(sdk = [34], qualifiers = "w390dp-h844dp-xxhdpi")
 class DesignShotsTest {
     @get:Rule val rule = createComposeRule()
+
+    /** The captain screens read Firebase Auth; a placeholder app lets them render in tests (nothing is ever sent). */
+    @Before fun fakeFirebase() {
+        val ctx = org.robolectric.RuntimeEnvironment.getApplication()
+        if (com.google.firebase.FirebaseApp.getApps(ctx).isEmpty()) {
+            com.google.firebase.FirebaseApp.initializeApp(
+                ctx,
+                com.google.firebase.FirebaseOptions.Builder().setApplicationId("1:1:android:1").setApiKey("x").setProjectId("demo").build()
+            )
+        }
+    }
 
     private val soon = System.currentTimeMillis() + 3 * 3_600_000L
     private val t1 = Trip(
@@ -62,6 +75,13 @@ class DesignShotsTest {
         save(name)
     }
 
+    @Test fun captainSplash1() = shot("C8-captain-splash-1", 900) { CapPhotoSplash(androidx.compose.ui.graphics.painter.BitmapPainter(android.graphics.BitmapFactory.decodeStream(javaClass.getResourceAsStream("/splash_1.jpg")).asImageBitmap())) }
+    @Test fun captainSplash2() = shot("C8-captain-splash-2", 900) { CapPhotoSplash(androidx.compose.ui.graphics.painter.BitmapPainter(android.graphics.BitmapFactory.decodeStream(javaClass.getResourceAsStream("/splash_2.jpg")).asImageBitmap())) }
+    @Test fun captainSplash3() = shot("C8-captain-splash-3", 900) { CapPhotoSplash(androidx.compose.ui.graphics.painter.BitmapPainter(android.graphics.BitmapFactory.decodeStream(javaClass.getResourceAsStream("/splash_3.jpg")).asImageBitmap())) }
+    @Test fun riderSplash1() = shot("R8-rider-splash-1", 900) { CapPhotoSplash(androidx.compose.ui.graphics.painter.BitmapPainter(android.graphics.BitmapFactory.decodeStream(javaClass.getResourceAsStream("/rider_splash_1.jpg")).asImageBitmap())) }
+    @Test fun riderSplash2() = shot("R8-rider-splash-2", 900) { CapPhotoSplash(androidx.compose.ui.graphics.painter.BitmapPainter(android.graphics.BitmapFactory.decodeStream(javaClass.getResourceAsStream("/rider_splash_2.jpg")).asImageBitmap())) }
+    @Test fun riderSplash3() = shot("R8-rider-splash-3", 900) { CapPhotoSplash(androidx.compose.ui.graphics.painter.BitmapPainter(android.graphics.BitmapFactory.decodeStream(javaClass.getResourceAsStream("/rider_splash_3.jpg")).asImageBitmap())) }
+    @Test fun adminSplash() = shot("A8-admin-splash", 900) { CapPhotoSplash(androidx.compose.ui.graphics.painter.BitmapPainter(android.graphics.BitmapFactory.decodeStream(javaClass.getResourceAsStream("/admin_splash.jpg")).asImageBitmap())) }
     @Test fun splash() = shot("0-splash", 1300) { SplashScreen(onDone = {}) }
     @Test fun login() = shot("6-login", 900) { AuthScreen() }
 
@@ -75,10 +95,8 @@ class DesignShotsTest {
     }
 
     @Test fun riderStart() = rider("R1-where-to", RiderFlowState(), emptyList())
-    @Test fun riderSouth() = rider("R2-south", RiderFlowState(step = 1, group = G_SOUTH), emptyList())
-    @Test fun riderNorth() = rider("R3-north", RiderFlowState(step = 1, group = G_NORTH), emptyList())
-    @Test fun riderInner() = rider("R4-inner", RiderFlowState(step = 1, group = G_INNER, place = "الشجرة"), emptyList())
-    @Test fun riderResults() = rider("R5-results", RiderFlowState(step = 2, group = G_SOUTH, road = "شارع الأردن", place = "", day = 0), listOf(t1))
+    @Test fun riderWhere() = rider("R2-where-are-you", RiderFlowState(who = 1), emptyList())
+    @Test fun riderDest() = rider("R2b-where-to", RiderFlowState(step = 1, cur = "إربد", who = 1), emptyList())
     @Test fun riderSoon() = shot("R6-soon") {
         Box(Modifier.fillMaxSize()) {
             SoonScreen()
@@ -107,4 +125,14 @@ class DesignShotsTest {
     @Test fun bookingSheet() = shot("R3-booking-seat-map") {
         BookingBody(t1, 4, 3, setOf(1, 2), {}, listOf("الدوار الرابع", "وسط البلد"), "وسط البلد", {}, "", {}, false) {}
     }
+
+    private val d1 = DeliveryOrder("1", "مطعم الشام", "شارع المدينة، قرب الدوار", "الشجرة، حي الجامعة", "٠٫٨ كم", "٢٫٠ د.أ", "قبل ٣ دقائق", "بدون بصل")
+    private val d2 = DeliveryOrder("2", "شاورما الأمير", "وسط البلد، مقابل البنك", "الشجرة، الحي الشمالي", "١٫٤ كم", "١٫٥ د.أ", "قبل ٧ دقائق")
+    private val d3 = DeliveryOrder("3", "بيتزا النخيل", "الشارع العام", "الشجرة، قرب المسجد", "٢٫١ كم", "٢٫٥ د.أ", "قبل ١٢ دقيقة")
+    private val d4 = DeliveryOrder("4", "مطعم الشام", "شارع المدينة، قرب الدوار", "الشجرة، حي الجامعة", "٠٫٨ كم", "٢٫٠ د.أ", "قبل ٢ دقيقة", mine = true)
+
+    @Test fun captainServices() = capShot("C4-captain-services") { CapServicesHome("أحمد", 3, 2, d1, {}, {}) }
+    @Test fun captainDelivery() = capShot("C5-captain-delivery") { CapDeliveryScreen(listOf(d1, d2, d3, d4)) }
+    @Test fun captainDeliveryMine() = capShot("C6-captain-delivery-mine") { CapDeliveryScreen(listOf(d1, d2, d4), tab = 1) }
+    @Test fun captainNewDelivery() = capShot("C7-captain-new-delivery") { CapNewDelivery(DeliveryDraft("مطعم الشام", "شارع المدينة، قرب الدوار", "الشجرة، حي الجامعة", "2.0", "بدون بصل")) }
 }

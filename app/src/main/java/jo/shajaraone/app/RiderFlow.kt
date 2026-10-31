@@ -92,10 +92,10 @@ fun flowMatches(t: Trip, fs: RiderFlowState): Boolean {
 
 @Composable
 internal fun GlassSection(title: String, sub: String = "", content: @Composable ColumnScope.() -> Unit) {
-    Column(Modifier.fillMaxWidth().darkGlass(24.dp).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxWidth().darkGlass(22.dp).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (sub.isNotBlank()) Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Text(sub, fontSize = 13.sp, color = Amber)
+            Text(title, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(sub, fontSize = 12.sp, color = Amber)
         } else Text(title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Dim)
         content()
     }
@@ -112,7 +112,7 @@ internal fun GlassChip(text: String, on: Boolean, modifier: Modifier = Modifier,
 }
 
 @Composable
-internal fun GlassGrid(items: List<String>, selected: String, cols: Int = 3, onPick: (String) -> Unit) = CapGrid(items, selected, 2, big = true, onPick = onPick)
+internal fun GlassGrid(items: List<String>, selected: String, cols: Int = 3, onPick: (String) -> Unit) = CapGrid(items, selected, cols, big = false, onPick = onPick)
 
 @Composable
 private fun BigChoice(title: String, sub: String, index: Int, onClick: () -> Unit) {
@@ -132,7 +132,7 @@ private fun BigChoice(title: String, sub: String, index: Int, onClick: () -> Uni
 
 @Composable
 private fun BackBar(title: String, onBack: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(top = 44.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    Row(Modifier.fillMaxWidth().padding(top = 28.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Box(Modifier.size(46.dp).squeeze(onBack), contentAlignment = Alignment.Center) { RoundBtn(4) }
         Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White, maxLines = 1)
     }
@@ -182,7 +182,7 @@ fun RiderFlow(
             } else {
                 Column(Modifier.padding(bottom = 6.dp)) {
                     Text("أهلاً $name", fontSize = 14.sp, color = Dim)
-                    Text(if (fs.who == 2) "وين موقع الشخص الآخر؟" else "وين أنت حالياً؟", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
+                    Text(if (fs.who == 2) "وين موقع الشخص الآخر؟" else "وين أنت حالياً؟", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
                     if (fs.who == 1) Text("اختر مكانك بإيدك", fontSize = 13.sp, color = Dim)
                 }
                 GlassSection("قرى الشمال", "الرمثا • إربد • باقي القرى") { GlassGrid(northPlaces - MAFRAQ, fs.cur) { fs.cur = it; fs.step = 1 } }
@@ -191,13 +191,13 @@ fun RiderFlow(
         }
         1 -> Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(bottom = 120.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             BackBar("أنت في ${fs.cur}") { fs.back() }
-            Box(Modifier.clip(RoundedCornerShape(14.dp)).background(Amber.copy(alpha = 0.14f)).border(1.dp, Amber, RoundedCornerShape(14.dp)).clickable { fs.back() }.padding(horizontal = 16.dp, vertical = 11.dp)) {
+            Box(Modifier.clip(RoundedCornerShape(14.dp)).background(Amber.copy(alpha = 0.14f)).border(1.dp, Amber, RoundedCornerShape(14.dp)).clickable { fs.back() }.padding(horizontal = 14.dp, vertical = 7.dp)) {
                 Text("📍 " + (if (fs.who == 2) "تغيير موقع الشخص يدوياً" else "تغيير موقعي يدوياً"), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Amber)
             }
-            Text("لوين بدك تروح؟", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
+            Text("لوين بدك تروح؟", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Brand.Ink)
             if (fs.curNorth) {
                 GlassSection("قرى الشمال", "الرمثا • إربد • باقي القرى") {
                     GlassGrid((northPlaces - MAFRAQ).filter { it != fs.cur }, "") { fs.dest = it; fs.road = NORTH_INNER; fs.step = 3 }

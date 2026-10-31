@@ -34,7 +34,8 @@ private fun fetchLatest(key: String): UpdateInfo? {
     return UpdateInfo(n, SITE + "?v=" + n)
 }
 
-private const val UPD_CHANNEL = "app_update_v1"
+// Channel sound cannot change after creation, so the sound change needs a new channel id (v2).
+private const val UPD_CHANNEL = "app_update_v2"
 
 /** Background check (every ~15 min, free): when a newer build is out, show ONE notification per build. */
 class UpdateCheckWorker(ctx: Context, params: androidx.work.WorkerParameters) : androidx.work.Worker(ctx, params) {
@@ -100,7 +101,7 @@ class UpdateCheckWorker(ctx: Context, params: androidx.work.WorkerParameters) : 
         if (android.os.Build.VERSION.SDK_INT >= 26) {
             val ch = android.app.NotificationChannel(UPD_CHANNEL, "تحديث التطبيق", android.app.NotificationManager.IMPORTANCE_HIGH)
             ch.setSound(
-                Uri.parse("android.resource://${ctx.packageName}/${R.raw.snd_system}"),
+                Uri.parse("android.resource://${ctx.packageName}/${R.raw.snd_update}"),
                 android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION).build()
             )
             nm.createNotificationChannel(ch)
@@ -141,7 +142,7 @@ fun UpdateCheck() {
         } catch (_: Exception) { }
     }
     val u = info
-    LaunchedEffect(u != null) { if (u != null) AppFeedback.system(ctx) }
+    LaunchedEffect(u != null) { if (u != null) AppFeedback.updateSound(ctx) }
     if (u != null && !dismissed) {
         AlertDialog(
             onDismissRequest = { dismissed = true },

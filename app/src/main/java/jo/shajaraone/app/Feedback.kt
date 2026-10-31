@@ -3,6 +3,8 @@ package jo.shajaraone.app
 import android.content.Context
 import android.media.MediaPlayer
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -54,8 +56,91 @@ object AppFeedback {
     /** Something failed. */
     fun error(ctx: Context) = fire(ctx, "snd_trip_cancel", millis = 90, amplitude = 200)
 
-    /** Captain only: a new booking request arrived. */
+    /** Captain only: a new booking request arrived (one short chime; the repeating ring is [ringRequest]). */
     fun newRequest(ctx: Context) = fire(ctx, "snd_new_trip", millis = 70, amplitude = 180)
+
+    /** A new app version is ready: the full update tune (not trimmed). */
+    fun updateSound(ctx: Context) = fire(ctx, "snd_update", millis = 40, amplitude = 120)
+
+    // ---- Repeating ring for a new booking request: loops sound + vibration until the captain decides or time is up ----
+    private val ringHandler = Handler(Looper.getMainLooper())
+    private val ringStopper = Runnable { ringStop() }
+    private var ringPlayer: MediaPlayer? = null
+    private var ringVib: Vibrator? = null
+    private var ringActive = false
+    private var ringStartTask: Runnable? = null
+
+    /**
+     * Rings for [maxMs] (15 s by default) or until [ringStop] is called (the captain accepted / declined).
+     * [startDelayMs]: the notification chime plays first, then the loop continues right after it.
+     * Calling it again while ringing only extends the time, it never doubles the sound.
+     */
+    fun ringRequest(ctx: Context, maxMs: Long = 15_000, startDelayMs: Long = 0) {
+        try {
+            val app = ctx.applicationContext
+            ringHandler.post {
+                try {
+                    ringHandler.removeCallbacks(ringStopper)
+                    ringHandler.postDelayed(ringStopper, maxMs + startDelayMs)
+                    if (ringActive) return@post
+                    ringActive = true
+                    val task = Runnable { startRingLoop(app) }
+                    ringStartTask = task
+                    ringHandler.postDelayed(task, startDelayMs)
+                } catch (_: Exception) { }
+            }
+        } catch (_: Exception) { }
+    }
+
+    private fun startRingLoop(ctx: Context) {
+        try {
+            if (!ringActive) return
+            if (HAPTICS_ENABLED) {
+                val vib = vibrator(ctx)
+                if (vib != null && vib.hasVibrator()) {
+                    vib.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 500, 700), 0))
+                    ringVib = vib
+                }
+            }
+            if (SOUNDS_ENABLED && jo.shajaraone.app.hasbat.AppDataManager.get(ctx).soundEnabled) {
+                val id = ctx.resources.getIdentifier("snd_new_trip", "raw", ctx.packageName)
+                if (id != 0) {
+                    val mp = MediaPlayer.create(ctx, id)
+                    if (mp != null) {
+                        mp.isLooping = true
+                        mp.start()
+                        ringPlayer = mp
+                    }
+                }
+            }
+        } catch (_: Exception) { }
+    }
+
+    /** Stops the ring (the captain accepted / declined, or opened the request). Safe to call any time. */
+    fun ringStop() {
+        try {
+            ringHandler.post {
+                try {
+                    ringActive = false
+                    ringHandler.removeCallbacks(ringStopper)
+                    ringStartTask?.let { ringHandler.removeCallbacks(it) }
+                    ringStartTask = null
+                    ringPlayer?.let { try { it.stop() } catch (_: Exception) { }; it.release() }
+                    ringPlayer = null
+                    ringVib?.cancel()
+                    ringVib = null
+                } catch (_: Exception) { }
+            }
+        } catch (_: Exception) { }
+    }
+
+    private fun vibrator(ctx: Context): Vibrator? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            (ctx.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager)?.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            ctx.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+        }
 
     private fun fire(ctx: Context, sound: String, millis: Long, amplitude: Int) {
         try {

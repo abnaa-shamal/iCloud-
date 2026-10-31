@@ -8,7 +8,10 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.foundation.background
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
 
@@ -22,8 +25,22 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/** Welcome picture: shown whole (never cropped), touching the screen width; the rest is a blurred copy of itself. */
+@Composable
+fun AdminSplash(onDone: () -> Unit) {
+    val current by rememberUpdatedState(onDone)
+    LaunchedEffect(Unit) { kotlinx.coroutines.delay(2500); current() }
+    val painter = androidx.compose.ui.res.painterResource(R.drawable.splash)
+    Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color.Black)) {
+        androidx.compose.foundation.Image(painter, null, Modifier.fillMaxSize().blur(32.dp), contentScale = androidx.compose.ui.layout.ContentScale.Crop, alpha = 0.55f)
+        androidx.compose.foundation.Image(painter, null, Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
+    }
+}
+
 @Composable
 fun AdminApp(report: (String) -> Unit) {
+    var splash by remember { mutableStateOf(true) }
+    if (splash) { AdminSplash { splash = false }; return }
     var signedIn by remember { mutableStateOf(false) }
     var checking by remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
     var busy by remember { mutableStateOf(false) }
@@ -72,7 +89,8 @@ fun AdminHome(data: AdminData, actions: AdminActions, onSignOut: () -> Unit) {
                     data.users, data.trips, data.bookings, data.loaded, data.error,
                     onApprove = { setUser(it, mapOf("status" to "approved"), "تم قبول ${it.name}") },
                     onVerify = { setUser(it, mapOf("verified" to true), "تم توثيق الرقم") },
-                    onOpenCaptains = { tab = 1 }, onOpenPlaces = { places = true }, onSignOut = onSignOut
+                    onOpenCaptains = { tab = 1 }, onOpenPlaces = { places = true }, onSignOut = onSignOut,
+                    onCleanStuck = { askFn(Ask("تنظيف الحجوزات العالقة", "إلغاء كل حجز فعّال رحلته ملغاة أو مرّ عليها أكثر من 4 ساعات؟", "نظّف") { actions.cleanStuckBookings() }) }
                 )
                 1 -> CaptainsScreen(data.users, setUser, askFn)
                 2 -> RidersScreen(data.users, setUser, askFn)

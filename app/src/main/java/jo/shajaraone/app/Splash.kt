@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -26,10 +27,47 @@ const val APP_DISPLAY_NAME = "أبناء الشمال"
 const val WELCOME_LINE = "هلا بعيال صويت، وهلا بأهل الشمال"
 const val SPLASH_MILLIS = 2000L
 
+/**
+ * A different photo (3 per app) every time the app is opened. Each flavor (rider / captain) has its own
+ * splash_1..3 in its own resource folder, so they are looked up by name.
+ */
+private fun captainSplashRes(ctx: android.content.Context): Int {
+    val sp = ctx.getSharedPreferences("splash", android.content.Context.MODE_PRIVATE)
+    val i = sp.getInt("next", 0) % 3
+    sp.edit().putInt("next", i + 1).apply()
+    return ctx.resources.getIdentifier("splash_${i + 1}", "drawable", ctx.packageName)
+}
+
+@Composable
+fun CapPhotoSplash(painter: androidx.compose.ui.graphics.painter.Painter) {
+    // The photos carry their own welcome text, so the whole picture is shown (never cropped): it touches the screen
+    // width, and any left-over space above/below is filled with a blurred, darkened copy of the same picture.
+    val appear = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { appear.animateTo(1f, tween(700, easing = FastOutSlowInEasing)) }
+    Box(Modifier.fillMaxSize().background(Color.Black).alpha(appear.value)) {
+        androidx.compose.foundation.Image(
+            painter, null, Modifier.fillMaxSize().androidx_blur(), contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            alpha = 0.55f
+        )
+        androidx.compose.foundation.Image(
+            painter, null, Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Fit
+        )
+    }
+}
+
+private fun Modifier.androidx_blur(): Modifier = this.blur(32.dp)
+
 /** Two-second welcome: the name with a glowing light sweep, then the welcome line fades in. */
 @Composable
 fun SplashScreen(onDone: () -> Unit) {
     val current by rememberUpdatedState(onDone)
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val photo = remember { captainSplashRes(ctx) }
+    if (photo != 0) {
+        LaunchedEffect(Unit) { delay(SPLASH_MILLIS + 500); current() }
+        CapPhotoSplash(androidx.compose.ui.res.painterResource(photo))
+        return
+    }
     LaunchedEffect(Unit) {
         delay(SPLASH_MILLIS)
         current()

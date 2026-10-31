@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Terracotta icon so the captain app is easy to tell apart from the rider app -->
-    <color name="ic_launcher_background">#BA5A31</color>
+    <color name="ic_launcher_background">#000000</color>
 </resources>
