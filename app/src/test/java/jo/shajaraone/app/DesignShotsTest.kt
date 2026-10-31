@@ -121,6 +121,17 @@ class DesignShotsTest {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) { CapNav(listOf(Triple(0, "الرئيسية", 2), Triple(6, "رحلة جديدة", 0)), 0) {} }
     }
 
+    @Test fun captainStart() = capShot("C9-captain-start") {
+        Column {
+            HeroHeader(title = "أبناء الشمال", subtitle = "تطبيق الكابتن", trailing = {
+                androidx.compose.material3.IconButton(onClick = {}) {
+                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Filled.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(30.dp))
+                }
+            })
+            Box(Modifier.weight(1f)) { CapPublishFlow(UserProfile(name = "أحمد محمد"), false, null, {}, previewHere = "إربد") }
+        }
+    }
+
     @Test fun captainEmpty() = capShot("C2-captain-empty") {
         CapDashboard("أحمد", emptyList(), emptyList())
     }

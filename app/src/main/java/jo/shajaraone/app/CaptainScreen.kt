@@ -548,7 +548,7 @@ private fun CapPublish(me: UserProfile, online: Boolean, trips: List<Trip>, onTr
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, onPublished: () -> Unit) {
+internal fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, onPublished: () -> Unit, previewHere: String? = null) {
     val ctx = LocalContext.current
     var step by rememberSaveable { mutableIntStateOf(0) }      // 0 = direction, 1 = places, 2 = time and publish
     var group by rememberSaveable { mutableStateOf("") }       // من الشمال / من الجنوب / داخل الشمال
@@ -564,7 +564,7 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
     var sending by remember { mutableStateOf(false) }
     var openRoad by remember { mutableStateOf("") }
     var manualStart by rememberSaveable { mutableStateOf(false) }   // true = the captain chose to pick his starting point by hand
-    var gpsHere by remember { mutableStateOf<String?>(null) }
+    var gpsHere by remember { mutableStateOf<String?>(previewHere) }
     LaunchedEffect(lockFrom) {
         if (lockFrom == null && hasLocationPermission(ctx)) fetchLocation(ctx) { l -> if (l != null) gpsHere = nearestPlace(l.latitude, l.longitude) }
     }
@@ -606,10 +606,8 @@ private fun CapPublishFlow(me: UserProfile, online: Boolean, lockFrom: String?, 
             }
             val lf = lockFrom ?: gpsHere?.takeIf { !manualStart && it in northPlaces }
             if (lf != null) {
-                if (lockFrom == null) Box(Modifier.clip(RoundedCornerShape(14.dp)).background(CapAccent.copy(alpha = 0.14f)).border(1.dp, CapAccent, RoundedCornerShape(14.dp)).clickable { manualStart = true }.padding(horizontal = 16.dp, vertical = 11.dp)) {
-                    Text("📍 تغيير نقطة الانطلاق يدوياً", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = CapInk)
-                }
-                Text("انطلاقك من $lf", Modifier.padding(top = 6.dp, bottom = 4.dp), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = CapInk)
+                Text(if (lockFrom == null) "موقعك الحالي في $lf" else "انطلاقك من $lf", Modifier.padding(top = 6.dp), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = CapInk)
+                if (lockFrom == null) Text("تغيير موقعك يدوياً", Modifier.padding(bottom = 4.dp).clickable { manualStart = true }.padding(vertical = 4.dp), fontSize = 12.sp, color = CapAccent)
                 Text(if (lockFrom != null) "وصلت إلى $lf، وين رايح بعدها؟" else "حسب موقعك الحالي، وين رايح؟", fontSize = 14.sp, color = CapMute)
                 CapBigChoice(G_NORTH_C, "من الشمال", 0) { group = G_NORTH_C; origin = lf; priceStr = ""; step = 1 }
                 if (lf != "المفرق") CapBigChoice(G_INNER_C, "الرمثا • إربد • باقي القرى", 1) { group = G_INNER_C; origin = lf; priceStr = ""; step = 1 }

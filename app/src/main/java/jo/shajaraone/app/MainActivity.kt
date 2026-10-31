@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -159,11 +160,20 @@ private fun HomeScaffold(me: UserProfile, onShowGuide: () -> Unit) {
     val ctx = LocalContext.current
     var menu by remember { mutableStateOf(false) }
     var confirmLogout by remember { mutableStateOf(false) }
+    var profile by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize()) {
-        HeroHeader(
+        if (IS_CAPTAIN_APP) HeroHeader(
+            title = APP_DISPLAY_NAME,
+            subtitle = "تطبيق الكابتن",
+            trailing = {
+                IconButton(onClick = { profile = true }) {
+                    Icon(Icons.Filled.Person, contentDescription = "حسابي", tint = Color.White, modifier = Modifier.size(30.dp))
+                }
+            }
+        ) else HeroHeader(
             title = "أهلاً ${me.name}",
-            subtitle = if (IS_CAPTAIN_APP) "$APP_DISPLAY_NAME • تطبيق الكابتن" else "$APP_DISPLAY_NAME • وين رايح اليوم؟",
+            subtitle = "$APP_DISPLAY_NAME • وين رايح اليوم؟",
             trailing = {
                 Text("v${BuildConfig.VERSION_NAME}", color = Color.White.copy(alpha = 0.6f), style = MaterialTheme.typography.labelSmall)
                 Box {
@@ -189,6 +199,23 @@ private fun HomeScaffold(me: UserProfile, onShowGuide: () -> Unit) {
                 else -> PassengerHome(me) // rider app: approved captains also see the passenger screens
             }
         }
+    }
+
+    if (profile) {
+        AlertDialog(
+            onDismissRequest = { profile = false },
+            title = { Text(me.name) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (me.phone.isNotBlank()) Text("📞 ${me.phone}")
+                    val car = listOf(me.carType, me.carColor, me.carPlate).filter { it.isNotBlank() }.joinToString(" • ")
+                    if (car.isNotBlank()) Text("🚗 $car")
+                    Text("إصدار التطبيق: ${BuildConfig.VERSION_NAME}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            confirmButton = { TextButton(onClick = { profile = false; confirmLogout = true }) { Text("تسجيل الخروج") } },
+            dismissButton = { TextButton(onClick = { profile = false }) { Text("إغلاق") } }
+        )
     }
 
     if (confirmLogout) {

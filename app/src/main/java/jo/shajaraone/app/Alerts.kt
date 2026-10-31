@@ -110,6 +110,9 @@ object Alerts {
                 )
             }
         }
+        fresh.firstOrNull { it.status == BK_PENDING }?.let { b ->
+            OverlayBanner.show(ctx, "📥 طلب حجز جديد", "${b.passengerName} • ${seatsText(b.seats)} • ${b.tripSummary}")
+        }
         // A new request keeps ringing (sound + vibration) for ~15 s, starting right after the notification chime.
         if (fresh.any { it.status == BK_PENDING }) AppFeedback.ringRequest(ctx, startDelayMs = 2100)
         val newest = fresh.maxOfOrNull { it.updatedAt } ?: return
@@ -126,6 +129,9 @@ object Alerts {
         fresh.take(3).forEach { r ->
             show(ctx, CH_NEW, r.id.hashCode(), "🕓 طلب حجز مسبق جديد",
                 "${r.from} ← ${r.to} • ${dayName(r.departAt)} ${clockText(r.departAt)} • ${seatsText(r.seats)}")
+        }
+        fresh.firstOrNull()?.let { r ->
+            OverlayBanner.show(ctx, "🕓 طلب حجز مسبق جديد", "${r.from} ← ${r.to} • ${dayName(r.departAt)} ${clockText(r.departAt)}")
         }
         if (fresh.isNotEmpty()) sp.edit().putLong("lastReq", fresh.maxOf { it.createdAt }).apply()
     }
