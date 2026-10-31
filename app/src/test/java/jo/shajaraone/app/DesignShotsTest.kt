@@ -125,7 +125,7 @@ class DesignShotsTest {
         Column {
             HeroHeader(title = "أبناء الشمال", subtitle = "تطبيق الكابتن", trailing = {
                 androidx.compose.material3.IconButton(onClick = {}) {
-                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Filled.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(30.dp))
+                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Filled.Person, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(30.dp))
                 }
             })
             Box(Modifier.weight(1f)) { CapPublishFlow(UserProfile(name = "أحمد محمد"), false, null, {}, previewHere = "إربد") }
