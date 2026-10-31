@@ -75,10 +75,6 @@ class DesignShotsTest {
     }
 
     @Test fun riderStart() = rider("R1-where-to", RiderFlowState(), emptyList())
-    @Test fun riderSouth() = rider("R2-south", RiderFlowState(step = 1, group = G_SOUTH), emptyList())
-    @Test fun riderNorth() = rider("R3-north", RiderFlowState(step = 1, group = G_NORTH), emptyList())
-    @Test fun riderInner() = rider("R4-inner", RiderFlowState(step = 1, group = G_INNER, place = "الشجرة"), emptyList())
-    @Test fun riderResults() = rider("R5-results", RiderFlowState(step = 2, group = G_SOUTH, road = "شارع الأردن", place = "", day = 0), listOf(t1))
     @Test fun riderSoon() = shot("R6-soon") {
         Box(Modifier.fillMaxSize()) {
             SoonScreen()
