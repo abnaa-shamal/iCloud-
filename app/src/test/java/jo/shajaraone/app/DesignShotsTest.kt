@@ -78,6 +78,9 @@ class DesignShotsTest {
     @Test fun captainSplash1() = shot("C8-captain-splash-1", 900) { CapPhotoSplash(androidx.compose.ui.graphics.painter.BitmapPainter(android.graphics.BitmapFactory.decodeStream(javaClass.getResourceAsStream("/splash_1.jpg")).asImageBitmap())) }
     @Test fun captainSplash2() = shot("C8-captain-splash-2", 900) { CapPhotoSplash(androidx.compose.ui.graphics.painter.BitmapPainter(android.graphics.BitmapFactory.decodeStream(javaClass.getResourceAsStream("/splash_2.jpg")).asImageBitmap())) }
     @Test fun captainSplash3() = shot("C8-captain-splash-3", 900) { CapPhotoSplash(androidx.compose.ui.graphics.painter.BitmapPainter(android.graphics.BitmapFactory.decodeStream(javaClass.getResourceAsStream("/splash_3.jpg")).asImageBitmap())) }
+    @Test fun riderSplash1() = shot("R8-rider-splash-1", 900) { CapPhotoSplash(androidx.compose.ui.graphics.painter.BitmapPainter(android.graphics.BitmapFactory.decodeStream(javaClass.getResourceAsStream("/rider_splash_1.jpg")).asImageBitmap())) }
+    @Test fun riderSplash2() = shot("R8-rider-splash-2", 900) { CapPhotoSplash(androidx.compose.ui.graphics.painter.BitmapPainter(android.graphics.BitmapFactory.decodeStream(javaClass.getResourceAsStream("/rider_splash_2.jpg")).asImageBitmap())) }
+    @Test fun riderSplash3() = shot("R8-rider-splash-3", 900) { CapPhotoSplash(androidx.compose.ui.graphics.painter.BitmapPainter(android.graphics.BitmapFactory.decodeStream(javaClass.getResourceAsStream("/rider_splash_3.jpg")).asImageBitmap())) }
     @Test fun splash() = shot("0-splash", 1300) { SplashScreen(onDone = {}) }
     @Test fun login() = shot("6-login", 900) { AuthScreen() }
 

@@ -27,8 +27,8 @@ const val WELCOME_LINE = "هلا بعيال صويت، وهلا بأهل الش�
 const val SPLASH_MILLIS = 2000L
 
 /**
- * Captain app only: a different photo (road, Al-Ramtha, clock tower) every time the app is opened.
- * The photos live in the captain flavor only, so they are looked up by name (the rider build simply has none).
+ * A different photo (3 per app) every time the app is opened. Each flavor (rider / captain) has its own
+ * splash_1..3 in its own resource folder, so they are looked up by name.
  */
 private fun captainSplashRes(ctx: android.content.Context): Int {
     val sp = ctx.getSharedPreferences("splash", android.content.Context.MODE_PRIVATE)
@@ -61,7 +61,7 @@ fun CapPhotoSplash(painter: androidx.compose.ui.graphics.painter.Painter) {
 fun SplashScreen(onDone: () -> Unit) {
     val current by rememberUpdatedState(onDone)
     val ctx = androidx.compose.ui.platform.LocalContext.current
-    val photo = remember { if (IS_CAPTAIN_APP) captainSplashRes(ctx) else 0 }
+    val photo = remember { captainSplashRes(ctx) }
     if (photo != 0) {
         LaunchedEffect(Unit) { delay(SPLASH_MILLIS + 500); current() }
         CapPhotoSplash(androidx.compose.ui.res.painterResource(photo))
