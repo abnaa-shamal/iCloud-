@@ -413,18 +413,18 @@ fun TripInfo(t: Trip, showCaptain: Boolean = true) {
     }
 }
 
-/** Glass card: translucent fill, hairline border. */
+/** Glass card: dark translucent fill, soft gold hairline border. */
 @Composable
 fun AppCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    val shape = RoundedCornerShape(10.dp)
+    val shape = RoundedCornerShape(24.dp)
     Box(
         modifier
             .fillMaxWidth()
-            .background(Brand.Stock, shape)
-            .border(1.dp, Brand.Rule, shape)
+            .background(Color(0xFF16161C).copy(alpha = 0.85f), shape)
+            .border(1.dp, Color(0x44D4AF37), shape)
     ) {
         CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
-            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
+            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
         }
     }
 }
@@ -472,18 +472,25 @@ fun LoadingBox() {
     }
 }
 
-/** Primary action: solid violet, white label. */
+/** Primary action: gold gradient capsule, dark label. */
 @Composable
 fun BigButton(text: String, enabled: Boolean = true, onClick: () -> Unit) {
     val ctx = LocalContext.current
+    val gold = Brush.horizontalGradient(listOf(Color(0xFFA67C00), Color(0xFFD4AF37), Color(0xFFF3E5AB), Color(0xFFD4AF37)))
     Surface(
         onClick = { onClick() }, enabled = enabled,
-        shape = RoundedCornerShape(28.dp),
-        color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
+        shape = CircleShape,
+        color = Color.Transparent,
+        contentColor = Color(0xFF0D0D11),
+        shadowElevation = if (enabled) 8.dp else 0.dp,
         modifier = Modifier.fillMaxWidth().height(56.dp)
     ) {
-        Box(contentAlignment = Alignment.Center) { Text(text, style = MaterialTheme.typography.titleMedium) }
+        Box(
+            Modifier.fillMaxSize().background(
+                if (enabled) gold else Brush.horizontalGradient(listOf(Color(0xFF2A2A30), Color(0xFF2A2A30)))
+            ),
+            contentAlignment = Alignment.Center
+        ) { Text(text, style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = if (enabled) Color(0xFF0D0D11) else Color(0xFF8A8A92)) }
     }
 }
 
