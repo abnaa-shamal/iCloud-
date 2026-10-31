@@ -90,6 +90,29 @@ class AdminActions(private val report: (String) -> Unit) {
         cancelBookingsOf(id, reason)
     }
 
+    /** Cancels every pending/accepted booking whose trip was cancelled, no longer exists, or left more than 4 hours ago. */
+    fun cleanStuckBookings() {
+        db.collection("bookings").whereIn("status", listOf("pending", "accepted")).get().addOnSuccessListener { snap ->
+            val limit = System.currentTimeMillis() - 4 * 3_600_000L
+            val tripIds = snap.documents.mapNotNull { it.getString("tripId") }.distinct()
+            if (tripIds.isEmpty()) { report("ما في حجوزات عالقة"); return@addOnSuccessListener }
+            com.google.android.gms.tasks.Tasks.whenAllSuccess<com.google.firebase.firestore.DocumentSnapshot>(
+                tripIds.map { db.collection("trips").document(it).get() }
+            ).addOnSuccessListener { trips ->
+                val dead = trips.filter { !it.exists() || it.getString("status") == "cancelled" }.map { it.id }.toSet()
+                val batch = db.batch(); var n = 0
+                snap.documents.forEach { d ->
+                    val departAt = d.getLong("departAt") ?: 0L
+                    if (d.getString("tripId") in dead || departAt < limit) {
+                        batch.update(d.reference, mapOf("status" to "cancelled_by_captain", "reason" to "حجز عالق نظّفته الإدارة", "updatedAt" to System.currentTimeMillis())); n++
+                    }
+                }
+                if (n == 0) report("ما في حجوزات عالقة")
+                else batch.commit().addOnSuccessListener { report("تم تنظيف $n حجز عالق") }.addOnFailureListener { report("ما تم: ${it.message?.take(120) ?: "خطأ"}") }
+            }.addOnFailureListener { report("ما تم: ${it.message?.take(120) ?: "خطأ"}") }
+        }.addOnFailureListener { report("ما تم: ${it.message?.take(120) ?: "خطأ"}") }
+    }
+
     fun cancelPendingBooking(id: String) = run(
         "تم إلغاء الحجز",
         db.collection("bookings").document(id)

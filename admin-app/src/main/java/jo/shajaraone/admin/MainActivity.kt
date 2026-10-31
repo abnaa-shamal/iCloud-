@@ -72,7 +72,8 @@ fun AdminHome(data: AdminData, actions: AdminActions, onSignOut: () -> Unit) {
                     data.users, data.trips, data.bookings, data.loaded, data.error,
                     onApprove = { setUser(it, mapOf("status" to "approved"), "تم قبول ${it.name}") },
                     onVerify = { setUser(it, mapOf("verified" to true), "تم توثيق الرقم") },
-                    onOpenCaptains = { tab = 1 }, onOpenPlaces = { places = true }, onSignOut = onSignOut
+                    onOpenCaptains = { tab = 1 }, onOpenPlaces = { places = true }, onSignOut = onSignOut,
+                    onCleanStuck = { askFn(Ask("تنظيف الحجوزات العالقة", "إلغاء كل حجز فعّال رحلته ملغاة أو مرّ عليها أكثر من 4 ساعات؟", "نظّف") { actions.cleanStuckBookings() }) }
                 )
                 1 -> CaptainsScreen(data.users, setUser, askFn)
                 2 -> RidersScreen(data.users, setUser, askFn)
