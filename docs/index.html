@@ -77,10 +77,10 @@ footer{text-align:center;color:var(--dim);font-size:13px;padding:26px 0 40px}
 <script>
 // Change only this line if the repository moves.
 var REPO = "abnaa-shamal/iCloud-";
-fetch("https://api.github.com/repos/" + REPO + "/releases?per_page=5").then(function(r){return r.json()}).then(function(list){
+fetch("https://api.github.com/repos/" + REPO + "/releases?per_page=30").then(function(r){return r.json()}).then(function(list){
   var best = {};
   list.forEach(function(rel){
-    var m = String(rel.tag_name).match(/(\d+)$/); var n = m ? parseInt(m[1],10) : 0; if(!n) return;
+    if(!/^build-/.test(String(rel.tag_name))) return; var m = String(rel.tag_name).match(/(\d+)$/); var n = m ? parseInt(m[1],10) : 0; if(!n) return;
     (rel.assets||[]).forEach(function(a){
       var k = /-rider-/.test(a.name) ? "rider" : /-captain-/.test(a.name) ? "captain" : null;
       if(k && (!best[k] || n > best[k].n)) best[k] = {n:n, url:a.browser_download_url};
