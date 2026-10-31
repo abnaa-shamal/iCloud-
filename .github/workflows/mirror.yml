@@ -1,0 +1,34 @@
+name: Fast APK mirror
+# Separate from the build: copies the rider/captain APKs of a release to a fast CDN branch (never the admin app).
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, e.g. preview-lab-98"
+        required: true
+permissions:
+  contents: write
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Copy APKs to the CDN branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          mkdir -p /tmp/dl /tmp/mirror
+          gh release download "${{ inputs.tag }}" --repo "${{ github.repository }}" --dir /tmp/dl --pattern "abnaa-rider-*.apk" --pattern "abnaa-captain-*.apk"
+          cd /tmp/mirror && git init -q -b apk-files
+          cp /tmp/dl/abnaa-rider-*.apk abnaa-rider.apk
+          cp /tmp/dl/abnaa-captain-*.apk abnaa-captain.apk
+          git add . && git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -q -m "apk ${{ inputs.tag }}"
+          SHA=$(git rev-parse HEAD)
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" apk-files
+          {
+            echo "### Fast links"
+            echo "rider: https://cdn.jsdelivr.net/gh/${{ github.repository }}@${SHA}/abnaa-rider.apk"
+            echo "captain: https://cdn.jsdelivr.net/gh/${{ github.repository }}@${SHA}/abnaa-captain.apk"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "rider: https://cdn.jsdelivr.net/gh/${{ github.repository }}@${SHA}/abnaa-rider.apk"
+          echo "captain: https://cdn.jsdelivr.net/gh/${{ github.repository }}@${SHA}/abnaa-captain.apk"
