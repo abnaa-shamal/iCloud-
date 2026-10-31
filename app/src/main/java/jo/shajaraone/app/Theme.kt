@@ -31,15 +31,15 @@ object Brand {
     // Colors follow the theme picked in Settings (the same 18 themes in both apps); CapTheme.t is set in ShajaraTheme.
     private val t get() = CapTheme.t
     private val dark get() = t?.isDark ?: true
-    val Violet: Color get() = t?.accentColor ?: Color(0xFFFF1744)               // main actions, selected items, logo
-    val VioletSoft: Color get() = t?.accentColor?.let { androidx.compose.ui.graphics.lerp(it, Color.Black, 0.15f) } ?: Color(0xFFD50032)
-    val VioletLight: Color get() = t?.accentColor?.let { androidx.compose.ui.graphics.lerp(it, Color.White, 0.4f) } ?: Color(0xFFFF7A93)
-    val Teal: Color get() = t?.needleColor ?: Color(0xFFFF5252)                 // highlights
+    val Violet: Color get() = t?.accentColor ?: Color(0xFFF5C451)               // main actions, selected items, logo
+    val VioletSoft: Color get() = t?.accentColor?.let { androidx.compose.ui.graphics.lerp(it, Color.Black, 0.15f) } ?: Color(0xFFC9932A)
+    val VioletLight: Color get() = t?.accentColor?.let { androidx.compose.ui.graphics.lerp(it, Color.White, 0.4f) } ?: Color(0xFFFFD873)
+    val Teal: Color get() = t?.needleColor ?: Color(0xFFFFD873)                 // highlights
     val Navy: Color get() = t?.bgGradient?.first() ?: Color(0xFF000000)         // base background
     val Ink: Color get() = if (dark) Color(0xFFF4F7FF) else Color(0xFF1E293B)   // main text
     val Muted: Color get() = if (dark) Color(0xFFA9B4CC) else Color(0xFF64748B) // secondary text
     val OnTeal = Color(0xFFFFFFFF)       // text on top of teal
-    val Ochre = Color(0xFFFFC857)        // gold highlight
+    val Ochre = Color(0xFFFFD873)        // gold highlight
     val Stock: Color get() = if (dark) Color(0x1FFFFFFF) else Color(0x14000000) // glass card surface
     val Pressed: Color get() = if (dark) Color(0x33000000) else Color(0x14000000) // recessed wells, inactive seats
     val Rule: Color get() = if (dark) Color(0x33FFFFFF) else Color(0x33000000)  // borders and perforation lines

@@ -22,19 +22,19 @@ import androidx.compose.ui.unit.sp
 /** Colors follow the Hasbat theme picked in Settings (CapTheme.t is set by HasbatShell). */
 object CapTheme { var t by mutableStateOf<jo.shajaraone.app.hasbat.AppTheme?>(null) }
 private val capT get() = CapTheme.t
-val CapBg: androidx.compose.ui.graphics.Brush get() = androidx.compose.ui.graphics.Brush.verticalGradient(capT?.bgGradient ?: listOf(Color(0xFF26272B), Color(0xFF141517)))
+val CapBg: androidx.compose.ui.graphics.Brush get() = androidx.compose.ui.graphics.Brush.verticalGradient(capT?.bgGradient ?: listOf(Color(0xFF090909), Color(0xFF15120B)))
 val CapInk: Color get() = capT?.let { jo.shajaraone.app.hasbat.textColorFor(it) } ?: Color(0xFFF4F4F6)
-val CapAccent: Color get() = capT?.accentColor ?: Color(0xFF3D8BFF)
+val CapAccent: Color get() = capT?.accentColor ?: Color(0xFFF5C451)
 val CapMute: Color get() = capT?.let { jo.shajaraone.app.hasbat.subTextColorFor(it) } ?: Color(0xFF9A9CA3)
 val CapLine: Color get() = capT?.accentColor?.copy(alpha = 0.28f) ?: Color(0x26FFFFFF)
-val CapRed = Color(0xFFFF6B6B)
+val CapRed = Color(0xFFB83A45)
 val CapSurface: Color get() = capT?.let { if (it.isDark) it.cardBg else Color.White } ?: Color(0xFF2B2C31)
-val CapPeach = Color(0xFFF8E8D2)
+val CapPeach = Color(0xFF2A2418)
 val CapDark = Color(0xFF16171A)
 
 fun Modifier.capCard(r: Dp = 22.dp): Modifier {
     val t = capT
-    return if (t == null) this.glassPanel(r, Color(0xFF303136), Color(0xFF1C1D20), Color(0x2E5C9DFF))
+    return if (t == null) this.glassPanel(r, Color(0xFF303136), Color(0xFF1C1D20), Color(0x33F5C451))
     else this.glassPanel(r, if (t.isDark) t.cardBg.copy(alpha = 0.92f) else Color.White, if (t.isDark) t.bgGradient.last().copy(alpha = 0.92f) else t.cardBg, t.accentColor.copy(alpha = 0.18f))
 }
 
@@ -89,7 +89,7 @@ fun CapAvatar(name: String, size: Dp = 42.dp) {
 @Composable
 fun CapNav(items: List<Triple<Int, String, Int>>, selected: Int, onPick: (Int) -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).glassPanel(28.dp, Color(0xFF2A2B30), Color(0xFF141517), Color(0x2E5C9DFF))
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).glassPanel(28.dp, Color(0xFF211C12), Color(0xFF0E0D0A), Color(0x33F5C451))
             .border(1.dp, CapLine, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).navigationBarsPadding().padding(horizontal = 24.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically
     ) {
@@ -98,7 +98,7 @@ fun CapNav(items: List<Triple<Int, String, Int>>, selected: Int, onPick: (Int) -
             Box {
                 Column(
                     Modifier.width(100.dp).clip(RoundedCornerShape(18.dp))
-                        .then(if (on) Modifier.background(Color(0xFF2D2F35)).border(1.5.dp, CapAccent.copy(alpha = .7f), RoundedCornerShape(18.dp)) else Modifier)
+                        .then(if (on) Modifier.background(Color(0xFF282116)).border(1.5.dp, CapAccent.copy(alpha = .7f), RoundedCornerShape(18.dp)) else Modifier)
                         .clickable(remember { MutableInteractionSource() }, null) { onPick(i) }.padding(vertical = 10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {

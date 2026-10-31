@@ -71,7 +71,7 @@ enum class AppTheme(
     SUNSET_ORANGE("البرتقالي الناري", "Sunset Orange", true, listOf(Color(0xFF170902), Color(0xFF0B0401)), Color(0xFF261205), Color(0xFFFF6D00), Color(0xFFFF9100), Color(0xFFFF6D00), Color(0xFFFFCA28)),
 
     // ---- ثيمات 2026 الجديدة (مضافة في النهاية حتى لا يتغير اختيار المستخدم الحالي) ----
-    GOLD_NOIR("الذهبي الأسود", "Gold Noir", true, listOf(Color(0xFF0B0B0C), Color(0xFF17130A)), Color(0xFF1A1710), Color(0xFFC9932A), Color(0xFFF5C451), Color(0xFFF5C451), Color(0xFFFFD873)),
+    GOLD_NOIR("أبناء الشمال — الأسود والذهبي", "Abnaa Al-Shamal Gold Noir", true, listOf(Color(0xFF090909), Color(0xFF15120B)), Color(0xFF1B1811), Color(0xFFD6A52C), Color(0xFFFFC52E), Color(0xFFD6A52C), Color(0xFFFFD873)),
     AURORA_GLASS("الشفق الزجاجي", "Aurora Glass", true, listOf(Color(0xFF060B1E), Color(0xFF14093A)), Color(0xFF141A3A), Color(0xFFA78BFA), Color(0xFF5EEAD4), Color(0xFF5EEAD4), Color(0xFF99F6E4)),
     CARBON_SPORT("الكربون الرياضي", "Carbon Sport", true, listOf(Color(0xFF111214), Color(0xFF1C1D21)), Color(0xFF202126), Color(0xFFFF8A00), Color(0xFFFF3B30), Color(0xFFFF3B30), Color(0xFFFFFFFF)),
     OLED_PURE("أسود أوليد (توفير بطارية)", "OLED Pure", true, listOf(Color(0xFF000000), Color(0xFF000000)), Color(0xFF0A0A0A), Color(0xFF7CFF6B), Color(0xFFC6FF3D), Color(0xFFC6FF3D), Color(0xFFC6FF3D)),

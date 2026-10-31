@@ -21,15 +21,15 @@ import androidx.compose.ui.unit.sp
 
 /** Admin look: deep navy glass with an indigo-violet accent. Different from the rider (black + amber) and captain (graphite + blue) apps. */
 object Royal {
-    val Bg = Color(0xFF060A14)
-    val BgTop = Color(0xFF16213D)
-    val Surface = Color(0xFF101829)
-    val Container = Color(0xFF1B2640)
-    val Gold = Color(0xFF8B7CFF)
-    val GoldLight = Color(0xFFB9AFFF)
-    val GoldDeep = Color(0xFF5B4FD6)
+    val Bg = Color(0xFF090909)
+    val BgTop = Color(0xFF17130B)
+    val Surface = Color(0xFF15130F)
+    val Container = Color(0xFF211C12)
+    val Gold = Color(0xFFD6A52C)
+    val GoldLight = Color(0xFFFFD873)
+    val GoldDeep = Color(0xFF9C7118)
     val Ivory = Color(0xFFF1F3FA)
-    val Muted = Color(0xFF9AA3BC)
+    val Muted = Color(0xFFA7A29A)
     val Emerald = Color(0xFF3DBB84)
     val Ruby = Color(0xFFE5677B)
     val Amber = Color(0xFFF0A93B)

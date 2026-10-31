@@ -88,8 +88,8 @@ fun RoyalCard(modifier: Modifier = Modifier, accent: Color = Royal.GoldDeep, con
     val s = RoundedCornerShape(24.dp)
     Column(
         modifier.fillMaxWidth().clip(s)
-            .background(Brush.verticalGradient(listOf(Color(0xFF1F2A47), Color(0xFF0E1526))))
-            .background(Brush.linearGradient(listOf(Color(0xFF8B7CFF).copy(alpha = 0.18f), Color.Transparent, Color.Transparent), Offset(0f, 0f), Offset(700f, 900f)))
+            .background(Brush.verticalGradient(listOf(Color(0xFF292214), Color(0xFF12100B))))
+            .background(Brush.linearGradient(listOf(Color(0xFFD6A52C).copy(alpha = 0.16f), Color.Transparent, Color.Transparent), Offset(0f, 0f), Offset(700f, 900f)))
             .border(1.dp, Brush.linearGradient(listOf(Color(0x77FFFFFF), accent.copy(alpha = 0.10f), Color(0x40FFFFFF)), Offset(0f, 0f), Offset(600f, 800f)), s)
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp), content = content
@@ -135,7 +135,7 @@ fun StatTile(value: String, label: String, color: Color, modifier: Modifier = Mo
     val s = RoundedCornerShape(22.dp)
     Column(
         modifier.clip(s)
-            .background(Brush.verticalGradient(listOf(Color(0xFF1F2A47), Color(0xFF0E1526))))
+            .background(Brush.verticalGradient(listOf(Color(0xFF292214), Color(0xFF12100B))))
             .background(Brush.linearGradient(listOf(color.copy(alpha = 0.16f), Color.Transparent, Color.Transparent), Offset(0f, 0f), Offset(500f, 600f)))
             .border(1.dp, Brush.linearGradient(listOf(Color(0x77FFFFFF), Color(0x0AFFFFFF), Color(0x40FFFFFF)), Offset(0f, 0f), Offset(500f, 600f)), s)
             .padding(14.dp)
