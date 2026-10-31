@@ -393,11 +393,13 @@ fun CapTripHistory(trips: List<Trip>?, bookings: List<Booking>, onBack: () -> Un
     var open by rememberSaveable { mutableStateOf("") }
     val now = System.currentTimeMillis()
     val past = (trips ?: emptyList()).filter { t -> !(t.status != TRIP_CANCELLED && t.departAt > now - 4 * 3_600_000L) }.sortedByDescending { it.departAt }
+    // The title stays fixed; only the list itself scrolls.
+    Column(Modifier.fillMaxSize().padding(top = 30.dp, start = 18.dp, end = 18.dp)) {
+    CapBackBar("سجل الرحلات") { onBack() }
     androidx.compose.foundation.lazy.LazyColumn(
-        Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 44.dp, bottom = 170.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(top = 10.dp, bottom = 130.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        item { CapBackBar("سجل الرحلات") { onBack() } }
         if (past.isEmpty()) item {
             Box(Modifier.fillMaxWidth().capCard().padding(24.dp), contentAlignment = Alignment.Center) { Text("ما في رحلات سابقة", color = CapMute) }
         }
@@ -406,7 +408,7 @@ fun CapTripHistory(trips: List<Trip>?, bookings: List<Booking>, onBack: () -> Un
                     val t = past[i]
                     val riders = bookings.filter { it.tripId == t.id && it.status == BK_ACCEPTED }
                     val isOpen = open == "h" + t.id
-                    Column(Modifier.fillMaxWidth().capCard().animateContentSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Column(Modifier.fillMaxWidth().capCard().animateContentSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(
                             Modifier.fillMaxWidth().clickable(remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, null) { open = if (isOpen) "" else "h" + t.id },
                             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -433,6 +435,7 @@ fun CapTripHistory(trips: List<Trip>?, bookings: List<Booking>, onBack: () -> Un
                     }
                 }
             }
+    }
     }
 }
 
