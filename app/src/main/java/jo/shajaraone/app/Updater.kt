@@ -14,9 +14,9 @@ import org.json.JSONArray
 import java.net.HttpURLConnection
 import java.net.URL
 
-/** Checks the download page's version file for a newer build of THIS app. */
+/** Checks the public GitHub releases for a newer REAL build (tag build-N, made only from main) of THIS app; preview-* tags are ignored. */
 private const val SITE = "https://abnaa-shamal.github.io/iCloud-/"
-private const val VERSION_URL = SITE + "apk/version.json"
+private const val RELEASES_URL = "https://api.github.com/repos/abnaa-shamal/iCloud-/releases?per_page=30"
 
 private class UpdateInfo(val build: Long, val url: String)
 
@@ -24,14 +24,24 @@ private fun installedBuild(ctx: Context): Long =
     try { ctx.packageManager.getPackageInfo(ctx.packageName, 0).longVersionCode } catch (_: Exception) { Long.MAX_VALUE }
 
 private fun fetchLatest(key: String): UpdateInfo? {
-    val c = URL(VERSION_URL + "?t=" + System.currentTimeMillis()).openConnection() as HttpURLConnection
+    val c = URL(RELEASES_URL).openConnection() as HttpURLConnection
     c.connectTimeout = 8000; c.readTimeout = 8000
     c.useCaches = false
+    c.setRequestProperty("Accept", "application/vnd.github+json")
     if (c.responseCode != 200) return null
-    val j = org.json.JSONObject(c.inputStream.bufferedReader().readText())
-    val n = j.optLong("n", 0L)
-    if (n <= 0L) return null
-    return UpdateInfo(n, SITE + "?v=" + n)
+    val arr = JSONArray(c.inputStream.bufferedReader().readText())
+    var best = 0L
+    for (i in 0 until arr.length()) {
+        val r = arr.getJSONObject(i)
+        val n = r.optString("tag_name").removePrefix("build-").toLongOrNull() ?: continue
+        if (!r.optString("tag_name").startsWith("build-")) continue
+        val assets = r.optJSONArray("assets") ?: continue
+        for (j in 0 until assets.length()) {
+            if (assets.getJSONObject(j).optString("name").contains("-$key-") && n > best) best = n
+        }
+    }
+    // The download link is the download page (it shows progress; raw GitHub file links hang on some phones).
+    return if (best > 0L) UpdateInfo(best, SITE + "?v=" + best) else null
 }
 
 // Channel sound cannot change after creation, so the sound change needs a new channel id (v2).
