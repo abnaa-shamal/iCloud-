@@ -72,10 +72,23 @@ class AdminActions(private val report: (String) -> Unit) {
     fun setUser(uid: String, fields: Map<String, Any>, okMsg: String = "تم") =
         run(okMsg, db.collection("users").document(uid).update(fields))
 
-    fun cancelTrip(id: String) = run(
-        "تم إلغاء الرحلة",
-        db.collection("trips").document(id).update(mapOf("status" to "cancelled", "cancelReason" to "ألغتها الإدارة"))
-    )
+    /** Cancelling a trip must also cancel its pending/accepted bookings, otherwise riders keep seeing it as active. */
+    private fun cancelBookingsOf(tripId: String, reason: String) {
+        db.collection("bookings").whereEqualTo("tripId", tripId).get().addOnSuccessListener { snap ->
+            val batch = db.batch()
+            var n = 0
+            snap.documents.filter { it.getString("status") == "pending" || it.getString("status") == "accepted" }.forEach { d ->
+                batch.update(d.reference, mapOf("status" to "cancelled_by_captain", "reason" to reason, "updatedAt" to System.currentTimeMillis())); n++
+            }
+            if (n > 0) batch.commit()
+        }
+    }
+
+    fun cancelTrip(id: String) {
+        val reason = "ألغتها الإدارة"
+        run("تم إلغاء الرحلة", db.collection("trips").document(id).update(mapOf("status" to "cancelled", "cancelReason" to reason)))
+        cancelBookingsOf(id, reason)
+    }
 
     fun cancelPendingBooking(id: String) = run(
         "تم إلغاء الحجز",
@@ -108,7 +121,7 @@ class AdminActions(private val report: (String) -> Unit) {
             return
         }
         val change: Task<Void> = when (r.type) {
-            "cancelTrip" -> trip.update(mapOf("status" to "cancelled", "cancelReason" to "ألغاها الكابتن بموافقة الإدارة"))
+            "cancelTrip" -> trip.update(mapOf("status" to "cancelled", "cancelReason" to "ألغاها الكابتن بموافقة الإدارة")).also { cancelBookingsOf(r.tripId, "ألغاها الكابتن بموافقة الإدارة") }
             "close" -> trip.update(mapOf("status" to "full"))
             "postpone" -> trip.update(mapOf("departAt" to r.newDepartAt, "note" to r.newNote))
             else -> {
