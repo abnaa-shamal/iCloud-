@@ -112,12 +112,17 @@ private fun Ready(uid: String, me: UserProfile) {
         onDispose { reg.remove() }
     }
 
-    // A captain account works on one phone only: opening it on another phone signs this one out.
+    // One phone per account: opening it on another phone signs this one out (captain app and rider app each have their own record).
     DisposableEffect(uid) {
-        val r = if (IS_CAPTAIN_APP && me.isCaptain) Repo.guardSingleDevice(ctx, uid) {
+        val onKicked = {
             Repo.signOut()
             android.widget.Toast.makeText(ctx, "انفتح حسابك على جهاز ثاني، انسجّل خروجك من هون", android.widget.Toast.LENGTH_LONG).show()
-        } else null
+        }
+        val r = when {
+            IS_CAPTAIN_APP && me.isCaptain -> Repo.guardSingleDevice(ctx, uid, "deviceSessions", onKicked)
+            !IS_CAPTAIN_APP -> Repo.guardSingleDevice(ctx, uid, "riderDeviceSessions", onKicked)
+            else -> null
+        }
         onDispose { r?.remove() }
     }
 
