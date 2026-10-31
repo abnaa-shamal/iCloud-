@@ -45,9 +45,14 @@ fun CaptainHome(me: UserProfile) {
     val feedbackCtx = LocalContext.current
     var lastPending by remember { mutableIntStateOf(-1) }
     LaunchedEffect(pending) {
-        if (lastPending >= 0 && pending > lastPending) { AppFeedback.newRequest(feedbackCtx); tab = 1 }
+        if (lastPending >= 0 && pending > lastPending) { AppFeedback.ringRequest(feedbackCtx); tab = 1 }
+        // The captain decided (accepted or declined one) or nothing is pending: stop the ring.
+        if (lastPending >= 0 && pending < lastPending || pending == 0) AppFeedback.ringStop()
         lastPending = pending
     }
+    // Opening the captain screen means he saw the request: stop any ring from the background alert.
+    LaunchedEffect(Unit) { AppFeedback.ringStop() }
+    DisposableEffect(Unit) { onDispose { AppFeedback.ringStop() } }
     val online = trips != null && trips!!.any { it.status != TRIP_CANCELLED && it.departAt > System.currentTimeMillis() - 4 * 3_600_000L }
     LaunchedEffect(online, trips != null) {
         if (trips != null) { if (online) CapReceiveService.start(feedbackCtx) else CapReceiveService.stop(feedbackCtx) }

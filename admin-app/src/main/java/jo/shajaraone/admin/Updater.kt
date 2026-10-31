@@ -56,6 +56,15 @@ fun UpdateCheck() {
         } catch (_: Exception) { }
     }
     val u = info
+    // The full update tune (not trimmed) plays once when the update dialog appears.
+    LaunchedEffect(u != null) {
+        if (u != null) {
+            try {
+                val mp = android.media.MediaPlayer.create(ctx, R.raw.snd_update)
+                if (mp != null) { mp.setOnCompletionListener { it.release() }; mp.start() }
+            } catch (_: Exception) { }
+        }
+    }
     if (u != null && !dismissed) {
         AlertDialog(
             onDismissRequest = { dismissed = true },
