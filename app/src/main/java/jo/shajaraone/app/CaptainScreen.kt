@@ -180,7 +180,7 @@ fun CapDashboard(name: String, trips: List<Trip>?, bookings: List<Booking>, home
             if (home && me != null) item { CaptainRideRequests(me) }
             items(pendShown.size, key = { pendShown[it].id }) { i ->
                 val b = pendShown[i]
-                Column(Modifier.entrance(i).fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(CapPeach).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(Modifier.entrance(i).fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFFE2BC4B), Color(0xFFF3E5AB), Color(0xFFE2BC4B)))).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Box(Modifier.size(36.dp).clip(androidx.compose.foundation.shape.CircleShape).background(CapDark), contentAlignment = Alignment.Center) {
                             Text(b.passengerName.trim().take(1), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)

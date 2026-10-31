@@ -206,7 +206,7 @@ fun CaptainRideRequests(me: UserProfile) {
             )
             open.forEach { r ->
                 val (otherPhone, free) = splitNote(r.note)
-                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CapPeach).padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(Color(0xFFE2BC4B), Color(0xFFF3E5AB), Color(0xFFE2BC4B)))).padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Box(Modifier.clip(RoundedCornerShape(8.dp)).background(CapDark).padding(horizontal = 10.dp, vertical = 3.dp)) {
                         Text("حجز مسبق", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
