@@ -87,6 +87,8 @@ class DesignShotsTest {
     }
 
     @Test fun riderStart() = rider("R1-where-to", RiderFlowState(), emptyList())
+    @Test fun riderWhere() = rider("R2-where-are-you", RiderFlowState(who = 1), emptyList())
+    @Test fun riderDest() = rider("R2b-where-to", RiderFlowState(step = 1, cur = "إربد", who = 1), emptyList())
     @Test fun riderSoon() = shot("R6-soon") {
         Box(Modifier.fillMaxSize()) {
             SoonScreen()
