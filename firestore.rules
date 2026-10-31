@@ -266,6 +266,15 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // One phone per captain: each captain app writes its own device id here and signs out when another id appears.
+    match /deviceSessions/{uid} {
+      allow read: if signedIn() && me() == uid;
+      allow create, update: if signedIn() && me() == uid
+        && request.resource.data.keys().hasOnly(['deviceId', 'at'])
+        && request.resource.data.deviceId is string && request.resource.data.deviceId.size() <= 64
+        && request.resource.data.at is int;
+    }
+
     // Place/sub-area lists shown in the apps. Everyone signed in may read; only the admin edits the one doc
     // config/places = { subAreas: { "<place>" or "<place>|<road>": [names] }, updatedAt }.
     match /config/{docId} {

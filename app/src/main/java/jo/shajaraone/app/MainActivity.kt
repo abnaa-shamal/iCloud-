@@ -111,6 +111,15 @@ private fun Ready(uid: String, me: UserProfile) {
         onDispose { reg.remove() }
     }
 
+    // A captain account works on one phone only: opening it on another phone signs this one out.
+    DisposableEffect(uid) {
+        val r = if (IS_CAPTAIN_APP && me.isCaptain) Repo.guardSingleDevice(ctx, uid) {
+            Repo.signOut()
+            android.widget.Toast.makeText(ctx, "انفتح حسابك على جهاز ثاني، انسجّل خروجك من هون", android.widget.Toast.LENGTH_LONG).show()
+        } else null
+        onDispose { r?.remove() }
+    }
+
     // Ask once for notification permission (Android 13+), needed for the booking chime.
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     LaunchedEffect(Unit) {
