@@ -70,9 +70,9 @@ class UpdateCheckWorker(ctx: Context, params: androidx.work.WorkerParameters) : 
                 androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) return
             val nm = ctx.getSystemService(android.app.NotificationManager::class.java)
             if (android.os.Build.VERSION.SDK_INT >= 26) {
-                val ch = android.app.NotificationChannel("ride_taken_v1", "قبول طلب الحجز المسبق", android.app.NotificationManager.IMPORTANCE_HIGH)
+                val ch = android.app.NotificationChannel("ride_taken_v2", "قبول طلب الحجز المسبق", android.app.NotificationManager.IMPORTANCE_HIGH)
                 ch.setSound(
-                    Uri.parse("android.resource://${ctx.packageName}/${R.raw.snd_system}"),
+                    Uri.parse("android.resource://${ctx.packageName}/${R.raw.snd_booking}"),
                     android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION).build()
                 )
                 nm.createNotificationChannel(ch)
@@ -82,7 +82,7 @@ class UpdateCheckWorker(ctx: Context, params: androidx.work.WorkerParameters) : 
                 android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
             )
             fresh.take(3).forEach { d ->
-                val n = androidx.core.app.NotificationCompat.Builder(ctx, "ride_taken_v1")
+                val n = androidx.core.app.NotificationCompat.Builder(ctx, "ride_taken_v2")
                     .setSmallIcon(R.drawable.ic_stat_pin)
                     .setContentTitle("✅ كابتن قبل طلبك المسبق")
                     .setContentText("${d.getString("takenByName") ?: ""} • ${d.getString("from") ?: ""} ← ${d.getString("to") ?: ""}")

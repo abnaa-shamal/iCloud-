@@ -71,7 +71,7 @@ class AppDataManager private constructor(context: Context) {
     // ------------------------------------------------------------------
     var language by mutableStateOf(prefs.getString("app_lang", "ar") ?: "ar")
         private set
-    var themeIndex by mutableIntStateOf(prefs.getInt("theme_index", 0))
+    var themeIndex by mutableIntStateOf(prefs.getInt("theme_index", AppTheme.GOLD_NOIR.ordinal))
         private set
     var soundEnabled by mutableStateOf(prefs.getBoolean("sound_enabled", true))
         private set
@@ -478,7 +478,7 @@ class AppDataManager private constructor(context: Context) {
         expensesCache = null
         presetsCache = null
         language = prefs.getString("app_lang", "ar") ?: "ar"
-        themeIndex = prefs.getInt("theme_index", 0)
+        themeIndex = prefs.getInt("theme_index", AppTheme.GOLD_NOIR.ordinal)
         soundEnabled = prefs.getBoolean("sound_enabled", true)
         selectedPresetId = prefs.getLong("selected_preset_id", 1L)
         autoDayNight = prefs.getBoolean("auto_day_night", false)

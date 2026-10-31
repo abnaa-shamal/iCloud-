@@ -29,7 +29,11 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AdminSplash(onDone: () -> Unit) {
     val current by rememberUpdatedState(onDone)
-    LaunchedEffect(Unit) { kotlinx.coroutines.delay(2500); current() }
+    val sctx = androidx.compose.ui.platform.LocalContext.current
+    LaunchedEffect(Unit) {
+        try { val mp = android.media.MediaPlayer.create(sctx, R.raw.snd_splash); if (mp != null) { mp.setOnCompletionListener { it.release() }; mp.start() } } catch (_: Exception) { }
+        kotlinx.coroutines.delay(2500); current()
+    }
     val painter = androidx.compose.ui.res.painterResource(R.drawable.splash)
     Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color.Black)) {
         androidx.compose.foundation.Image(painter, null, Modifier.fillMaxSize().blur(32.dp), contentScale = androidx.compose.ui.layout.ContentScale.Crop, alpha = 0.55f)
