@@ -44,12 +44,14 @@ fun PermissionGate(content: @Composable () -> Unit) {
     val gps = tick >= 0 && gpsOn(ctx)
     val notif = tick >= 0 && (Build.VERSION.SDK_INT < 33 || granted(ctx, Manifest.permission.POST_NOTIFICATIONS))
     val bg = tick >= 0 && (Build.VERSION.SDK_INT < 29 || granted(ctx, Manifest.permission.ACCESS_BACKGROUND_LOCATION))
+    // Captain only: "display over other apps", so a new booking request pops up on top of whatever app is open.
+    val ovl = tick >= 0 && (!BuildConfig.CAPTAIN_APP || Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(ctx))
     val askBg = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { tick++ }
     fun askBg0() = askBg.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
     val gp = remember { ctx.getSharedPreferences("perm_gate", Context.MODE_PRIVATE) }
     var skipped by remember { mutableStateOf(gp.getBoolean("bg_skipped", false)) }
-    if (loc && gps && notif && (bg || skipped)) { content(); return }
-    if (loc && gps && notif) {
+    if (loc && gps && notif && ovl && (bg || skipped)) { content(); return }
+    if (loc && gps && notif && ovl) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(top = 80.dp, bottom = 40.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text("خطوة أخيرة (يُفضّل)", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = CapInk)
             Text("عشان الموقع يضل شغال حتى لو طلعت من التطبيق، فعّل «السماح طول الوقت»:", fontSize = 15.sp, color = CapMute, lineHeight = 24.sp)
@@ -74,7 +76,9 @@ fun PermissionGate(content: @Composable () -> Unit) {
             Triple("الموقع", "عشان نعرف مكانك ونوصّل الكابتن والعميل لبعض", loc),
             Triple("تشغيل الـGPS", "لازم يكون الموقع شغّال من إعدادات الجوال", gps),
             Triple("الإشعارات", "عشان توصلك الطلبات والردود فوراً", notif)
-        ).forEach { (t, d, ok) ->
+        ).let { base ->
+            if (BuildConfig.CAPTAIN_APP) base + Triple("الظهور فوق التطبيقات", "عشان يطلع لك طلب الحجز فوق أي تطبيق مفتوح وتقبله بلمسة، بدون ما تفتح التطبيق", ovl) else base
+        }.forEach { (t, d, ok) ->
             Row(Modifier.fillMaxWidth().capCard(20.dp).padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(if (ok) "✅" else "⭕", fontSize = 22.sp)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -87,6 +91,7 @@ fun PermissionGate(content: @Composable () -> Unit) {
             !loc -> "السماح بالموقع"
             !gps -> "فتح إعدادات الموقع"
             !notif -> "السماح بالإشعارات"
+            !ovl -> "السماح بالظهور فوق التطبيقات"
             else -> "تابع"
         }
         CapBtn(label, Modifier.fillMaxWidth(), height = 56.dp) {
@@ -94,6 +99,7 @@ fun PermissionGate(content: @Composable () -> Unit) {
                 !loc -> if (!triedLoc) { triedLoc = true; askLoc.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)) } else openAppSettings(ctx)
                 !gps -> ctx.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 !notif -> if (!triedNotif && Build.VERSION.SDK_INT >= 33) { triedNotif = true; askNotif.launch(Manifest.permission.POST_NOTIFICATIONS) } else openAppSettings(ctx)
+                !ovl -> ctx.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + ctx.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 else -> {}
             }
         }
