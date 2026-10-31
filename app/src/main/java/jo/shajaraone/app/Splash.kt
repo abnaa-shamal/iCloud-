@@ -26,10 +26,47 @@ const val APP_DISPLAY_NAME = "أبناء الشمال"
 const val WELCOME_LINE = "هلا بعيال صويت، وهلا بأهل الشمال"
 const val SPLASH_MILLIS = 2000L
 
+/**
+ * Captain app only: a different photo (road, Al-Ramtha, clock tower) every time the app is opened.
+ * The photos live in the captain flavor only, so they are looked up by name (the rider build simply has none).
+ */
+private fun captainSplashRes(ctx: android.content.Context): Int {
+    val sp = ctx.getSharedPreferences("splash", android.content.Context.MODE_PRIVATE)
+    val i = sp.getInt("next", 0) % 3
+    sp.edit().putInt("next", i + 1).apply()
+    return ctx.resources.getIdentifier("splash_${i + 1}", "drawable", ctx.packageName)
+}
+
+@Composable
+fun CapPhotoSplash(painter: androidx.compose.ui.graphics.painter.Painter) {
+    val appear = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { appear.animateTo(1f, tween(700, easing = FastOutSlowInEasing)) }
+    Box(Modifier.fillMaxSize().background(Color.Black)) {
+        androidx.compose.foundation.Image(
+            painter, null, Modifier.fillMaxSize().alpha(appear.value), contentScale = androidx.compose.ui.layout.ContentScale.Crop
+        )
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.55f to Color.Transparent, 1f to Color(0xCC000000))))
+        Column(
+            Modifier.align(Alignment.BottomCenter).padding(bottom = 64.dp).alpha(appear.value),
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(APP_DISPLAY_NAME, fontSize = 38.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(WELCOME_LINE, fontSize = 17.sp, color = Color(0xFFF2E6D0))
+        }
+    }
+}
+
 /** Two-second welcome: the name with a glowing light sweep, then the welcome line fades in. */
 @Composable
 fun SplashScreen(onDone: () -> Unit) {
     val current by rememberUpdatedState(onDone)
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val photo = remember { if (IS_CAPTAIN_APP) captainSplashRes(ctx) else 0 }
+    if (photo != 0) {
+        LaunchedEffect(Unit) { delay(SPLASH_MILLIS + 500); current() }
+        CapPhotoSplash(androidx.compose.ui.res.painterResource(photo))
+        return
+    }
     LaunchedEffect(Unit) {
         delay(SPLASH_MILLIS)
         current()

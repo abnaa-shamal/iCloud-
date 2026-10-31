@@ -11,6 +11,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
@@ -74,6 +75,9 @@ class DesignShotsTest {
         save(name)
     }
 
+    @Test fun captainSplash1() = shot("C8-captain-splash-1", 900) { CapPhotoSplash(androidx.compose.ui.graphics.painter.BitmapPainter(android.graphics.BitmapFactory.decodeStream(javaClass.getResourceAsStream("/splash_1.jpg")).asImageBitmap())) }
+    @Test fun captainSplash2() = shot("C8-captain-splash-2", 900) { CapPhotoSplash(androidx.compose.ui.graphics.painter.BitmapPainter(android.graphics.BitmapFactory.decodeStream(javaClass.getResourceAsStream("/splash_2.jpg")).asImageBitmap())) }
+    @Test fun captainSplash3() = shot("C8-captain-splash-3", 900) { CapPhotoSplash(androidx.compose.ui.graphics.painter.BitmapPainter(android.graphics.BitmapFactory.decodeStream(javaClass.getResourceAsStream("/splash_3.jpg")).asImageBitmap())) }
     @Test fun splash() = shot("0-splash", 1300) { SplashScreen(onDone = {}) }
     @Test fun login() = shot("6-login", 900) { AuthScreen() }
 
