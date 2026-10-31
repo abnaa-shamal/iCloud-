@@ -15,6 +15,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,6 +30,17 @@ import java.io.File
 @Config(sdk = [34], qualifiers = "w390dp-h844dp-xxhdpi")
 class DesignShotsTest {
     @get:Rule val rule = createComposeRule()
+
+    /** The captain screens read Firebase Auth; a placeholder app lets them render in tests (nothing is ever sent). */
+    @Before fun fakeFirebase() {
+        val ctx = org.robolectric.RuntimeEnvironment.getApplication()
+        if (com.google.firebase.FirebaseApp.getApps(ctx).isEmpty()) {
+            com.google.firebase.FirebaseApp.initializeApp(
+                ctx,
+                com.google.firebase.FirebaseOptions.Builder().setApplicationId("1:1:android:1").setApiKey("x").setProjectId("demo").build()
+            )
+        }
+    }
 
     private val soon = System.currentTimeMillis() + 3 * 3_600_000L
     private val t1 = Trip(
