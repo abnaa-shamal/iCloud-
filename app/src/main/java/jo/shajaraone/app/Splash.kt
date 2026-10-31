@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -39,15 +40,22 @@ private fun captainSplashRes(ctx: android.content.Context): Int {
 
 @Composable
 fun CapPhotoSplash(painter: androidx.compose.ui.graphics.painter.Painter) {
-    // The photos already carry their own welcome text, so nothing is drawn on top.
+    // The photos carry their own welcome text, so the whole picture is shown (never cropped): it touches the screen
+    // width, and any left-over space above/below is filled with a blurred, darkened copy of the same picture.
     val appear = remember { Animatable(0f) }
     LaunchedEffect(Unit) { appear.animateTo(1f, tween(700, easing = FastOutSlowInEasing)) }
-    Box(Modifier.fillMaxSize().background(Color.Black)) {
+    Box(Modifier.fillMaxSize().background(Color.Black).alpha(appear.value)) {
         androidx.compose.foundation.Image(
-            painter, null, Modifier.fillMaxSize().alpha(appear.value), contentScale = androidx.compose.ui.layout.ContentScale.Crop
+            painter, null, Modifier.fillMaxSize().androidx_blur(), contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            alpha = 0.55f
+        )
+        androidx.compose.foundation.Image(
+            painter, null, Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Fit
         )
     }
 }
+
+private fun Modifier.androidx_blur(): Modifier = this.blur(32.dp)
 
 /** Two-second welcome: the name with a glowing light sweep, then the welcome line fades in. */
 @Composable

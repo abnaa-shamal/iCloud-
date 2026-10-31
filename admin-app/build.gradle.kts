@@ -18,7 +18,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = (System.getenv("VERSION_CODE") ?: "1").toInt()
-        versionName = "1.0.${System.getenv("VERSION_CODE") ?: "0"}"
+        versionName = "1.5.${System.getenv("VERSION_CODE") ?: "0"}"
         buildConfigField("String", "FB_API_KEY", env("ABNAA_FIREBASE_API_KEY", "placeholder"))
         buildConfigField("String", "FB_APP_ID", env("ABNAA_RIDER_APP_ID", "1:1:android:1"))
         buildConfigField("String", "FB_PROJECT_ID", env("FIREBASE_PROJECT_ID", "shajara-rides-security-t-2632f"))
