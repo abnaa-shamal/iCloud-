@@ -39,20 +39,13 @@ private fun captainSplashRes(ctx: android.content.Context): Int {
 
 @Composable
 fun CapPhotoSplash(painter: androidx.compose.ui.graphics.painter.Painter) {
+    // The photos already carry their own welcome text, so nothing is drawn on top.
     val appear = remember { Animatable(0f) }
     LaunchedEffect(Unit) { appear.animateTo(1f, tween(700, easing = FastOutSlowInEasing)) }
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         androidx.compose.foundation.Image(
             painter, null, Modifier.fillMaxSize().alpha(appear.value), contentScale = androidx.compose.ui.layout.ContentScale.Crop
         )
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.55f to Color.Transparent, 1f to Color(0xCC000000))))
-        Column(
-            Modifier.align(Alignment.BottomCenter).padding(bottom = 64.dp).alpha(appear.value),
-            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(APP_DISPLAY_NAME, fontSize = 38.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Text(WELCOME_LINE, fontSize = 17.sp, color = Color(0xFFF2E6D0))
-        }
     }
 }
 
