@@ -174,6 +174,25 @@ jobs:
             --repo "${{ github.repository }}" --target "${{ github.sha }}" --prerelease \
             --title "أبناء الشمال ${{ github.run_number }}" --notes "نسخة رقم ${{ github.run_number }}"
 
+      # Fast mirror for slow phones: the rider/captain APKs (never the admin one) go to a single orphan branch that is
+      # overwritten every build, and are served through the jsDelivr CDN. The links are printed in the run summary.
+      - name: Mirror rider/captain APKs on the CDN
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          mkdir -p /tmp/mirror && cd /tmp/mirror && git init -q -b apk-files
+          cp "$GITHUB_WORKSPACE"/app/build/outputs/apk/rider/release/*.apk abnaa-rider.apk
+          cp "$GITHUB_WORKSPACE"/app/build/outputs/apk/captain/release/*.apk abnaa-captain.apk
+          git add . && git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -q -m "apk ${{ github.ref_name }} #${{ github.run_number }}"
+          SHA=$(git rev-parse HEAD)
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" apk-files
+          {
+            echo "### روابط سريعة (CDN)"
+            echo "- العميل: https://cdn.jsdelivr.net/gh/${{ github.repository }}@${SHA}/abnaa-rider.apk"
+            echo "- الكابتن: https://cdn.jsdelivr.net/gh/${{ github.repository }}@${SHA}/abnaa-captain.apk"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   # Automatic tests of firestore.rules on a LOCAL emulator (never touches real or test Firebase data)
   rules-test:
     runs-on: ubuntu-latest
