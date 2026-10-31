@@ -2,6 +2,7 @@ package jo.shajaraone.app
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -89,7 +90,11 @@ fun RideRequestDialog(me: UserProfile, fs: RiderFlowState, onDismiss: () -> Unit
                 if (at < System.currentTimeMillis() + 10 * 60_000L) { toast(ctx, "اختر وقت بعد 10 دقايق على الأقل"); return@TextButton }
                 sending = true
                 val full = (if (fs.who == 2 && fs.otherOk) "لـ:" + fs.other.filter { it.isDigit() } + (if (note.isNotBlank()) " • " else "") else "") + note
-                Repo.createRideRequest(me, fs.cur, fs.dest, fs.road, at, seats.toLong(), full) { ok ->
+                Repo.createRideRequest(me, fs.cur, fs.dest, fs.road, at, seats.toLong(), full, onBlocked = {
+                    sending = false
+                    toast(ctx, "عندك حجز مسبق شغّال. ألغِه من «طلباتي المسبقة» لتطلب غيره")
+                    onDismiss()
+                }) { ok ->
                     sending = false
                     toast(ctx, if (ok) "انبعت طلبك للكباتن ✅" else "ما انبعت الطلب، جرّب كمان مرة")
                     if (ok) onDismiss()
@@ -148,6 +153,7 @@ fun RiderRideRequests() {
                         GhostBtn("واتساب", Modifier.weight(1f)) { openWhatsApp(ctx, r.takenByPhone, "مرحبا كابتن ${r.takenByName}، بخصوص طلبي ${r.from} ← ${r.to} ${rideWhen(r)}") }
                     }
                 }
+                Text("لتعديل اليوم أو الوقت: كلّم الكابتن واتفق معه، أو ألغِ الطلب وأرسل طلب جديد.", fontSize = 12.sp, color = Dim)
                 GhostBtn("إلغاء الطلب", Modifier.fillMaxWidth(), Color(0xFFFF8A80)) {
                     Repo.cancelRideRequest(r) { ok -> toast(ctx, if (ok) "انلغى الطلب" else "ما قدرت ألغي، جرّب كمان مرة") }
                 }
@@ -170,7 +176,6 @@ fun CaptainRideRequests(me: UserProfile) {
         val uid = Repo.auth.currentUser?.uid
         val a: ListenerRegistration? = Repo.listenOpenRideRequests { l ->
             val others = l.filter { it.passengerUid != uid }
-            if (lastCount >= 0 && others.size > lastCount) { AppFeedback.newTrip(ctx); toast(ctx, "طلب حجز مسبق جديد") }
             lastCount = others.size
             open = others
         }
@@ -240,3 +245,39 @@ fun CaptainRideRequests(me: UserProfile) {
         }
     }
 }
+
+
+/** Captain: a new pre-booking pops up on top of whatever screen he is on (trips, history, ...) with its own tone. */
+@Composable
+fun PreBookingPopup(modifier: Modifier = Modifier) {
+    val ctx = LocalContext.current
+    var pop by remember { mutableStateOf<Repo.RideReq?>(null) }
+    DisposableEffect(Unit) {
+        val uid = Repo.auth.currentUser?.uid
+        var seen: Set<String>? = null
+        val reg: ListenerRegistration = Repo.listenOpenRideRequests { l ->
+            val ids = l.map { it.id }.toSet()
+            val old = seen
+            seen = ids
+            if (old != null) l.firstOrNull { it.id !in old && it.passengerUid != uid }?.let { pop = it; AppFeedback.prebook(ctx) }
+        }
+        onDispose { reg.remove() }
+    }
+    LaunchedEffect(pop) { if (pop != null) { kotlinx.coroutines.delay(12_000); pop = null } }
+    pop?.let { r ->
+        Column(
+            modifier.statusBarsPadding().padding(horizontal = 14.dp, vertical = 10.dp).fillMaxWidth()
+                .clip(RoundedCornerShape(22.dp)).background(Color(0xFF141418))
+                .androidx_border()
+                .clickable { pop = null }.padding(horizontal = 18.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text("🕓 حجز مسبق جديد", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFFF3C94B))
+            Text("${r.from} ← ${r.to}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("${rideWhen(r)} • ${seatsText(r.seats)}", fontSize = 13.sp, color = Color(0xFFD8D8DE))
+        }
+    }
+}
+
+private fun Modifier.androidx_border(): Modifier =
+    this.border(1.dp, Color(0xFFD4AF37), RoundedCornerShape(22.dp))

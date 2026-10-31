@@ -247,14 +247,24 @@ object Repo {
         getString("takenByPhone") ?: "", getString("takenByCar") ?: "", getLong("createdAt") ?: 0L, getLong("updatedAt") ?: 0L
     )
 
-    fun createRideRequest(me: UserProfile, from: String, to: String, road: String, departAt: Long, seats: Long, note: String, onDone: (Boolean) -> Unit) {
+    /**
+     * One pre-booking per rider at a time. The document id is the rider's uid (the rules enforce it too),
+     * so he can only send a new one after cancelling the old one or when its time has passed.
+     * Current (same-day) bookings are a different collection and are not affected.
+     */
+    fun createRideRequest(me: UserProfile, from: String, to: String, road: String, departAt: Long, seats: Long, note: String,
+                          onBlocked: () -> Unit = {}, onDone: (Boolean) -> Unit) {
         val uid = auth.currentUser?.uid ?: return onDone(false)
         val data = hashMapOf<String, Any>(
             "passengerUid" to uid, "passengerName" to me.name, "passengerPhone" to me.phone,
             "from" to from, "to" to to, "road" to road, "departAt" to departAt, "seats" to seats, "note" to note.take(120),
             "status" to "open", "createdAt" to now(), "updatedAt" to now()
         )
-        db.collection("rideRequests").add(data).addOnSuccessListener { onDone(true) }.addOnFailureListener { onDone(false) }
+        db.collection("rideRequests").whereEqualTo("passengerUid", uid).get().addOnSuccessListener { snap ->
+            val busy = snap.documents.any { (it.getString("status") == "open" || it.getString("status") == "taken") && (it.getLong("departAt") ?: 0L) > now() }
+            if (busy) { onBlocked(); return@addOnSuccessListener }
+            db.collection("rideRequests").document(uid).set(data).addOnSuccessListener { onDone(true) }.addOnFailureListener { onDone(false) }
+        }.addOnFailureListener { onDone(false) }
     }
 
     /** Captain: every open request (the newest first). */

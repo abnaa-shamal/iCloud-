@@ -53,6 +53,9 @@ object AppFeedback {
     /** Something worked, e.g. a booking request was sent. */
     fun success(ctx: Context) = fire(ctx, "snd_booking", millis = 40, amplitude = 160)
 
+    /** Captain: a rider posted a pre-booking (its own two-note chime). */
+    fun prebook(ctx: Context) = fire(ctx, "snd_prebook", millis = 60, amplitude = 170)
+
     /** Trip / captain arrived. */
     fun arrival(ctx: Context) = fire(ctx, "snd_arrival", millis = 60, amplitude = 160)
 

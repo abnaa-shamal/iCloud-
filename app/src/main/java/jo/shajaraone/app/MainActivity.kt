@@ -198,6 +198,7 @@ private fun HomeScaffold(me: UserProfile, onShowGuide: () -> Unit) {
                 IS_CAPTAIN_APP && me.isCaptain -> CaptainStatusScreen(me) // admin whose own captain account is not approved yet
                 else -> PassengerHome(me) // rider app: approved captains also see the passenger screens
             }
+            if (IS_CAPTAIN_APP && me.isCaptain && me.status == USER_APPROVED) PreBookingPopup(Modifier.align(Alignment.TopCenter))
         }
     }
 

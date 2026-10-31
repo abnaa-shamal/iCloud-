@@ -945,3 +945,36 @@ test('booking needs a verified number: an unverified rider is refused, the same 
   await assertSucceeds(updateDoc(doc(asAdmin(), 'users/paxU'), { verified: true }));
   await assertSucceeds(bookAs(asPaxU(), 'paxU', '0792000009'));
 });
+
+// ---- pre-booking (rideRequests): one per rider, the document id is the rider's uid ----
+const rideReq = (over = {}) => ({
+  passengerUid: 'pax', passengerName: 'راكب', passengerPhone: '0792000001', from: 'إربد', to: 'عمّان', road: '',
+  departAt: 2000000000000, seats: 1, note: '', status: 'open', createdAt: 1, updatedAt: 1, ...over,
+});
+
+test('rideRequests: rider can create his one request under his own uid', async () => {
+  await assertSucceeds(setDoc(doc(asPax(), 'rideRequests/pax'), rideReq()));
+});
+
+test('rideRequests: a random id is refused (no second request through the back door)', async () => {
+  await assertFails(addDoc(collection(asPax(), 'rideRequests'), rideReq()));
+});
+
+test('rideRequests: cannot replace a live request with a new one', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), 'rideRequests/pax'), rideReq()); });
+  await assertFails(setDoc(doc(asPax(), 'rideRequests/pax'), rideReq({ to: 'الزرقاء' })));
+});
+
+test('rideRequests: after cancelling, he can send a new one', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), 'rideRequests/pax'), rideReq({ status: 'cancelled' })); });
+  await assertSucceeds(setDoc(doc(asPax(), 'rideRequests/pax'), rideReq({ to: 'الزرقاء' })));
+});
+
+test('rideRequests: after the trip time has passed, he can send a new one', async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), 'rideRequests/pax'), rideReq({ departAt: 1000000000000 })); });
+  await assertSucceeds(setDoc(doc(asPax(), 'rideRequests/pax'), rideReq()));
+});
+
+test('rideRequests: nobody can create a request in another rider\'s name', async () => {
+  await assertFails(setDoc(doc(asCap(), 'rideRequests/pax'), rideReq()));
+});
