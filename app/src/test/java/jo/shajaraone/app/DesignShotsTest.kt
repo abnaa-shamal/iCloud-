@@ -107,4 +107,14 @@ class DesignShotsTest {
     @Test fun bookingSheet() = shot("R3-booking-seat-map") {
         BookingBody(t1, 4, 3, setOf(1, 2), {}, listOf("الدوار الرابع", "وسط البلد"), "وسط البلد", {}, "", {}, false) {}
     }
+
+    private val d1 = DeliveryOrder("1", "مطعم الشام", "شارع المدينة، قرب الدوار", "الشجرة، حي الجامعة", "٠٫٨ كم", "٢٫٠ د.أ", "قبل ٣ دقائق", "بدون بصل")
+    private val d2 = DeliveryOrder("2", "شاورما الأمير", "وسط البلد، مقابل البنك", "الشجرة، الحي الشمالي", "١٫٤ كم", "١٫٥ د.أ", "قبل ٧ دقائق")
+    private val d3 = DeliveryOrder("3", "بيتزا النخيل", "الشارع العام", "الشجرة، قرب المسجد", "٢٫١ كم", "٢٫٥ د.أ", "قبل ١٢ دقيقة")
+    private val d4 = DeliveryOrder("4", "مطعم الشام", "شارع المدينة، قرب الدوار", "الشجرة، حي الجامعة", "٠٫٨ كم", "٢٫٠ د.أ", "قبل ٢ دقيقة", mine = true)
+
+    @Test fun captainServices() = capShot("C4-captain-services") { CapServicesHome("أحمد", 3, 2, d1, {}, {}) }
+    @Test fun captainDelivery() = capShot("C5-captain-delivery") { CapDeliveryScreen(listOf(d1, d2, d3, d4)) }
+    @Test fun captainDeliveryMine() = capShot("C6-captain-delivery-mine") { CapDeliveryScreen(listOf(d1, d2, d4), tab = 1) }
+    @Test fun captainNewDelivery() = capShot("C7-captain-new-delivery") { CapNewDelivery(DeliveryDraft("مطعم الشام", "شارع المدينة، قرب الدوار", "الشجرة، حي الجامعة", "2.0", "بدون بصل")) }
 }
