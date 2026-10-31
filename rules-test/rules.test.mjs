@@ -978,3 +978,15 @@ test('rideRequests: after the trip time has passed, he can send a new one', asyn
 test('rideRequests: nobody can create a request in another rider\'s name', async () => {
   await assertFails(setDoc(doc(asCap(), 'rideRequests/pax'), rideReq()));
 });
+
+// ---- one phone per account: the rider app has its own record ----
+test('riderDeviceSessions: owner can write his own record', async () => {
+  await assertSucceeds(setDoc(doc(asPax(), 'riderDeviceSessions/pax'), { deviceId: 'abc', at: 1 }));
+});
+test('riderDeviceSessions: cannot write or read someone else\'s record', async () => {
+  await assertFails(setDoc(doc(asCap(), 'riderDeviceSessions/pax'), { deviceId: 'abc', at: 1 }));
+  await assertFails(getDoc(doc(asCap(), 'riderDeviceSessions/pax')));
+});
+test('riderDeviceSessions: extra fields refused', async () => {
+  await assertFails(setDoc(doc(asPax(), 'riderDeviceSessions/pax'), { deviceId: 'abc', at: 1, role: 'admin' }));
+});
