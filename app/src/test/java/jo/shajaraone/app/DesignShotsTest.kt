@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.unit.dp
 import org.junit.Before
 import org.junit.Rule
